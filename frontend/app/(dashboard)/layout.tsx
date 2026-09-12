@@ -10,11 +10,11 @@ export default function DashboardLayout({
 }) {
   return (
     <OfficerRouteGuard>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#f8fafc]">
         <Sidebar />
         <div className="pl-64">
           <Navbar />
-          <main className="p-8 max-w-7xl mx-auto">{children}</main>
+          <main className="p-6 sm:p-8 max-w-[1440px] mx-auto">{children}</main>
         </div>
       </div>
     </OfficerRouteGuard>

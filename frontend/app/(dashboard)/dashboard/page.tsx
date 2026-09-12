@@ -20,332 +20,689 @@ import {
   ClockIcon,
   ArrowRightIcon,
   EyeIcon,
+  DownloadIcon,
+  PlusIcon,
+  UploadCloudIcon,
+  TrendingUpIcon,
+  SparklesIcon,
+  ChevronRightIcon,
+  RefreshCwIcon,
+  XCircleIcon,
 } from "@/components/icons";
+import { EvidenceModal } from "@/components/evidence-modal";
 import { apiRequest } from "@/lib/api";
+import { getUser } from "@/lib/session";
+import { User, EvidenceItem } from "@/lib/types";
 
 interface OfficerDashboardStats {
   active_tenders: number;
   total_bids: number;
   under_verification: number;
+  pending_review: number;
   compliant_bids: number;
-  requires_review: number;
+  high_risk: number;
 }
 
-const DASHBOARD_STATS: OfficerDashboardStats = {
-  active_tenders: 2,
-  total_bids: 3,
-  under_verification: 1,
-  compliant_bids: 1,
-  requires_review: 1,
+const DEFAULT_DASHBOARD_STATS: OfficerDashboardStats = {
+  active_tenders: 12,
+  total_bids: 48,
+  under_verification: 8,
+  pending_review: 5,
+  compliant_bids: 29,
+  high_risk: 4,
 };
 
-const RECENT_TENDERS = [
+interface ActiveTenderItem {
+  id: string;
+  ref: string;
+  title: string;
+  category: string;
+  deadline: string;
+  bids_count: number;
+  verified_count: number;
+  status: "OPEN" | "PUBLISHED" | "CLOSING SOON" | "UNDER REVIEW" | "CLOSED";
+}
+
+const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
   {
-    id: "TND-2024-001",
-    ref: "CPCL/PROC/SAFETY/2024/09",
-    title: "Supply and Maintenance of High-Grade Industrial Safety Equipment",
-    category: "Industrial Safety & Fire Protection",
-    estimated_value: "₹ 4,50,00,000",
-    closing_date: "30-Aug-2024",
-    bidders_count: 3,
-    status: "Under Evaluation",
+    id: "TND-2026-001",
+    ref: "CPCL/PROC/2026/001",
+    title: "Industrial Safety Helmets & Impact Visors",
+    category: "Industrial PPE",
+    deadline: "18 Sep 2026",
+    bids_count: 3,
+    verified_count: 2,
+    status: "OPEN",
   },
   {
-    id: "TND-2024-002",
-    ref: "CPCL/MAINT/VALVES/2024/11",
-    title: "Annual Rate Contract for Refinery High-Pressure Valve Overhauling",
-    category: "Mechanical & Piping",
-    estimated_value: "₹ 2,80,00,000",
-    closing_date: "15-Sep-2024",
-    bidders_count: 0,
-    status: "Published",
+    id: "TND-2026-002",
+    ref: "CPCL/PROC/2026/002",
+    title: "Industrial Protective Equipment & Harness Kits",
+    category: "Safety & Fall Protection",
+    deadline: "22 Sep 2026",
+    bids_count: 5,
+    verified_count: 3,
+    status: "OPEN",
+  },
+  {
+    id: "TND-2026-003",
+    ref: "CPCL/PROC/2026/003",
+    title: "Fire Safety Equipment & Hydrant Valves",
+    category: "Fire & Safety Systems",
+    deadline: "25 Sep 2026",
+    bids_count: 2,
+    verified_count: 1,
+    status: "CLOSING SOON",
+  },
+  {
+    id: "TND-2026-004",
+    ref: "CPCL/PROC/2026/004",
+    title: "High-Pressure Refinery Valve Assemblies",
+    category: "Piping & Instrumentation",
+    deadline: "02 Oct 2026",
+    bids_count: 4,
+    verified_count: 4,
+    status: "UNDER REVIEW",
+  },
+  {
+    id: "TND-2026-005",
+    ref: "CPCL/PROC/2026/005",
+    title: "Hazardous Gas Detection Sensors (Fixed & Portable)",
+    category: "Environmental Monitoring",
+    deadline: "12 Oct 2026",
+    bids_count: 0,
+    verified_count: 0,
+    status: "PUBLISHED",
   },
 ];
 
-const RECENT_BIDS = [
+interface VerificationQueueItem {
+  id: string;
+  bidder_name: string;
+  document_name: string;
+  document_type: string;
+  status: "REVIEW REQUIRED" | "VERIFIED" | "FAILED" | "UNDER REVIEW";
+  risk: "LOW" | "MEDIUM" | "HIGH";
+  tender_ref: string;
+  evidence: EvidenceItem;
+}
+
+const VERIFICATION_QUEUE_DATA: VerificationQueueItem[] = [
   {
-    id: "BID-001",
-    name: "ABC Safety Solutions Pvt Ltd",
-    tender_ref: "CPCL/PROC/SAFETY/2024/09",
-    amount: "₹ 4,42,00,000",
-    score: 100,
+    id: "VQ-001",
+    bidder_name: "ABC Safety Solutions Pvt Ltd",
+    document_name: "Experience Certificate & Past PSU Orders",
+    document_type: "Experience Credentials",
+    status: "REVIEW REQUIRED",
     risk: "LOW",
-    status: "COMPLIANT",
-    issues: "All 6 statutory & technical criteria verified.",
+    tender_ref: "CPCL/PROC/2026/001",
+    evidence: {
+      requirement_id: "REQ-EXP-01",
+      requirement_code: "EXP",
+      requirement_name: "Experience Certificate Scrutiny",
+      clause_reference: "Section III, Clause 4.2",
+      category: "Technical",
+      mandatory: true,
+      required_value: ">= 3 Years PSU Experience",
+      bidder_value: "5 Years Verified (4 POs)",
+      status: "REVIEW_REQUIRED",
+      rule_evaluated: "5 >= 3 Years experience claim requires officer signature endorsement",
+      evidence_source: "ABC_Past_Supply_Orders_CPCL_IOCL.pdf",
+      page_number: 1,
+      highlight_text: "Executed 4 industrial safety supply orders with CPCL, IOCL, and ONGC with total turnover exceeding benchmark.",
+      explanation: "Experience fulfills threshold requirements. Officer review is requested to confirm certificate seal authenticity.",
+      confidence: 0.98,
+      weight: 20,
+    },
   },
   {
-    id: "BID-003",
-    name: "SafeGuard Equipments Pvt Ltd",
-    tender_ref: "CPCL/PROC/SAFETY/2024/09",
-    amount: "₹ 4,29,00,000",
-    score: 83.3,
-    risk: "MEDIUM",
-    status: "REVIEW_REQUIRED",
-    issues: "Secondary OEM letter & 35% local content.",
-  },
-  {
-    id: "BID-002",
-    name: "SecureTech Industries Ltd",
-    tender_ref: "CPCL/PROC/SAFETY/2024/09",
-    amount: "₹ 4,68,00,000",
-    score: 66.7,
+    id: "VQ-002",
+    bidder_name: "SecureTech Industries Ltd",
+    document_name: "OEM Authorization (Honeywell / Karam)",
+    document_type: "OEM Authorization",
+    status: "VERIFIED",
     risk: "HIGH",
-    status: "NON_COMPLIANT",
-    issues: "Turnover (₹2.2 Cr) & Experience deficits.",
+    tender_ref: "CPCL/PROC/2026/001",
+    evidence: {
+      requirement_id: "REQ-OEM-01",
+      requirement_code: "OEM",
+      requirement_name: "Direct Manufacturer Authorization",
+      clause_reference: "Section III, Clause 4.5",
+      category: "Technical",
+      mandatory: true,
+      required_value: "Direct OEM Authorization",
+      bidder_value: "Tier 1 Direct MAF",
+      status: "PASS",
+      rule_evaluated: "Direct OEM authorization letter verified on principal OEM letterhead",
+      evidence_source: "Honeywell_Direct_OEM_MAF_2024.pdf",
+      page_number: 2,
+      highlight_text: "Direct Manufacturer Authorization: Valid channel partner authorization for CPCL refinery safety bids.",
+      explanation: "Direct OEM authorization successfully authenticated via digital letterhead verification.",
+      confidence: 0.97,
+      weight: 15,
+    },
+  },
+  {
+    id: "VQ-003",
+    bidder_name: "SafeGuard Equipments Pvt Ltd",
+    document_name: "Local Content Declaration (Make in India)",
+    document_type: "MII Declaration",
+    status: "FAILED",
+    risk: "MEDIUM",
+    tender_ref: "CPCL/PROC/2026/001",
+    evidence: {
+      requirement_id: "REQ-MII-01",
+      requirement_code: "LOCAL_CONTENT",
+      requirement_name: "Minimum Local Content (Class-I)",
+      clause_reference: "Section IV, Clause 5.1",
+      category: "Eligibility",
+      mandatory: true,
+      required_value: ">= 50% (Class-I Local Supplier)",
+      bidder_value: "35.0% (Class-II Supplier)",
+      status: "FAIL",
+      rule_evaluated: "35.0% < 50.0% mandatory Class-I threshold under Public Procurement Order",
+      evidence_source: "SafeGuard_MakeInIndia_SelfDeclaration.pdf",
+      page_number: 1,
+      highlight_text: "Self-declaration: Local content is computed at 35.0% based on imported raw material components.",
+      explanation: "Bidder declared only 35.0% domestic value addition, failing the mandatory 50.0% Class-I requirement.",
+      confidence: 0.95,
+      weight: 15,
+    },
+  },
+  {
+    id: "VQ-004",
+    bidder_name: "Chennai Valves & Fittings Corp",
+    document_name: "Audited Balance Sheet & Annual Turnover",
+    document_type: "Financial Turnover",
+    status: "UNDER REVIEW",
+    risk: "MEDIUM",
+    tender_ref: "CPCL/PROC/2026/004",
+    evidence: {
+      requirement_id: "REQ-FIN-01",
+      requirement_code: "TURNOVER",
+      requirement_name: "Annual Average Turnover",
+      clause_reference: "Section II, Clause 3.1",
+      category: "Financial",
+      mandatory: true,
+      required_value: ">= ₹3.00 Cr",
+      bidder_value: "₹3.20 Cr (Pending CA UDIN Verification)",
+      status: "REVIEW_REQUIRED",
+      rule_evaluated: "₹3.20 Cr >= ₹3.00 Cr requirement. UDIN verification in progress.",
+      evidence_source: "Chennai_Valves_Audited_FY24.pdf",
+      page_number: 3,
+      highlight_text: "Average turnover over past 3 financial years certified as ₹3,20,45,000.",
+      explanation: "Turnover satisfies numerical threshold. CA certificate UDIN validation awaiting ICAI API response.",
+      confidence: 0.96,
+      weight: 20,
+    },
   },
 ];
 
-const VERIFICATION_ACTIVITY = [
+const RECENT_ACTIVITY_DATA = [
   {
-    id: "ACT-001",
-    title: "GSTN Registration Verified",
-    target: "ABC Safety Solutions (33AABCA1234F1Z5)",
-    time: "10 mins ago",
-    status: "AUTHENTICATED",
+    id: "ACT-01",
+    action: "ABC Safety Solutions submitted a bid",
+    time: "2 minutes ago",
+    type: "submission",
+    meta: "Tender CPCL/PROC/2026/001 · 6 Annexures",
   },
   {
-    id: "ACT-002",
-    title: "OCR Clause Extraction Completed",
-    target: "Honeywell_Direct_OEM_MAF_2024.pdf",
-    time: "25 mins ago",
-    status: "AUTHENTICATED",
+    id: "ACT-02",
+    action: "SecureTech Industries uploaded OEM Authorization",
+    time: "18 minutes ago",
+    type: "upload",
+    meta: "Honeywell_Direct_OEM_MAF_2024.pdf",
   },
   {
-    id: "ACT-003",
-    title: "Make In India Content Verification",
-    target: "SafeGuard Equipments (35.0% Class-II)",
-    time: "40 mins ago",
-    status: "REQUIRES REVIEW",
-  },
-  {
-    id: "ACT-004",
-    title: "Audited Balance Sheet OCR Parsing",
-    target: "SecureTech_Financial_Statement_FY24.pdf",
+    id: "ACT-03",
+    action: "Tender CPCL/PROC/2026/001 was published",
     time: "1 hour ago",
-    status: "INVALID",
+    type: "publish",
+    meta: "Est. Value: ₹ 4,50,00,000 · NCB Tender",
   },
   {
-    id: "ACT-005",
-    title: "Central Debarment Registry Check",
-    target: "All 3 Bidders Cleared (CVC / GeM)",
+    id: "ACT-04",
+    action: "Experience Certificate verification flagged review",
     time: "2 hours ago",
-    status: "AUTHENTICATED",
+    type: "flag",
+    meta: "ABC Safety Solutions · Section III, Clause 4.2",
+  },
+  {
+    id: "ACT-05",
+    action: "Central Debarment Registry checked across 3 vendors",
+    time: "3 hours ago",
+    type: "security",
+    meta: "CVC & GeM Debarred Registry: All Cleared",
   },
 ];
 
 export default function OfficerDashboardPage() {
-  const [stats, setStats] = useState<OfficerDashboardStats>(DASHBOARD_STATS);
+  const [stats, setStats] = useState<OfficerDashboardStats>(DEFAULT_DASHBOARD_STATS);
+  const [user, setUser] = useState<User | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
+  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [selectedBidderName, setSelectedBidderName] = useState("");
 
   useEffect(() => {
+    const u = getUser<User>();
+    if (u) setUser(u);
+
     async function fetchStats() {
       try {
         const res = await apiRequest<any>("/dashboard/stats");
-        if (res?.active_tenders) {
-          setStats({
-            active_tenders: res.active_tenders,
-            total_bids: res.total_bidders || 3,
-            under_verification: 1,
-            compliant_bids: 1,
-            requires_review: res.pending_reviews || 1,
-          });
+        if (res?.active_tenders !== undefined) {
+          setStats((prev) => ({
+            ...prev,
+            active_tenders: res.active_tenders || prev.active_tenders,
+            total_bids: res.total_bidders || prev.total_bids,
+            pending_review: res.pending_reviews || prev.pending_review,
+          }));
         }
       } catch {
-        // Fallback
+        // Retain standard default stats
       }
     }
     fetchStats();
   }, []);
 
+  function handleOpenEvidence(item: VerificationQueueItem) {
+    setSelectedEvidence(item.evidence);
+    setSelectedBidderName(item.bidder_name);
+    setIsEvidenceModalOpen(true);
+  }
+
+  const officerName = user?.name || "Procurement Officer";
+
+  // Helper for status badge rendering in table
+  const renderTenderStatus = (status: ActiveTenderItem["status"]) => {
+    switch (status) {
+      case "OPEN":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 border border-emerald-200">
+            <span className="size-1.5 rounded-full bg-emerald-500" />
+            OPEN
+          </span>
+        );
+      case "PUBLISHED":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-700 border border-blue-200">
+            <span className="size-1.5 rounded-full bg-blue-500" />
+            PUBLISHED
+          </span>
+        );
+      case "CLOSING SOON":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-extrabold text-amber-700 border border-amber-200">
+            <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+            CLOSING SOON
+          </span>
+        );
+      case "UNDER REVIEW":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-extrabold text-purple-700 border border-purple-200">
+            <span className="size-1.5 rounded-full bg-purple-500" />
+            UNDER REVIEW
+          </span>
+        );
+      case "CLOSED":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-700 border border-slate-200">
+            <span className="size-1.5 rounded-full bg-slate-400" />
+            CLOSED
+          </span>
+        );
+    }
+  };
+
+  // Helper for verification queue status
+  const renderQueueStatus = (status: VerificationQueueItem["status"]) => {
+    switch (status) {
+      case "VERIFIED":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+            <CheckCircleIcon className="size-3 text-emerald-600" />
+            VERIFIED
+          </span>
+        );
+      case "REVIEW REQUIRED":
+      case "UNDER REVIEW":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
+            <AlertTriangleIcon className="size-3 text-amber-600" />
+            REVIEW REQUIRED
+          </span>
+        );
+      case "FAILED":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-200">
+            <XCircleIcon className="size-3 text-red-600" />
+            FAILED
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Evidence Inspection Modal */}
+      <EvidenceModal
+        isOpen={isEvidenceModalOpen}
+        onClose={() => setIsEvidenceModalOpen(false)}
+        evidence={selectedEvidence}
+        bidderName={selectedBidderName}
+      />
+
+      {/* ========================================================================= */}
+      {/* 1. WELCOME SECTION & QUICK ACTIONS HEADER                                 */}
+      {/* ========================================================================= */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
-              CPCL Evaluation Portal
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200/80 uppercase tracking-wide">
+              <ShieldCheckIcon className="size-3 text-blue-600" />
+              CPCL Evaluation Cell
             </span>
-            <span className="text-xs text-slate-500">· Manali Refinery NCB</span>
+            <span className="text-[11px] text-slate-400">·</span>
+            <span className="text-[11px] font-medium text-slate-500">
+              Institutional Evaluation Mode
+            </span>
           </div>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900">
-            Procurement Officer Dashboard
+
+          <h1 className="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+            Good morning, {officerName}
           </h1>
-          <p className="text-xs text-slate-500">
-            Real-time statutory compliance, deterministic evaluation matrix, and bid verification.
+
+          <p className="mt-0.5 text-xs text-slate-500 font-medium">
+            Here&apos;s an overview of your procurement activities and verification status.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Link href="/compliance">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <ShieldCheckIcon className="size-3.5" />
-              Verify Bids
+        {/* Header Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href="/tenders">
+            <Button
+              size="sm"
+              className="bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-xs flex items-center gap-1.5"
+            >
+              <PlusIcon className="size-3.5" />
+              Create Tender
             </Button>
           </Link>
+
+          <Link href="/verification">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <UploadCloudIcon className="size-3.5 text-slate-500" />
+              Verification Queue
+            </Button>
+          </Link>
+
           <Link href="/comparison">
-            <Button size="sm" variant="outline">
-              <ScaleIcon className="size-3.5" />
-              Compare Bidders
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <ScaleIcon className="size-3.5 text-slate-500" />
+              Compare Bids
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* 5 KPI Metric Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      {/* ========================================================================= */}
+      {/* 2. SUMMARY CARDS (6 STATISTIC METRICS)                                    */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
         {/* Active Tenders */}
-        <Card className="p-4 border-slate-200">
+        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Active Tenders
             </span>
-            <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 border border-blue-100">
-              <FileTextIcon className="size-4" />
+            <div className="rounded-lg bg-blue-50 p-1.5 text-blue-700 border border-blue-100">
+              <FileTextIcon className="size-3.5" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900 leading-none">
             {stats.active_tenders}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-500">CPCL Live Tenders</p>
+          <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-blue-700">
+            <TrendingUpIcon className="size-3 text-blue-600" />
+            <span>+2 this month</span>
+          </div>
         </Card>
 
         {/* Total Bids */}
-        <Card className="p-4 border-slate-200">
+        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Total Bids
             </span>
-            <div className="rounded-lg bg-indigo-50 p-1.5 text-indigo-600 border border-indigo-100">
-              <UsersIcon className="size-4" />
+            <div className="rounded-lg bg-indigo-50 p-1.5 text-indigo-700 border border-indigo-100">
+              <UsersIcon className="size-3.5" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900 leading-none">
             {stats.total_bids}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-500">Submitted Packages</p>
+          <p className="mt-1.5 text-[10px] font-medium text-slate-500">
+            Across 12 RFPs
+          </p>
         </Card>
 
         {/* Under Verification */}
-        <Card className="p-4 border-slate-200">
+        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Under Verification
             </span>
             <div className="rounded-lg bg-slate-100 p-1.5 text-slate-700 border border-slate-200">
-              <ClockIcon className="size-4" />
+              <ClockIcon className="size-3.5" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900 leading-none">
             {stats.under_verification}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-500">OCR & Rule Parsing</p>
+          <p className="mt-1.5 text-[10px] font-medium text-slate-500">
+            OCR & Rule Parsing
+          </p>
+        </Card>
+
+        {/* Pending Review */}
+        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Pending Review
+            </span>
+            <div className="rounded-lg bg-amber-50 p-1.5 text-amber-700 border border-amber-100">
+              <AlertTriangleIcon className="size-3.5" />
+            </div>
+          </div>
+          <p className="mt-2 text-2xl font-extrabold text-amber-700 leading-none">
+            {stats.pending_review}
+          </p>
+          <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-amber-700">
+            <span>Officer Action</span>
+          </div>
         </Card>
 
         {/* Compliant Bids */}
-        <Card className="p-4 border-slate-200">
+        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Compliant Bids
             </span>
-            <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 border border-emerald-100">
-              <CheckCircleIcon className="size-4" />
+            <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-700 border border-emerald-100">
+              <CheckCircleIcon className="size-3.5" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-emerald-700">
+          <p className="mt-2 text-2xl font-extrabold text-emerald-700 leading-none">
             {stats.compliant_bids}
           </p>
-          <p className="mt-0.5 text-[10px] text-emerald-600 font-medium">100% Eligible</p>
+          <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+            <span>100% Eligible</span>
+          </div>
         </Card>
 
-        {/* Requires Review */}
-        <Card className="p-4 border-slate-200">
+        {/* High Risk */}
+        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Requires Review
+              High Risk
             </span>
-            <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 border border-amber-100">
-              <AlertTriangleIcon className="size-4" />
+            <div className="rounded-lg bg-red-50 p-1.5 text-red-700 border border-red-100">
+              <AlertTriangleIcon className="size-3.5" />
             </div>
           </div>
-          <p className="mt-2 text-2xl font-extrabold text-amber-700">
-            {stats.requires_review}
+          <p className="mt-2 text-2xl font-extrabold text-red-700 leading-none">
+            {stats.high_risk}
           </p>
-          <p className="mt-0.5 text-[10px] text-amber-700 font-medium">Officer Action</p>
+          <p className="mt-1.5 text-[10px] font-semibold text-red-600">
+            Deficits flagged
+          </p>
         </Card>
       </div>
 
-      {/* Main Grid: Recent Tenders & Recent Bids */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column (2 Cols): Recent Tenders & Recent Bids */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Recent Tenders Section */}
-          <Card className="overflow-hidden">
-            <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileTextIcon className="size-4 text-blue-600" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  Recent Tenders
-                </h2>
-              </div>
-              <Link
-                href="/tenders"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                View all <ArrowRightIcon className="size-3" />
-              </Link>
+      {/* ========================================================================= */}
+      {/* 3. MAIN SECTION: ACTIVE TENDERS TABLE                                     */}
+      {/* ========================================================================= */}
+      <Card className="overflow-hidden border-slate-200 shadow-xs">
+        <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <FileTextIcon className="size-4 text-blue-700" />
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                Active Tenders
+              </h2>
             </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Current live procurement packages undergoing statutory & technical evaluation.
+            </p>
+          </div>
 
-            <div className="divide-y divide-slate-100">
-              {RECENT_TENDERS.map((tender) => (
-                <div
+          <div className="flex items-center gap-2">
+            <Link
+              href="/tenders"
+              className="text-xs font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 transition-colors"
+            >
+              View all tenders <ArrowRightIcon className="size-3" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-slate-100 bg-slate-50/50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              <tr>
+                <th className="px-4 py-3">Tender ID</th>
+                <th className="px-4 py-3">Tender Title</th>
+                <th className="px-4 py-3">Deadline</th>
+                <th className="px-4 py-3">Bids</th>
+                <th className="px-4 py-3">Verification</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {ACTIVE_TENDERS_DATA.map((tender) => (
+                <tr
                   key={tender.id}
-                  className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-slate-50/50 transition-colors"
+                  className="hover:bg-slate-50/70 transition-colors group"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-mono font-bold text-blue-800 border border-blue-200/60">
-                        {tender.ref}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-500">
-                        {tender.category}
-                      </span>
-                    </div>
-                    <h3 className="text-xs font-bold text-slate-900">
+                  {/* Tender ID */}
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    <span className="font-mono font-bold text-blue-700 bg-blue-50/80 px-2 py-1 rounded border border-blue-200/60 text-[11px]">
+                      {tender.ref}
+                    </span>
+                  </td>
+
+                  {/* Tender Title */}
+                  <td className="px-4 py-3.5">
+                    <p className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
                       {tender.title}
-                    </h3>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                      <span>Value: <strong>{tender.estimated_value}</strong></span>
-                      <span>·</span>
-                      <span>Closing: <strong>{tender.closing_date}</strong></span>
-                      <span>·</span>
-                      <span>Bidders: <strong className="text-blue-700">{tender.bidders_count} Submitted</strong></span>
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-medium">
+                      Category: {tender.category}
+                    </p>
+                  </td>
+
+                  {/* Deadline */}
+                  <td className="px-4 py-3.5 whitespace-nowrap font-medium text-slate-700">
+                    <div className="flex items-center gap-1.5 text-slate-600">
+                      <ClockIcon className="size-3 text-slate-400" />
+                      <span>{tender.deadline}</span>
                     </div>
-                  </div>
+                  </td>
 
-                  <Link href="/tenders">
-                    <Button size="sm" variant="outline" className="text-xs whitespace-nowrap">
-                      Inspect RFP
-                    </Button>
-                  </Link>
-                </div>
+                  {/* Bids */}
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    <span className="font-bold text-slate-800">
+                      {tender.bids_count} Bids
+                    </span>
+                  </td>
+
+                  {/* Verification */}
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50/60 px-2 py-0.5 rounded border border-emerald-200/60">
+                      <CheckCircleIcon className="size-3 text-emerald-600" />
+                      {tender.verified_count} Verified
+                    </span>
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-4 py-3.5 whitespace-nowrap">
+                    {renderTenderStatus(tender.status)}
+                  </td>
+
+                  {/* Action */}
+                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <Link href="/tenders">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      >
+                        <EyeIcon className="size-3 text-slate-500" />
+                        View
+                      </Button>
+                    </Link>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </Card>
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
-          {/* Recent Bids Section */}
-          <Card className="overflow-hidden">
+      {/* ========================================================================= */}
+      {/* 4. TWO-COLUMN SPLIT: VERIFICATION QUEUE & (ACTIVITY + COMPLIANCE)         */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Left Column (2 cols): Verification Queue */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="overflow-hidden border-slate-200 shadow-xs">
             <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UsersIcon className="size-4 text-blue-600" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  Recent Bids & Evaluations
-                </h2>
+              <div>
+                <div className="flex items-center gap-2">
+                  <UploadCloudIcon className="size-4 text-blue-700" />
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                    Verification Queue
+                  </h2>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Documents and bid criteria requiring officer scrutiny and evidence validation.
+                </p>
               </div>
+
               <Link
-                href="/bidders"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                href="/verification"
+                className="text-xs font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 transition-colors"
               >
-                View all <ArrowRightIcon className="size-3" />
+                Full Queue <ArrowRightIcon className="size-3" />
               </Link>
             </div>
 
@@ -353,33 +710,66 @@ export default function OfficerDashboardPage() {
               <table className="w-full text-left text-xs">
                 <thead className="border-b border-slate-100 bg-slate-50/50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                   <tr>
-                    <th className="px-4 py-2.5">Bidder Entity</th>
-                    <th className="px-4 py-2.5">Bid Value</th>
-                    <th className="px-4 py-2.5">Score</th>
-                    <th className="px-4 py-2.5">Risk</th>
-                    <th className="px-4 py-2.5 text-right">Action</th>
+                    <th className="px-4 py-3">Bidder</th>
+                    <th className="px-4 py-3">Document / Requirement</th>
+                    <th className="px-4 py-3">Verification Status</th>
+                    <th className="px-4 py-3">Risk</th>
+                    <th className="px-4 py-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {RECENT_BIDS.map((bid) => (
-                    <tr key={bid.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-3">
-                        <p className="font-bold text-slate-900">{bid.name}</p>
-                        <p className="text-[10px] text-slate-500 font-mono">{bid.id} · {bid.tender_ref}</p>
+                  {VERIFICATION_QUEUE_DATA.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="hover:bg-slate-50/70 transition-colors"
+                    >
+                      {/* Bidder */}
+                      <td className="px-4 py-3.5">
+                        <p className="font-bold text-slate-900 leading-tight">
+                          {item.bidder_name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          {item.tender_ref}
+                        </p>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-slate-800">{bid.amount}</td>
-                      <td className="px-4 py-3">
-                        <ScoreDisplay score={bid.score} size="sm" />
+
+                      {/* Document */}
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <FileTextIcon className="size-3.5 text-blue-600 shrink-0" />
+                          <div>
+                            <p className="font-medium text-slate-800 leading-snug">
+                              {item.document_name}
+                            </p>
+                            <span className="text-[10px] text-slate-400">
+                              {item.document_type}
+                            </span>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <RiskBadge risk={bid.risk} />
+
+                      {/* Status */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {renderQueueStatus(item.status)}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link href={`/compliance?bidder=${bid.id}`}>
-                          <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
-                            Inspect
-                          </Button>
-                        </Link>
+
+                      {/* Risk */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <RiskBadge risk={item.risk} />
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEvidence(item)}
+                            className="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors border border-blue-200/80 inline-flex items-center gap-1"
+                          >
+                            <EyeIcon className="size-3" />
+                            View Evidence
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -389,60 +779,206 @@ export default function OfficerDashboardPage() {
           </Card>
         </div>
 
-        {/* Right Column (1 Col): Verification Activity */}
+        {/* Right Column (1 col): Compliance Overview & Recent Activity */}
         <div className="space-y-6">
-          <Card className="overflow-hidden">
+          {/* Compliance Overview */}
+          <Card className="p-5 border-slate-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheckIcon className="size-4 text-blue-700" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                  Compliance Overview
+                </h3>
+              </div>
+              <Link
+                href="/compliance"
+                className="text-[11px] font-bold text-blue-700 hover:underline"
+              >
+                Matrix
+              </Link>
+            </div>
+
+            {/* Metric Chips */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl bg-emerald-50 p-2.5 border border-emerald-200/80">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  PASS
+                </span>
+                <span className="text-xl font-extrabold text-emerald-800 leading-tight">
+                  29
+                </span>
+              </div>
+
+              <div className="rounded-xl bg-red-50 p-2.5 border border-red-200/80">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-red-700">
+                  FAIL
+                </span>
+                <span className="text-xl font-extrabold text-red-800 leading-tight">
+                  8
+                </span>
+              </div>
+
+              <div className="rounded-xl bg-amber-50 p-2.5 border border-amber-200/80">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                  REVIEW
+                </span>
+                <span className="text-xl font-extrabold text-amber-800 leading-tight">
+                  11
+                </span>
+              </div>
+            </div>
+
+            {/* Segmented Distribution Bar */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                <span>Overall Evaluation Health</span>
+                <span className="font-bold text-slate-800">48 Total Evaluated</span>
+              </div>
+              <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  style={{ width: "60.4%" }}
+                  className="bg-emerald-500 transition-all"
+                  title="Compliant (60.4%)"
+                />
+                <div
+                  style={{ width: "16.7%" }}
+                  className="bg-red-500 transition-all"
+                  title="Non-Compliant (16.7%)"
+                />
+                <div
+                  style={{ width: "22.9%" }}
+                  className="bg-amber-400 transition-all"
+                  title="Requires Review (22.9%)"
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-slate-400 font-medium pt-0.5">
+                <span className="text-emerald-700 font-semibold">60% Compliant</span>
+                <span className="text-amber-700 font-semibold">23% Review</span>
+                <span className="text-red-700 font-semibold">17% Non-Compliant</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Recent Bid Activity Feed */}
+          <Card className="overflow-hidden border-slate-200 shadow-xs">
             <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheckIcon className="size-4 text-blue-600" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  Verification Activity
-                </h2>
+                <ClockIcon className="size-4 text-blue-700" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                  Recent Bid Activity
+                </h3>
               </div>
               <Link
                 href="/audit"
-                className="text-[11px] font-semibold text-blue-600 hover:underline"
+                className="text-[11px] font-bold text-blue-700 hover:underline"
               >
-                Full Trail
+                Audit Trail
               </Link>
             </div>
 
             <div className="divide-y divide-slate-100 p-2">
-              {VERIFICATION_ACTIVITY.map((act) => (
-                <div key={act.id} className="p-3 space-y-1.5 hover:bg-slate-50/60 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900">
-                      {act.title}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
+              {RECENT_ACTIVITY_DATA.map((act) => (
+                <div
+                  key={act.id}
+                  className="p-2.5 rounded-lg hover:bg-slate-50/80 transition-colors space-y-1"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-bold text-slate-900 leading-snug">
+                      {act.action}
+                    </p>
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap font-medium">
                       {act.time}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 truncate" title={act.target}>
-                    {act.target}
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {act.meta}
                   </p>
-                  <div className="pt-0.5">
-                    <DocumentStatusBadge status={act.status} />
-                  </div>
                 </div>
               ))}
             </div>
           </Card>
 
-          {/* Quick Guidance Box */}
-          <Card className="p-4 border-blue-200 bg-blue-50/50">
-            <div className="flex items-start gap-2.5">
-              <ShieldCheckIcon className="size-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs font-bold text-blue-900">
-                  Deterministic Audit Guarantee
-                </h4>
-                <p className="mt-1 text-[11px] leading-relaxed text-blue-800">
-                  All compliance verdicts are strictly computed by deterministic rules. AI models are used only for text extraction and document OCR parsing.
-                </p>
-              </div>
+          {/* Quick Actions Card */}
+          <Card className="p-4 border-slate-200 shadow-xs space-y-2.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+              Quick Actions
+            </h4>
+            <div className="grid grid-cols-1 gap-2">
+              <Link href="/tenders" className="w-full">
+                <button
+                  type="button"
+                  className="w-full rounded-lg bg-blue-700 px-3 py-2 text-left text-xs font-bold text-white hover:bg-blue-800 transition-colors flex items-center justify-between shadow-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <PlusIcon className="size-3.5" />
+                    Create Tender
+                  </span>
+                  <ChevronRightIcon className="size-3.5" />
+                </button>
+              </Link>
+
+              <Link href="/verification" className="w-full">
+                <button
+                  type="button"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <UploadCloudIcon className="size-3.5 text-slate-500" />
+                    Review Verification Queue
+                  </span>
+                  <ChevronRightIcon className="size-3.5 text-slate-400" />
+                </button>
+              </Link>
+
+              <Link href="/comparison" className="w-full">
+                <button
+                  type="button"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <ScaleIcon className="size-3.5 text-slate-500" />
+                    Compare Bids
+                  </span>
+                  <ChevronRightIcon className="size-3.5 text-slate-400" />
+                </button>
+              </Link>
+
+              <Link href="/reports" className="w-full">
+                <button
+                  type="button"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2">
+                    <DownloadIcon className="size-3.5 text-slate-500" />
+                    Generate Report
+                  </span>
+                  <ChevronRightIcon className="size-3.5 text-slate-400" />
+                </button>
+              </Link>
             </div>
           </Card>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 5. STATUTORY GOVERNANCE & DECISION SUPPORT BANNER                         */}
+      {/* ========================================================================= */}
+      <div className="rounded-xl border border-blue-200/80 bg-blue-50/50 p-4 shadow-xs">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-blue-100 p-2 text-blue-700 shrink-0">
+            <ShieldCheckIcon className="size-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-blue-950 flex items-center gap-2">
+              <span>AI-Assisted Verification & Decision Support</span>
+              <span className="rounded bg-blue-200/70 px-1.5 py-0.2 text-[9px] font-mono font-bold text-blue-900">
+                GFR 144 / CVC GUIDELINES
+              </span>
+            </h4>
+            <p className="mt-1 text-[11px] text-blue-900/80 leading-relaxed">
+              Compliance assessment, OCR clause extraction, and risk indexing are computed through deterministic rule engines for institutional transparency. In strict adherence to statutory procurement guidelines, <strong>final procurement decisions and tender award authority remain exclusively with the authorized Procurement Officer</strong>.
+            </p>
+          </div>
         </div>
       </div>
     </div>
