@@ -148,8 +148,128 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
                 "threshold": 1,
                 "unit": "Certificate",
                 "mandatory": True
+            },
+            {
+                "id": "REQ-MECH-03",
+                "clause": "Clause 5.2.1",
+                "category": "TECHNICAL",
+                "title": "IBR (Indian Boiler Regulations) Well-Known Stockist Approval",
+                "description": "Valid IBR Form II certificate approved by Chief Inspector of Boilers.",
+                "threshold": 1,
+                "unit": "Certificate",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-MECH-04",
+                "clause": "Clause 6.1.0",
+                "category": "STATUTORY",
+                "title": "Make in India (MII) Local Content >= 50%",
+                "description": "Minimum 50% domestic value addition certificate.",
+                "threshold": 50.0,
+                "unit": "Percentage",
+                "mandatory": True
             }
         ]
+    },
+    {
+        "id": "TND-2024-003",
+        "tender_number": "CPCL/PROC/INST/2024/22",
+        "title": "Annual Maintenance & Upgradation Contract for Process Automation DCS & Field Transmitters",
+        "department": "Instrumentation & Control Division",
+        "status": "ACTIVE",
+        "estimated_value": 24000000.0,  # ₹2.40 Cr
+        "emd_amount": 480000.0,
+        "publish_date": "2024-08-01T10:00:00Z",
+        "closing_date": "2024-10-15T17:00:00Z",
+        "category": "Automation & Instrumentation",
+        "description": "Comprehensive maintenance and OEM calibrated spares replacement for Honeywell Experion DCS and Emerson Rosemount pressure/flow transmitters at Manali Refinery.",
+        "requirements": [
+            {
+                "id": "REQ-INST-01",
+                "clause": "Clause 2.1.0",
+                "category": "FINANCIAL",
+                "title": "Annual Turnover",
+                "description": "Minimum average turnover of ₹1.50 Crore during past 3 years.",
+                "threshold": 1.5,
+                "unit": "Crore INR",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-INST-02",
+                "clause": "Clause 3.4.2",
+                "category": "OEM_AUTHORIZATION",
+                "title": "Authorized DCS System Integrator Certificate",
+                "description": "Direct System Integrator authorization from Honeywell / Emerson.",
+                "threshold": 1,
+                "unit": "Authorization",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-INST-03",
+                "clause": "Clause 4.1.1",
+                "category": "TECHNICAL",
+                "title": "Hydrocarbon Refinery Automation Experience",
+                "description": "At least 2 completed AMC contracts in PSU petroleum refineries.",
+                "threshold": 2,
+                "unit": "Contracts",
+                "mandatory": True
+            }
+        ]
+    }
+]
+
+# Separate Multi-Bid Storage for Bidders
+SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = [
+    {
+        "id": "BID-DOC-001",
+        "bidder_id": "BID-001",
+        "tender_id": "TND-2024-001",
+        "tender_number": "CPCL/PROC/SAFETY/2024/09",
+        "tender_title": "Supply and Maintenance of High-Grade Industrial Safety & Fire Protection Equipment",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "bid_amount": "₹ 4,42,00,000",
+        "submission_date": "2024-08-20T14:30:00Z",
+        "status": "SUBMITTED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 100.0,
+        "passed_rules": 6,
+        "total_rules": 6,
+        "is_draft": False
+    },
+    {
+        "id": "BID-DOC-002",
+        "bidder_id": "BID-001",
+        "tender_id": "TND-2024-002",
+        "tender_number": "CPCL/PROC/MECH/2024/14",
+        "tender_title": "Supply of High-Pressure Seamless Alloy Pipes & Flanges for Crude Distillation Unit",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "bid_amount": "₹ 8,10,00,000",
+        "submission_date": None,
+        "status": "DRAFT",
+        "verification_status": "PENDING",
+        "compliance_status": "PENDING",
+        "compliance_score": 0.0,
+        "passed_rules": 0,
+        "total_rules": 4,
+        "is_draft": True
+    },
+    {
+        "id": "BID-DOC-003",
+        "bidder_id": "BID-001",
+        "tender_id": "TND-2024-003",
+        "tender_number": "CPCL/PROC/INST/2024/22",
+        "tender_title": "Annual Maintenance & Upgradation Contract for Process Automation DCS & Field Transmitters",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "bid_amount": "₹ 2,15,00,000",
+        "submission_date": "2024-09-02T11:20:00Z",
+        "status": "UNDER_VERIFICATION",
+        "verification_status": "PROCESSING",
+        "compliance_status": "REVIEW_REQUIRED",
+        "compliance_score": 80.0,
+        "passed_rules": 2,
+        "total_rules": 3,
+        "is_draft": False
     }
 ]
 
@@ -273,3 +393,67 @@ def get_bidder_by_id(bidder_id: str) -> Optional[Dict[str, Any]]:
 def add_bidder(bidder_data: Dict[str, Any]) -> Dict[str, Any]:
     SAMPLE_BIDDERS.append(bidder_data)
     return bidder_data
+
+def get_bids_by_bidder_id(bidder_id: str) -> List[Dict[str, Any]]:
+    return [b for b in SAMPLE_BIDDER_BIDS if b.get("bidder_id") == bidder_id]
+
+def add_bid_for_bidder(bid_data: Dict[str, Any]) -> Dict[str, Any]:
+    SAMPLE_BIDDER_BIDS.append(bid_data)
+    return bid_data
+
+SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = [
+    {
+        "id": "NOTIF-001",
+        "bidder_id": "BID-001",
+        "title": "Technical Evaluation Passed",
+        "message": "Your bid for Tender CPCL/PROC/SAFETY/2024/09 has passed technical & statutory pre-qualification with 100% compliance.",
+        "timestamp": "2024-08-26T14:30:00Z",
+        "type": "SUCCESS",
+        "read": False
+    },
+    {
+        "id": "NOTIF-002",
+        "bidder_id": "BID-001",
+        "title": "MSME Udyam Exemption Verified",
+        "message": "EMD Exemption of ₹9,00,000 granted under MSME Udyam Policy (Certificate: UDYAM-TN-02-0012345).",
+        "timestamp": "2024-08-21T10:00:00Z",
+        "type": "INFO",
+        "read": True
+    },
+    {
+        "id": "NOTIF-003",
+        "bidder_id": "BID-001",
+        "title": "Tender Deadline Approaching",
+        "message": "Tender CPCL/PROC/MECH/2024/14 (Alloy Pipes & Flanges) closes on 30-Sep-2024. Your draft submission is pending final review.",
+        "timestamp": "2024-09-01T09:00:00Z",
+        "type": "WARNING",
+        "read": False
+    },
+    {
+        "id": "NOTIF-004",
+        "bidder_id": "BID-001",
+        "title": "Document Verification In Progress",
+        "message": "Automated verification initiated for Process Automation AMC submission (TND-2024-003).",
+        "timestamp": "2024-09-02T11:25:00Z",
+        "type": "INFO",
+        "read": False
+    }
+]
+
+def get_notifications_for_bidder(bidder_id: str) -> List[Dict[str, Any]]:
+    notifs = [n for n in SAMPLE_NOTIFICATIONS if n.get("bidder_id") == bidder_id]
+    if not notifs:
+        # Provide welcoming notification for new registered bidder
+        return [
+            {
+                "id": f"NOTIF-NEW-{bidder_id}",
+                "bidder_id": bidder_id,
+                "title": "Welcome to BidSure AI",
+                "message": "Your organization account is active. Complete your statutory document profile to apply for active CPCL tenders.",
+                "timestamp": "Just now",
+                "type": "SUCCESS",
+                "read": False
+            }
+        ]
+    return notifs
+
