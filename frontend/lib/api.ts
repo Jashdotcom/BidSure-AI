@@ -2,7 +2,9 @@
 
 import { getToken } from "@/lib/session";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" ? "http://localhost:8000" : "http://localhost:8000");
 
 export class ApiError extends Error {
   readonly status: number;
@@ -49,42 +51,65 @@ export async function apiRequest<T>(
           : undefined,
       cache: "no-store",
     });
-  } catch (netErr) {
-    // Fallback to direct localhost port 8000 or 8001 if direct proxy is unreachable
-    if (typeof window !== "undefined") {
-      try {
-        const directUrl = `http://localhost:8000${normalizedPath.replace(/^\/api/, "")}`;
-        response = await fetch(directUrl, {
-          method: options.method ?? "GET",
-          headers,
-          body:
-            options.body !== undefined
-              ? options.body instanceof FormData
-                ? options.body
-                : JSON.stringify(options.body)
-              : undefined,
-          cache: "no-store",
-        });
-      } catch {
-        throw new ApiError(503, "Cannot connect to BidSure AI backend server. Please verify backend is running on port 8000.");
-      }
-    } else {
-      throw new ApiError(503, "Cannot connect to BidSure AI backend server.");
+  } catch {
+    // If direct call fails, try relative proxy as fallback
+    try {
+      response = await fetch(normalizedPath, {
+        method: options.method ?? "GET",
+        headers,
+        body:
+          options.body !== undefined
+            ? options.body instanceof FormData
+              ? options.body
+              : JSON.stringify(options.body)
+            : undefined,
+        cache: "no-store",
+      });
+    } catch {
+      throw new ApiError(
+        503,
+        "Unable to connect to the authentication service. Please try again."
+      );
     }
   }
 
   if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
+    let message = "";
+
     try {
-      const payload = (await response.json()) as { detail?: string | { msg?: string }[] };
+      const payload = (await response.json()) as {
+        detail?: string | { msg?: string }[];
+        message?: string;
+      };
+
       if (typeof payload.detail === "string") {
         message = payload.detail;
       } else if (Array.isArray(payload.detail) && payload.detail[0]?.msg) {
         message = payload.detail[0].msg;
+      } else if (typeof payload.message === "string") {
+        message = payload.message;
       }
     } catch {
-      // keep fallback message
+      // JSON parsing failed (e.g. HTML 404/500 page from dev server)
     }
+
+    // Friendly formatted messages based on HTTP status code
+    if (!message) {
+      if (response.status === 401) {
+        message = "Invalid email or password.";
+      } else if (response.status === 403) {
+        message = "Access denied. You do not have permission to access this resource.";
+      } else if (response.status === 404) {
+        message = "Unable to connect to the authentication service. Please try again.";
+      } else if (response.status >= 500) {
+        message = "Authentication service encountered an error. Please try again later.";
+      } else {
+        message = "Unable to complete request. Please try again.";
+      }
+    } else if (response.status === 401 && message.toLowerCase().includes("unauthorized")) {
+      message = "Invalid email or password.";
+    }
+
     throw new ApiError(response.status, message);
   }
 
