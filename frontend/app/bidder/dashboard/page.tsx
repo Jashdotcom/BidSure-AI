@@ -110,74 +110,74 @@ export default function BidderDashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Compliance Readiness */}
-        <Card className="p-5 border-l-4 border-l-emerald-600">
+        <Card className="p-4 border-slate-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Readiness Score
             </span>
-            <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
-              <ShieldCheckIcon className="size-5" />
+            <div className="rounded-lg bg-emerald-50 p-1.5 text-emerald-600 border border-emerald-100">
+              <ShieldCheckIcon className="size-4" />
             </div>
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900">
             {data.overall_compliance}%
           </p>
-          <p className="mt-1 text-xs text-emerald-700 font-medium">
+          <p className="mt-0.5 text-[10px] text-emerald-700 font-medium">
             All 6 Core Criteria Verified
           </p>
         </Card>
 
         {/* Active Bids */}
-        <Card className="p-5 border-l-4 border-l-blue-600">
+        <Card className="p-4 border-slate-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Active Tender Bids
             </span>
-            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
-              <FileTextIcon className="size-5" />
+            <div className="rounded-lg bg-blue-50 p-1.5 text-blue-600 border border-blue-100">
+              <FileTextIcon className="size-4" />
             </div>
           </div>
-          <p className="mt-2 text-3xl font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900">
             {data.active_bids_count}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-0.5 text-[10px] text-slate-500">
             CPCL/PROC/SAFETY/2024/09
           </p>
         </Card>
 
         {/* Statutory Status */}
-        <Card className="p-5 border-l-4 border-l-indigo-600">
+        <Card className="p-4 border-slate-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Statutory Status
             </span>
-            <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
-              <CheckCircleIcon className="size-5" />
+            <div className="rounded-lg bg-indigo-50 p-1.5 text-indigo-600 border border-indigo-100">
+              <CheckCircleIcon className="size-4" />
             </div>
           </div>
-          <p className="mt-2 text-lg font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900">
             Active & Clear
           </p>
-          <p className="mt-1 text-xs text-indigo-700 font-medium">
-            GSTN, PAN, EPFO & CVC Debarment
+          <p className="mt-0.5 text-[10px] text-indigo-700 font-medium">
+            GSTN, PAN & Debarment Clear
           </p>
         </Card>
 
         {/* MSME Udyam Exemption */}
-        <Card className="p-5 border-l-4 border-l-amber-500">
+        <Card className="p-4 border-slate-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               MSME Benefit
             </span>
-            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
-              <CheckCircleIcon className="size-5" />
+            <div className="rounded-lg bg-amber-50 p-1.5 text-amber-600 border border-amber-100">
+              <CheckCircleIcon className="size-4" />
             </div>
           </div>
-          <p className="mt-2 text-lg font-extrabold text-slate-900">
+          <p className="mt-2 text-2xl font-extrabold text-slate-900">
             EMD Exemption
           </p>
-          <p className="mt-1 text-xs text-amber-700 font-medium">
-            Udyam Small Enterprise Validated
+          <p className="mt-0.5 text-[10px] text-amber-700 font-medium">
+            Udyam Small Enterprise
           </p>
         </Card>
       </div>
