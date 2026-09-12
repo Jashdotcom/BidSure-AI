@@ -272,14 +272,14 @@ async def register_bidder(req: RegisterBidderRequest):
     company_name = req.company_name.strip()
     email_clean = req.email.strip().lower()
     phone = req.phone.strip()
-    gstin = req.gstin.strip().upper()
-    pan = req.pan.strip().upper()
-    udyam = req.udyam.strip().upper()
+    gstin = req.gstin.strip().upper() if req.gstin else ""
+    pan = req.pan.strip().upper() if req.pan else ""
+    udyam = req.udyam.strip().upper() if req.udyam else ""
 
-    if not all([full_name, company_name, email_clean, phone, gstin, pan, udyam]):
+    if not all([full_name, company_name, email_clean, phone]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="All fields are required for bidder registration."
+            detail="Full name, company name, email, and phone are required for bidder registration."
         )
 
     # 2. Email format validation

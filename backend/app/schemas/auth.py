@@ -12,9 +12,9 @@ class RegisterBidderRequest(BaseModel):
     phone: str = Field(..., description="Primary contact phone number")
     password: str = Field(..., min_length=6, description="Account password")
     confirm_password: str = Field(..., min_length=6, description="Confirm account password")
-    gstin: str = Field(..., description="Goods and Services Tax Identification Number")
-    pan: str = Field(..., description="Permanent Account Number")
-    udyam: str = Field(..., description="MSME Udyam Registration Number")
+    gstin: Optional[str] = Field(default="", description="Goods and Services Tax Identification Number")
+    pan: Optional[str] = Field(default="", description="Permanent Account Number")
+    udyam: Optional[str] = Field(default="", description="MSME Udyam Registration Number")
 
 class TokenResponse(BaseModel):
     access_token: str
