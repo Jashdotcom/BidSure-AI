@@ -21,11 +21,9 @@ import {
   ClockIcon,
   ArrowRightIcon,
   EyeIcon,
-  DownloadIcon,
   PlusIcon,
   TrendingUpIcon,
   SparklesIcon,
-  ChevronRightIcon,
   RefreshCwIcon,
   XCircleIcon,
 } from "@/components/icons";
@@ -887,53 +885,6 @@ export default function OfficerDashboardPage() {
                   </p>
                 </div>
               ))}
-            </div>
-          </Card>
-
-          {/* Quick Actions Card */}
-          <Card className="p-4 border-slate-200 shadow-xs space-y-2.5">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-              Quick Actions
-            </h4>
-            <div className="grid grid-cols-1 gap-2">
-              <Link href="/tenders" className="w-full">
-                <button
-                  type="button"
-                  className="w-full rounded-lg bg-blue-700 px-3 py-2 text-left text-xs font-bold text-white hover:bg-blue-800 transition-colors flex items-center justify-between shadow-xs"
-                >
-                  <span className="flex items-center gap-2">
-                    <PlusIcon className="size-3.5" />
-                    Create Tender
-                  </span>
-                  <ChevronRightIcon className="size-3.5" />
-                </button>
-              </Link>
-
-              <Link href="/comparison" className="w-full">
-                <button
-                  type="button"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <ScaleIcon className="size-3.5 text-slate-500" />
-                    Compare Bids
-                  </span>
-                  <ChevronRightIcon className="size-3.5 text-slate-400" />
-                </button>
-              </Link>
-
-              <Link href="/reports" className="w-full">
-                <button
-                  type="button"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <DownloadIcon className="size-3.5 text-slate-500" />
-                    Generate Report
-                  </span>
-                  <ChevronRightIcon className="size-3.5 text-slate-400" />
-                </button>
-              </Link>
             </div>
           </Card>
         </div>
