@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { Card, Button, StatusBadge } from "@/components/ui";
+import { Card, Button, StatusBadge, TenderStatusBadge } from "@/components/ui";
 import {
   FileTextIcon,
   SparklesIcon,
@@ -29,7 +29,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Industrial Safety Helmets & Impact Visors",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Fire & Safety Department, Manali Refinery",
-    status: "OPEN",
+    status: "PUBLISHED",
     estimated_value: 45000000.0,
     emd_amount: 900000.0,
     publish_date: "2026-07-01T09:00:00Z",
@@ -49,7 +49,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Industrial Protective Equipment & Harness Kits",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Safety & Fall Protection Wing",
-    status: "OPEN",
+    status: "PUBLISHED",
     estimated_value: 32000000.0,
     emd_amount: 640000.0,
     publish_date: "2026-07-10T10:00:00Z",
@@ -69,7 +69,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Fire Safety Equipment & Hydrant Valves",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Fire & Safety Department",
-    status: "CLOSING SOON",
+    status: "REQUIREMENTS_REVIEW",
     estimated_value: 58000000.0,
     emd_amount: 1160000.0,
     publish_date: "2026-07-15T09:00:00Z",
@@ -89,7 +89,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "High-Pressure Refinery Valve Assemblies",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Mechanical Engineering Division",
-    status: "UNDER REVIEW",
+    status: "PUBLISHED",
     estimated_value: 82000000.0,
     emd_amount: 1640000.0,
     publish_date: "2026-07-20T10:00:00Z",
@@ -129,7 +129,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Crude Distillation Unit Heat Exchanger Tubes",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Heat Transfer & Thermal Operations",
-    status: "OPEN",
+    status: "ANALYZING",
     estimated_value: 65000000.0,
     emd_amount: 1300000.0,
     publish_date: "2026-08-05T09:00:00Z",
@@ -149,7 +149,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Centrifugal Process Pumps & Mechanical Seals",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Rotating Machinery Division",
-    status: "OPEN",
+    status: "PUBLISHED",
     estimated_value: 48000000.0,
     emd_amount: 960000.0,
     publish_date: "2026-08-10T11:00:00Z",
@@ -169,7 +169,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Refinery Effluent Treatment Plant Sludge Dewatering",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Environmental Management & ETP",
-    status: "UNDER REVIEW",
+    status: "REQUIREMENTS_REVIEW",
     estimated_value: 36000000.0,
     emd_amount: 720000.0,
     publish_date: "2026-08-12T10:00:00Z",
@@ -249,7 +249,7 @@ const INITIAL_SAMPLE_TENDERS: Tender[] = [
     title: "Supply and Maintenance of High-Grade Industrial Safety & Fire Protection Equipment",
     organization: "Chennai Petroleum Corporation Limited (CPCL)",
     department: "Fire & Safety Department, Manali Refinery",
-    status: "EVALUATING",
+    status: "CLOSED",
     estimated_value: 45000000.0,
     emd_amount: 900000.0,
     publish_date: "2024-07-01T09:00:00Z",
@@ -503,7 +503,7 @@ export default function TendersPage() {
     updateUrlParams("");
   }
 
-  // Create Tender
+  // Create Tender (starts in DRAFT stage)
   async function handleCreateTender(e: React.FormEvent) {
     e.preventDefault();
     if (!newTender.title) return;
@@ -518,7 +518,7 @@ export default function TendersPage() {
       organization: newTender.organization,
       department: newTender.department,
       category: newTender.category,
-      status: "OPEN",
+      status: "DRAFT",
       estimated_value: parseFloat(newTender.estimated_value) || 30000000,
       emd_amount: parseFloat(newTender.emd_amount) || 600000,
       deadline: newTender.deadline,
@@ -553,15 +553,114 @@ export default function TendersPage() {
     });
   }
 
-  // AI Clause Extraction
+  // Lifecycle Transition 1: DRAFT -> ANALYZING -> REQUIREMENTS_REVIEW
+  async function handleAnalyzeTender(tender: Tender) {
+    setSelectedTender(tender);
+    setActiveView("CLAUSE_SCRUTINY");
+    setAnalyzing(true);
+    setIsApproved(false);
+    setApprovalMessage(null);
+
+    // Update local and remote status to ANALYZING
+    setTenders((prev) =>
+      prev.map((t) => (t.id === tender.id ? { ...t, status: "ANALYZING" } : t))
+    );
+    setSelectedTender((prev) => ({ ...prev, status: "ANALYZING" }));
+
+    try {
+      await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
+        method: "PATCH",
+        body: { status: "ANALYZING" },
+      });
+    } catch {
+      // Offline fallback
+    }
+
+    // AI clause extraction completion -> transitions to REQUIREMENTS_REVIEW
+    setTimeout(async () => {
+      setAnalyzing(false);
+      setIsApproved(false);
+      setApprovalMessage(
+        "✓ AI Clause Analysis Complete: 6 mandatory statutory and technical requirements extracted and ready for review."
+      );
+      setTenders((prev) =>
+        prev.map((t) => (t.id === tender.id ? { ...t, status: "REQUIREMENTS_REVIEW" } : t))
+      );
+      setSelectedTender((prev) => ({ ...prev, status: "REQUIREMENTS_REVIEW" }));
+
+      try {
+        await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
+          method: "PATCH",
+          body: { status: "REQUIREMENTS_REVIEW" },
+        });
+      } catch {
+        // Offline fallback
+      }
+    }, 1200);
+  }
+
+  // Lifecycle Transition 2: REQUIREMENTS_REVIEW / DRAFT -> PUBLISHED
+  async function handlePublishTender(tender: Tender) {
+    setIsApproved(true);
+    setApprovalMessage(
+      "✓ Tender Approved & Published! Notice is now live and accepting vendor submissions."
+    );
+    setTenders((prev) =>
+      prev.map((t) => (t.id === tender.id ? { ...t, status: "PUBLISHED" } : t))
+    );
+    setSelectedTender((prev) => ({ ...prev, status: "PUBLISHED" }));
+
+    try {
+      await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
+        method: "PATCH",
+        body: { status: "PUBLISHED" },
+      });
+    } catch {
+      // Offline fallback
+    }
+  }
+
+  // Lifecycle Transition 3: PUBLISHED -> CLOSED
+  async function handleCloseTender(tender: Tender) {
+    setTenders((prev) =>
+      prev.map((t) => (t.id === tender.id ? { ...t, status: "CLOSED" } : t))
+    );
+    setSelectedTender((prev) => ({ ...prev, status: "CLOSED" }));
+    setApprovalMessage("✓ Tender closed. Bidding archive sealed; no new submissions accepted.");
+
+    try {
+      await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
+        method: "PATCH",
+        body: { status: "CLOSED" },
+      });
+    } catch {
+      // Offline fallback
+    }
+  }
+
+  // AI Clause Extraction on Scrutiny page
   function handleAnalyze() {
     setAnalyzing(true);
     setIsApproved(false);
     setApprovalMessage(null);
-    setTimeout(() => {
+    setTimeout(async () => {
       setAnalyzing(false);
       setIsApproved(true);
-      setApprovalMessage("✓ All 6 mandatory statutory and technical clauses extracted and mapped to GFR 144.");
+      setApprovalMessage("✓ All mandatory statutory and technical clauses extracted and mapped to GFR 144.");
+      if (selectedTender.status === "DRAFT" || selectedTender.status === "ANALYZING") {
+        setTenders((prev) =>
+          prev.map((t) => (t.id === selectedTender.id ? { ...t, status: "REQUIREMENTS_REVIEW" } : t))
+        );
+        setSelectedTender((prev) => ({ ...prev, status: "REQUIREMENTS_REVIEW" }));
+        try {
+          await apiRequest(`/tenders/${encodeURIComponent(selectedTender.id)}`, {
+            method: "PATCH",
+            body: { status: "REQUIREMENTS_REVIEW" },
+          });
+        } catch {
+          // Offline fallback
+        }
+      }
     }, 1200);
   }
 
@@ -714,7 +813,7 @@ export default function TendersPage() {
                           {tender.title}
                         </h2>
                       </div>
-                      <StatusBadge status={tender.status} />
+                      <TenderStatusBadge status={tender.status} />
                     </div>
 
                     {/* Organization & Category */}
@@ -758,37 +857,139 @@ export default function TendersPage() {
                       <div>
                         <span className="block text-[10px] font-semibold text-slate-400">BIDS RECEIVED</span>
                         <strong className="text-blue-700 font-bold">
-                          {tender.bids_count ?? 3} Submissions
+                          {tender.bids_count ?? 0} Submissions
                         </strong>
                       </div>
                     </div>
                   </div>
 
-                  {/* Actions Bar */}
-                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 gap-2">
+                  {/* Actions Bar (State-Aware Deterministic Controls) */}
+                  <div className="mt-4 flex flex-wrap items-center justify-between border-t border-slate-100 pt-3 gap-2">
                     <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
                       <ClockIcon className="size-3 text-slate-400" />
                       Closing: {tender.deadline || "18 Sep 2026"}
                     </span>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedTender(tender);
-                          setActiveView("CLAUSE_SCRUTINY");
-                        }}
-                        className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1"
-                      >
-                        <SparklesIcon className="size-3.5" />
-                        Scrutinize Clauses
-                      </button>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {/* DRAFT STATE: Analyze Document or Scrutinize */}
+                      {tender.status === "DRAFT" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleAnalyzeTender(tender)}
+                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800 transition-colors flex items-center gap-1 shadow-xs"
+                          >
+                            <SparklesIcon className="size-3.5 text-amber-300" />
+                            Analyze Document
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTender(tender);
+                              setActiveView("CLAUSE_SCRUTINY");
+                            }}
+                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
+                          >
+                            Scrutinize Clauses
+                          </button>
+                        </>
+                      )}
 
-                      <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
-                        <Button size="sm" variant="outline" className="text-xs font-semibold">
-                          View Bids ({tender.bids_count ?? 0}) →
-                        </Button>
-                      </Link>
+                      {/* ANALYZING STATE: AI processing in flight */}
+                      {tender.status === "ANALYZING" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTender(tender);
+                            setActiveView("CLAUSE_SCRUTINY");
+                          }}
+                          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1.5"
+                        >
+                          <svg className="size-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                          AI Analyzing...
+                        </button>
+                      )}
+
+                      {/* REQUIREMENTS REVIEW STATE: Edit / Approve Requirements / Publish */}
+                      {tender.status === "REQUIREMENTS_REVIEW" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTender(tender);
+                              setActiveView("CLAUSE_SCRUTINY");
+                            }}
+                            className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors flex items-center gap-1"
+                          >
+                            <SparklesIcon className="size-3.5" />
+                            Scrutinize Clauses
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handlePublishTender(tender)}
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-xs"
+                          >
+                            Publish Tender
+                          </button>
+                        </>
+                      )}
+
+                      {/* PUBLISHED STATE: Live tender accepting bids */}
+                      {tender.status === "PUBLISHED" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTender(tender);
+                              setActiveView("CLAUSE_SCRUTINY");
+                            }}
+                            className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1"
+                          >
+                            <SparklesIcon className="size-3.5" />
+                            Scrutinize Clauses
+                          </button>
+
+                          <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
+                            <Button size="sm" variant="outline" className="text-xs font-semibold">
+                              View Bids ({tender.bids_count ?? 0}) →
+                            </Button>
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCloseTender(tender)}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                            title="Close tender bidding"
+                          >
+                            Close
+                          </button>
+                        </>
+                      )}
+
+                      {/* CLOSED STATE: Archived sealed tender */}
+                      {tender.status === "CLOSED" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTender(tender);
+                              setActiveView("CLAUSE_SCRUTINY");
+                            }}
+                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
+                          >
+                            View RFP Clauses
+                          </button>
+
+                          <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
+                            <Button size="sm" variant="outline" className="text-xs font-semibold text-slate-600">
+                              View Bids ({tender.bids_count ?? 0})
+                            </Button>
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -812,6 +1013,7 @@ export default function TendersPage() {
                   <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                     {selectedTender.tender_number || selectedTender.ref || selectedTender.id}
                   </span>
+                  <TenderStatusBadge status={selectedTender.status} />
                   <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                     OCR INGESTED
                   </span>
@@ -836,18 +1038,27 @@ export default function TendersPage() {
                 {analyzing ? "Re-Extracting Rules..." : "Re-Analyze RFP Document"}
               </Button>
 
-              <Button
-                onClick={() => {
-                  setIsApproved(true);
-                  setApprovalMessage("✓ Criteria approved by Procurement Officer. Configured for deterministic vendor evaluation.");
-                }}
-                variant={isApproved ? "outline" : "primary"}
-                className={isApproved ? "border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-bold" : "text-xs font-bold"}
-                size="sm"
-              >
-                <CheckCircleIcon className="size-4 text-emerald-600" />
-                {isApproved ? "Requirements Approved ✓" : "Approve Requirements"}
-              </Button>
+              {selectedTender.status !== "PUBLISHED" && selectedTender.status !== "CLOSED" && (
+                <Button
+                  onClick={() => handlePublishTender(selectedTender)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs"
+                  size="sm"
+                >
+                  <CheckCircleIcon className="size-4 text-white" />
+                  Approve & Publish Tender
+                </Button>
+              )}
+
+              {selectedTender.status === "PUBLISHED" && (
+                <Button
+                  onClick={() => handleCloseTender(selectedTender)}
+                  variant="outline"
+                  className="text-xs font-bold text-slate-700 hover:bg-slate-100"
+                  size="sm"
+                >
+                  Close Tender
+                </Button>
+              )}
 
               <button
                 type="button"

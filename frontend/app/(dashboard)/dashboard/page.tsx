@@ -6,6 +6,7 @@ import {
   Card,
   Button,
   StatusBadge,
+  TenderStatusBadge,
   RiskBadge,
   ScoreDisplay,
   DocumentStatusBadge,
@@ -60,7 +61,7 @@ interface ActiveTenderItem {
   deadline: string;
   bids_count: number;
   verified_count: number;
-  status: "OPEN" | "PUBLISHED" | "CLOSING SOON" | "UNDER REVIEW" | "CLOSED";
+  status: "DRAFT" | "ANALYZING" | "REQUIREMENTS_REVIEW" | "PUBLISHED" | "CLOSED" | string;
 }
 
 const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
@@ -72,7 +73,7 @@ const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
     deadline: "18 Sep 2026",
     bids_count: 3,
     verified_count: 2,
-    status: "OPEN",
+    status: "PUBLISHED",
   },
   {
     id: "TND-2026-002",
@@ -82,7 +83,7 @@ const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
     deadline: "22 Sep 2026",
     bids_count: 5,
     verified_count: 3,
-    status: "OPEN",
+    status: "PUBLISHED",
   },
   {
     id: "TND-2026-003",
@@ -92,7 +93,7 @@ const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
     deadline: "25 Sep 2026",
     bids_count: 2,
     verified_count: 1,
-    status: "CLOSING SOON",
+    status: "REQUIREMENTS_REVIEW",
   },
   {
     id: "TND-2026-004",
@@ -102,7 +103,7 @@ const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
     deadline: "02 Oct 2026",
     bids_count: 4,
     verified_count: 4,
-    status: "UNDER REVIEW",
+    status: "PUBLISHED",
   },
   {
     id: "TND-2026-005",
@@ -655,7 +656,7 @@ export default function OfficerDashboardPage() {
 
                   {/* Status */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    {renderTenderStatus(tender.status)}
+                    <TenderStatusBadge status={tender.status} />
                   </td>
 
                   {/* Action */}

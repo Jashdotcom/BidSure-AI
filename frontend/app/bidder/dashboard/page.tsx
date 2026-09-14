@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, Button, StatusBadge, DocumentStatusBadge } from "@/components/ui";
+import { Card, Button, StatusBadge, DocumentStatusBadge, TenderStatusBadge } from "@/components/ui";
 import {
   FileTextIcon,
   ShieldCheckIcon,
@@ -556,9 +556,7 @@ export default function BidderDashboardPage() {
                       <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold font-mono text-blue-700 border border-blue-200">
                         {tender.tender_number}
                       </span>
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
-                        {tender.status}
-                      </span>
+                      <TenderStatusBadge status={tender.status} />
                     </div>
 
                     <h3 className="text-xs font-bold text-slate-900 leading-snug">

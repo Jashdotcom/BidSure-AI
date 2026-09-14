@@ -318,6 +318,65 @@ async def list_bidder_notifications(
     return get_notifications_for_bidder(bidder_id)
 
 
+@router.post("/bids", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def submit_bid(
+    payload: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Submits a new bid for a published CPCL tender.
+    RESTRICTED: Tenders must be in PUBLISHED status. Closed or Draft tenders cannot accept bids.
+    """
+    tender_id = payload.get("tender_id")
+    if not tender_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tender ID is required for bid submission."
+        )
+
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender {tender_id} not found."
+        )
+
+    tender_status = tender.get("status", "DRAFT").upper()
+    if tender_status == "CLOSED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tender {tender_id} is CLOSED. Bidding is closed and no new submissions are accepted."
+        )
+    if tender_status != "PUBLISHED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tender {tender_id} is in {tender_status} stage. Bids can only be submitted for PUBLISHED tenders."
+        )
+
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    new_bid = {
+        "id": f"BID-{tender_id}-{len(SAMPLE_BIDDERS) + 1}",
+        "bid_submission_id": f"SUB-{tender_id}-00{len(SAMPLE_BIDDERS) + 1}",
+        "bidder_id": bidder_id,
+        "tender_id": tender_id,
+        "tender_number": tender.get("tender_number", tender_id),
+        "tender_title": tender.get("title", ""),
+        "name": current_user.get("organization") or current_user.get("name", "Authorized Bidder"),
+        "bid_amount": payload.get("bid_amount", "₹ 0"),
+        "status": "SUBMITTED",
+        "verification_status": "PROCESSING",
+        "compliance_status": "REVIEW_REQUIRED",
+        "submission_date": payload.get("submission_date", "2026-09-14T10:00:00Z"),
+        "is_draft": False
+    }
+
+    add_bid_for_bidder(new_bid)
+    return {
+        "message": "Bid submitted successfully.",
+        "bid": new_bid
+    }
+
+
 @router.post("/pre-check", response_model=Dict[str, Any])
 async def run_bidder_pre_check(
     payload: Dict[str, Any],
@@ -326,12 +385,19 @@ async def run_bidder_pre_check(
     """
     Allows bidder to simulate a preliminary compliance check before final bid submission.
     """
-    tender_id = payload.get("tender_id", "TND-2024-001")
+    tender_id = payload.get("tender_id", "TND-2026-001")
     tender = get_tender_by_id(tender_id)
     if not tender:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tender not found."
+        )
+
+    tender_status = tender.get("status", "DRAFT").upper()
+    if tender_status == "CLOSED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tender {tender_id} is CLOSED. Pre-check and bidding are not available for closed tenders."
         )
 
     # Construct candidate bidder profile for evaluation

@@ -134,6 +134,73 @@ export function Input({ label, error, hint, className = "", id, ...props }: Inpu
   );
 }
 
+// Tender Lifecycle Status Badge (DRAFT / ANALYZING / REQUIREMENTS_REVIEW / PUBLISHED / CLOSED)
+export function TenderStatusBadge({
+  status,
+}: {
+  status: "DRAFT" | "ANALYZING" | "REQUIREMENTS_REVIEW" | "PUBLISHED" | "CLOSED" | string;
+}) {
+  const normalized = status?.toUpperCase().replace(/\s+/g, "_");
+
+  if (normalized === "DRAFT") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 border border-slate-300">
+        <span className="size-1.5 rounded-full bg-slate-500" />
+        Draft
+      </span>
+    );
+  }
+
+  if (normalized === "ANALYZING") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 border border-blue-200">
+        <svg className="size-3 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+        AI Analysis
+      </span>
+    );
+  }
+
+  if (
+    normalized === "REQUIREMENTS_REVIEW" ||
+    normalized === "REQUIREMENT_REVIEW" ||
+    normalized === "UNDER_REVIEW"
+  ) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-300">
+        <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+        Requirements Review
+      </span>
+    );
+  }
+
+  if (normalized === "PUBLISHED" || normalized === "OPEN" || normalized === "ACTIVE") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 border border-emerald-300">
+        <span className="size-1.5 rounded-full bg-emerald-500" />
+        Published
+      </span>
+    );
+  }
+
+  if (normalized === "CLOSED" || normalized === "ARCHIVED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600 border border-slate-200">
+        <span className="size-1.5 rounded-full bg-slate-400" />
+        Closed
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 border border-slate-200">
+      {status}
+    </span>
+  );
+}
+
 // Compliance Status Badge (PASS / FAIL / REVIEW)
 export function StatusBadge({
   status,

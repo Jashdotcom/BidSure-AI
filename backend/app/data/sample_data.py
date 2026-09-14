@@ -50,7 +50,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Industrial Safety Helmets & Impact Visors",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Fire & Safety Department, Manali Refinery",
-        "status": "OPEN",
+        "status": "PUBLISHED",
         "estimated_value": 45000000.0,
         "estimated_value_display": "₹ 4,50,00,000",
         "emd_amount": 900000.0,
@@ -151,7 +151,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Industrial Protective Equipment & Harness Kits",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Safety & Fall Protection Wing",
-        "status": "OPEN",
+        "status": "PUBLISHED",
         "estimated_value": 32000000.0,
         "estimated_value_display": "₹ 3,20,00,000",
         "emd_amount": 640000.0,
@@ -173,7 +173,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Fire Safety Equipment & Hydrant Valves",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Fire & Safety Department",
-        "status": "CLOSING SOON",
+        "status": "REQUIREMENTS_REVIEW",
         "estimated_value": 58000000.0,
         "estimated_value_display": "₹ 5,80,00,000",
         "emd_amount": 1160000.0,
@@ -195,7 +195,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "High-Pressure Refinery Valve Assemblies",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Mechanical Engineering Division",
-        "status": "UNDER REVIEW",
+        "status": "PUBLISHED",
         "estimated_value": 82000000.0,
         "estimated_value_display": "₹ 8,20,00,000",
         "emd_amount": 1640000.0,
@@ -239,7 +239,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Crude Distillation Unit Heat Exchanger Tubes",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Heat Transfer & Thermal Operations",
-        "status": "OPEN",
+        "status": "ANALYZING",
         "estimated_value": 65000000.0,
         "estimated_value_display": "₹ 6,50,00,000",
         "emd_amount": 1300000.0,
@@ -261,7 +261,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Centrifugal Process Pumps & Mechanical Seals",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Rotating Machinery Division",
-        "status": "OPEN",
+        "status": "PUBLISHED",
         "estimated_value": 48000000.0,
         "estimated_value_display": "₹ 4,80,00,000",
         "emd_amount": 960000.0,
@@ -283,7 +283,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Refinery Effluent Treatment Plant Sludge Dewatering",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Environmental Management & ETP",
-        "status": "UNDER REVIEW",
+        "status": "REQUIREMENTS_REVIEW",
         "estimated_value": 36000000.0,
         "estimated_value_display": "₹ 3,60,00,000",
         "emd_amount": 720000.0,
@@ -371,7 +371,7 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "title": "Supply and Maintenance of High-Grade Industrial Safety & Fire Protection Equipment",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
         "department": "Fire & Safety Department, Manali Refinery",
-        "status": "EVALUATING",
+        "status": "CLOSED",
         "estimated_value": 45000000.0,
         "estimated_value_display": "₹ 4,50,00,000",
         "emd_amount": 900000.0,
@@ -771,6 +771,8 @@ def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
         tender_data["ref"] = tender_data["tender_number"]
     if not tender_data.get("organization"):
         tender_data["organization"] = "Chennai Petroleum Corporation Limited (CPCL)"
+    if not tender_data.get("status"):
+        tender_data["status"] = "DRAFT"
     SAMPLE_TENDERS.insert(0, tender_data)
     return tender_data
 
