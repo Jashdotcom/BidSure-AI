@@ -5,13 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { logout } from "@/lib/auth";
 import { getUser } from "@/lib/session";
 import { User } from "@/lib/types";
-import {
-  ShieldCheckIcon,
-  SearchIcon,
-  BellIcon,
-  CheckCircleIcon,
-  AlertTriangleIcon,
-} from "@/components/icons";
+import { BellIcon } from "@/components/icons";
 
 export function Navbar() {
   const router = useRouter();
@@ -25,7 +19,7 @@ export function Navbar() {
     else {
       setUserState({
         id: "USR-CPCL-001",
-        name: "S. Ramanathan",
+        name: "Rajesh Kumar",
         email: "officer@cpcl.gov.in",
         role: "PROCUREMENT_OFFICER",
         organization: "Chennai Petroleum Corporation Limited",
@@ -52,7 +46,17 @@ export function Navbar() {
     return "Dashboard";
   };
 
-  const initials = (user?.name || "SR")
+  const getPageSubtitle = () => {
+    if (pathname.includes("/tenders")) return "Manage tender notices, eligibility criteria, and extract clause rules";
+    if (pathname.includes("/bidders")) return "Evaluate participating bidder proposals, statutory records, and compliance";
+    if (pathname.includes("/verification") || pathname.includes("/documents"))
+      return "Verify submitted technical documents, certificates, and financial balance sheets";
+    if (pathname.includes("/compliance")) return "Evaluate compliance matrix, rule matching, and verification evidence";
+    if (pathname.includes("/audit")) return "Immutable log of automated checks and officer evaluation actions";
+    return "Automated Statutory Pre-Qualification & Verification System";
+  };
+
+  const initials = (user?.name || "RK")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -61,36 +65,20 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-6 shadow-xs select-none">
-      {/* Left: Page Title & Breadcrumb */}
+      {/* Left: Page Title & Subtitle */}
       <div className="flex items-center gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-sm font-extrabold text-slate-900 tracking-tight">
-              {getPageTitle()}
-            </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200/80">
-              <ShieldCheckIcon className="size-3 text-blue-600" />
-              CPCL Evaluation Cell
-            </span>
-          </div>
+          <h1 className="text-sm font-extrabold text-slate-900 tracking-tight">
+            {getPageTitle()}
+          </h1>
           <p className="hidden md:block text-[11px] text-slate-500 font-medium">
-            Manali Refinery · Statutory Procurement Evaluation Portal
+            {getPageSubtitle()}
           </p>
         </div>
       </div>
 
-      {/* Right: Search, Notifications & Officer Profile */}
-      <div className="flex items-center gap-3.5">
-        {/* Search Input */}
-        <div className="relative hidden lg:block w-56">
-          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search tenders, bids, clauses..."
-            className="w-full rounded-lg border border-slate-200 bg-slate-50/70 py-1.5 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 transition-all"
-          />
-        </div>
-
+      {/* Right: Notifications & Officer Profile */}
+      <div className="flex items-center gap-4">
         {/* Notifications Icon & Popover */}
         <div className="relative">
           <button
@@ -147,12 +135,12 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:block text-right">
             <p className="text-xs font-bold text-slate-900 leading-tight">
-              {user?.name || "S. Ramanathan"}
+              {user?.name || "Rajesh Kumar"}
             </p>
             <p className="text-[10px] text-slate-500 font-medium">
               {user?.role === "SENIOR_PROCUREMENT_OFFICER"
                 ? "Chief Procurement Officer (CPO)"
-                : "Senior Procurement Officer"}
+                : "Procurement Officer"}
             </p>
           </div>
 

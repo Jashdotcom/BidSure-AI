@@ -8,6 +8,8 @@ export interface User {
   organization: string;
   phone?: string;
   bidder_id?: string;
+  department?: string;
+  designation?: string;
 }
 
 export function isBidder(user?: User | null): boolean {
@@ -33,6 +35,8 @@ export interface Bidder {
   id: string;
   name: string;
   tender_id: string;
+  tender_number?: string;
+  tender_title?: string;
   bid_submission_id?: string;
   contact_person?: string;
   email?: string;
@@ -48,10 +52,14 @@ export interface Bidder {
   is_debarred?: boolean;
   epfo_code?: string;
   submitted_at?: string;
+  status?: string;
+  verification_status?: string;
+  compliance_status?: string;
   compliance_score?: number;
   risk_level?: "LOW" | "MEDIUM" | "HIGH";
   summary?: BidderSummary;
   highlight_issue?: string;
+  documents?: Record<string, string>;
 }
 
 export interface EvidenceItem {
@@ -101,18 +109,46 @@ export interface TenderRequirement {
   scoring_weight: number;
 }
 
+export interface Requirement {
+  id: string;
+  code: string;
+  name: string;
+  clause_reference: string;
+  category: string;
+  type?: string;
+  mandatory: boolean;
+  description: string;
+  threshold_value: string | number | boolean;
+  validation_source?: string;
+  weight?: number;
+  constraint_type?: "boolean" | "numeric" | "enum" | "text";
+  constraint?: Record<string, any>;
+  source_document?: string;
+  source_page?: number;
+  confidence?: number;
+  unit?: string;
+}
+
 export interface Tender {
   id: string;
-  tender_id: string;
+  tender_id?: string;
+  tender_number?: string;
+  ref?: string;
   title: string;
   organization: string;
+  department?: string;
   category: string;
   status: string;
-  estimated_value: string;
-  emd_amount: string;
-  published_date: string;
-  closing_date: string;
-  bidders_count: number;
-  requirements_count: number;
-  requirements?: TenderRequirement[];
+  estimated_value?: string | number;
+  emd_amount?: string | number;
+  published_date?: string;
+  publish_date?: string;
+  closing_date?: string;
+  deadline?: string;
+  bids_count?: number;
+  bidders_count?: number;
+  verified_count?: number;
+  description?: string;
+  requirements_count?: number;
+  requirements?: TenderRequirement[] | Requirement[];
 }

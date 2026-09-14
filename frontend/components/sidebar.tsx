@@ -9,7 +9,6 @@ import {
   FileTextIcon,
   UsersIcon,
   ShieldCheckIcon,
-  DownloadIcon,
   RefreshCwIcon,
   UploadCloudIcon,
   SettingsIcon,
@@ -22,11 +21,10 @@ import { User } from "@/lib/types";
 
 const OFFICER_PRIMARY_NAV = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3Icon },
-  { name: "Tenders", href: "/tenders", icon: FileTextIcon, count: "12" },
-  { name: "Bids & Submissions", href: "/bidders", icon: UsersIcon, count: "48" },
-  { name: "Verification", href: "/verification", icon: UploadCloudIcon, count: "8" },
+  { name: "Tenders", href: "/tenders", icon: FileTextIcon },
+  { name: "Bids & Submissions", href: "/bidders", icon: UsersIcon },
+  { name: "Verification", href: "/verification", icon: UploadCloudIcon },
   { name: "Compliance", href: "/compliance", icon: ShieldCheckIcon },
-  { name: "Reports", href: "/reports", icon: DownloadIcon },
   { name: "Audit Trail", href: "/audit", icon: RefreshCwIcon },
 ];
 
@@ -47,7 +45,7 @@ export function Sidebar() {
     } else {
       setUser({
         id: "USR-CPCL-001",
-        name: "S. Ramanathan",
+        name: "Rajesh Kumar",
         email: "officer@cpcl.gov.in",
         role: "PROCUREMENT_OFFICER",
         organization: "Chennai Petroleum Corporation Limited",
@@ -60,7 +58,7 @@ export function Sidebar() {
     router.push("/login");
   }
 
-  const initials = (user?.name || "S. Ramanathan")
+  const initials = (user?.name || "Rajesh Kumar")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -75,26 +73,10 @@ export function Sidebar() {
           <Logo />
         </div>
 
-        {/* Institution / Division Badge */}
-        <div className="mx-3.5 my-3 rounded-lg border border-slate-200/90 bg-slate-50/70 p-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">
-              CPCL Evaluation Cell
-            </span>
-            <span className="flex size-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
-          </div>
-          <p className="mt-1 text-xs font-bold text-slate-900 truncate">
-            Chennai Petroleum Corp. Ltd
-          </p>
-          <p className="text-[10px] text-slate-500 font-medium truncate">
-            Refinery Procurement Portal · GFR 144
-          </p>
-        </div>
-
         {/* Primary Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-1.5 space-y-4">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
           <div>
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Procurement Management
             </div>
             <nav className="space-y-0.5">
@@ -122,18 +104,6 @@ export function Sidebar() {
                       />
                       <span>{item.name}</span>
                     </div>
-
-                    {item.count && (
-                      <span
-                        className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold transition-colors ${
-                          isActive
-                            ? "bg-blue-200/70 text-blue-800"
-                            : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700"
-                        }`}
-                      >
-                        {item.count}
-                      </span>
-                    )}
                   </Link>
                 );
               })}
@@ -142,7 +112,7 @@ export function Sidebar() {
 
           {/* System & Support Section */}
           <div>
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
               System & Preferences
             </div>
             <nav className="space-y-0.5">
@@ -190,7 +160,7 @@ export function Sidebar() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-slate-900 leading-tight">
-                  {user?.name || "Procurement Officer"}
+                  {user?.name || "Rajesh Kumar"}
                 </p>
                 <p className="truncate text-[10px] text-slate-500 font-medium">
                   {user?.email || "officer@cpcl.gov.in"}
@@ -234,7 +204,7 @@ export function Sidebar() {
 
             <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
               <p>
-                <strong>CPCL Institutional Procurement Helpdesk:</strong> For technical evaluation issues, rule customization, or audit inquiries, contact the central vigilance and IT cell.
+                <strong>Procurement Helpdesk:</strong> For technical evaluation issues, rule customization, or audit inquiries, contact the central IT & procurement cell.
               </p>
               <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 space-y-1.5 text-[11px]">
                 <div className="flex justify-between">
@@ -243,10 +213,10 @@ export function Sidebar() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Official Email:</span>
-                  <span className="font-semibold text-blue-700">procurement-support@cpcl.gov.in</span>
+                  <span className="font-semibold text-blue-700">support@bidsure.ai</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Evaluation Mode:</span>
+                  <span className="text-slate-500">Evaluation Engine:</span>
                   <span className="font-semibold text-emerald-700">Deterministic Engine Active</span>
                 </div>
               </div>

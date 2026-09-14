@@ -400,11 +400,11 @@ export default function OfficerDashboardPage() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 border border-blue-200/80 uppercase tracking-wide">
               <ShieldCheckIcon className="size-3 text-blue-600" />
-              CPCL Evaluation Cell
+              Procurement Officer Portal
             </span>
             <span className="text-[11px] text-slate-400">·</span>
             <span className="text-[11px] font-medium text-slate-500">
-              Institutional Evaluation Mode
+              Automated Statutory Pre-Qualification
             </span>
           </div>
 

@@ -160,6 +160,12 @@ export default function CompliancePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
+    if (bidderParam && bidderParam !== selectedBidderId) {
+      setSelectedBidderId(bidderParam);
+    }
+  }, [bidderParam, selectedBidderId]);
+
+  useEffect(() => {
     loadBidderCompliance(selectedBidderId);
   }, [selectedBidderId]);
 
