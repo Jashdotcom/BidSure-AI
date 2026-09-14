@@ -10,7 +10,6 @@ import {
   UsersIcon,
   ShieldCheckIcon,
   RefreshCwIcon,
-  UploadCloudIcon,
   SettingsIcon,
   HelpCircleIcon,
   LogoutIcon,
@@ -23,7 +22,6 @@ const OFFICER_PRIMARY_NAV = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3Icon },
   { name: "Tenders", href: "/tenders", icon: FileTextIcon },
   { name: "Bids & Submissions", href: "/bidders", icon: UsersIcon },
-  { name: "Verification", href: "/verification", icon: UploadCloudIcon },
   { name: "Compliance", href: "/compliance", icon: ShieldCheckIcon },
   { name: "Audit Trail", href: "/audit", icon: RefreshCwIcon },
 ];

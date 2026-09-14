@@ -23,7 +23,6 @@ import {
   EyeIcon,
   DownloadIcon,
   PlusIcon,
-  UploadCloudIcon,
   TrendingUpIcon,
   SparklesIcon,
   ChevronRightIcon,
@@ -294,9 +293,12 @@ export default function OfficerDashboardPage() {
         if (res?.active_tenders !== undefined) {
           setStats((prev) => ({
             ...prev,
-            active_tenders: res.active_tenders || prev.active_tenders,
-            total_bids: res.total_bidders || prev.total_bids,
-            pending_review: res.pending_reviews || prev.pending_review,
+            active_tenders: res.active_tenders ?? prev.active_tenders,
+            total_bids: res.total_bids ?? res.total_bidders ?? prev.total_bids,
+            under_verification: res.under_verification ?? prev.under_verification,
+            pending_review: res.pending_review ?? res.pending_reviews ?? prev.pending_review,
+            compliant_bids: res.compliant_bids ?? prev.compliant_bids,
+            high_risk: res.high_risk ?? prev.high_risk,
           }));
         }
       } catch {
@@ -419,7 +421,7 @@ export default function OfficerDashboardPage() {
         </div>
 
         {/* Header Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-2.5">
           <Link href="/tenders">
             <Button
               size="sm"
@@ -427,28 +429,6 @@ export default function OfficerDashboardPage() {
             >
               <PlusIcon className="size-3.5" />
               Create Tender
-            </Button>
-          </Link>
-
-          <Link href="/verification">
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              <UploadCloudIcon className="size-3.5 text-slate-500" />
-              Verification Queue
-            </Button>
-          </Link>
-
-          <Link href="/comparison">
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              <ScaleIcon className="size-3.5 text-slate-500" />
-              Compare Bids
             </Button>
           </Link>
         </div>
@@ -689,7 +669,7 @@ export default function OfficerDashboardPage() {
             <div className="border-b border-slate-100 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <UploadCloudIcon className="size-4 text-blue-700" />
+                  <ShieldCheckIcon className="size-4 text-blue-700" />
                   <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
                     Verification Queue
                   </h2>
@@ -700,10 +680,10 @@ export default function OfficerDashboardPage() {
               </div>
 
               <Link
-                href="/verification"
+                href="/compliance"
                 className="text-xs font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 transition-colors"
               >
-                Full Queue <ArrowRightIcon className="size-3" />
+                View Compliance <ArrowRightIcon className="size-3" />
               </Link>
             </div>
 
@@ -915,19 +895,6 @@ export default function OfficerDashboardPage() {
                     Create Tender
                   </span>
                   <ChevronRightIcon className="size-3.5" />
-                </button>
-              </Link>
-
-              <Link href="/verification" className="w-full">
-                <button
-                  type="button"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <UploadCloudIcon className="size-3.5 text-slate-500" />
-                    Review Verification Queue
-                  </span>
-                  <ChevronRightIcon className="size-3.5 text-slate-400" />
                 </button>
               </Link>
 
