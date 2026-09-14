@@ -5,6 +5,8 @@ Provides realistic mock tenders, bidders, and compliance records for CPCL evalua
 from typing import Dict, List, Any, Optional
 import time
 import hashlib
+import threading
+import re
 from datetime import datetime
 
 SAMPLE_USERS: List[Dict[str, Any]] = [
@@ -764,6 +766,8 @@ def get_tender_by_id(tender_id: str) -> Optional[Dict[str, Any]]:
             return t
     return None
 
+_tender_number_lock = threading.Lock()
+
 def check_tender_id_exists(tender_num_or_id: str, exclude_id: Optional[str] = None) -> bool:
     """
     Checks if a Tender ID or Tender Number already exists in the system.
@@ -784,38 +788,158 @@ def check_tender_id_exists(tender_num_or_id: str, exclude_id: Optional[str] = No
             return True
     return False
 
-def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
-    # Check if duplicate ID exists
-    t_id = tender_data.get("tender_number") or tender_data.get("id") or tender_data.get("tender_id") or tender_data.get("ref")
-    if t_id and check_tender_id_exists(t_id):
-        raise ValueError(f"Tender ID '{t_id}' already exists in the registry. Please use a unique Tender ID.")
+def get_highest_tender_sequence(year: int = 2026) -> int:
+    """
+    Scans all tenders in the registry and returns the highest integer sequence for the specified year.
+    Matches formats:
+    - CPCL/PROC/2026/011 -> 11
+    - CPCL/PROC/SAFETY/2024/09 -> 9
+    - TND-2026-011 -> 11
+    """
+    highest = 0
+    year_str = str(year)
+    for t in SAMPLE_TENDERS:
+        for field in ("tender_number", "ref", "tender_id", "id"):
+            val = t.get(field)
+            if val and isinstance(val, str):
+                # Pattern: CPCL/PROC/.../2026/012 or CPCL/PROC/2026/012
+                m = re.search(r'CPCL/PROC/(?:[A-Z0-9_-]+/)?' + re.escape(year_str) + r'/(\d+)', val, re.IGNORECASE)
+                if m:
+                    try:
+                        seq = int(m.group(1))
+                        if seq > highest:
+                            highest = seq
+                    except ValueError:
+                        pass
+                # Pattern: TND-2026-012 or TND-2026/012
+                m2 = re.search(r'TND[-/]' + re.escape(year_str) + r'[-/](\d+)', val, re.IGNORECASE)
+                if m2:
+                    try:
+                        seq = int(m2.group(1))
+                        if seq > highest:
+                            highest = seq
+                    except ValueError:
+                        pass
+    return highest
 
-    # Assign internal ID if missing
-    if not tender_data.get("id"):
-        tender_data["id"] = f"TND-2026-00{len(SAMPLE_TENDERS) + 1}"
-    if not tender_data.get("tender_number") and tender_data.get("ref"):
-        tender_data["tender_number"] = tender_data["ref"]
-    elif not tender_data.get("ref") and tender_data.get("tender_number"):
-        tender_data["ref"] = tender_data["tender_number"]
-    if not tender_data.get("tender_id"):
-        tender_data["tender_id"] = tender_data.get("tender_number") or tender_data.get("id")
-    if not tender_data.get("organization"):
-        tender_data["organization"] = "Chennai Petroleum Corporation Limited (CPCL)"
-    if not tender_data.get("status"):
-        tender_data["status"] = "DRAFT"
-    SAMPLE_TENDERS.insert(0, tender_data)
-    return tender_data
+def get_next_tender_number(year: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Returns the next available sequential Tender ID and preview metadata without consuming or saving it.
+    Format: CPCL/PROC/{YEAR}/{NUMBER:03d} (e.g. CPCL/PROC/2026/012)
+    """
+    if year is None:
+        year_int = 2026
+    else:
+        try:
+            year_int = int(year)
+        except (ValueError, TypeError):
+            year_int = 2026
+
+    highest = get_highest_tender_sequence(year_int)
+    next_seq = highest + 1
+
+    formatted_number = f"CPCL/PROC/{year_int}/{next_seq:03d}"
+    internal_id = f"TND-{year_int}-{next_seq:03d}"
+
+    return {
+        "tender_number": formatted_number,
+        "tender_id": formatted_number,
+        "internal_id": internal_id,
+        "year": year_int,
+        "sequence": next_seq,
+        "highest_existing_sequence": highest
+    }
+
+def generate_and_reserve_tender_number(year: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Thread-safe generator that atomically calculates and reserves the next unique sequential Tender ID.
+    Guarantees that concurrent requests receive distinct incremented numbers without duplicate collision.
+    """
+    with _tender_number_lock:
+        if year is None:
+            year_int = 2026
+        else:
+            try:
+                year_int = int(year)
+            except (ValueError, TypeError):
+                year_int = 2026
+
+        highest = get_highest_tender_sequence(year_int)
+        next_seq = highest + 1
+
+        formatted_number = f"CPCL/PROC/{year_int}/{next_seq:03d}"
+        while check_tender_id_exists(formatted_number):
+            next_seq += 1
+            formatted_number = f"CPCL/PROC/{year_int}/{next_seq:03d}"
+
+        internal_id = f"TND-{year_int}-{next_seq:03d}"
+        while check_tender_id_exists(internal_id):
+            internal_id = f"TND-{year_int}-{next_seq + 1:03d}"
+
+        return {
+            "tender_number": formatted_number,
+            "tender_id": formatted_number,
+            "internal_id": internal_id,
+            "year": year_int,
+            "sequence": next_seq
+        }
+
+def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
+    with _tender_number_lock:
+        issue = tender_data.get("issue_date") or tender_data.get("publish_date")
+        target_year = 2026
+        if issue and len(str(issue)) >= 4:
+            try:
+                target_year = int(str(issue)[:4])
+            except ValueError:
+                target_year = 2026
+
+        raw_id = (
+            tender_data.get("tender_number")
+            or tender_data.get("tender_id")
+            or tender_data.get("ref")
+            or tender_data.get("id")
+        )
+
+        # If no custom valid tender_number provided or if auto/placeholder passed, generate sequential ID
+        if not raw_id or "AUTO" in str(raw_id).upper() or "DRAFT-" in str(raw_id).upper():
+            gen = generate_and_reserve_tender_number(target_year)
+            tender_data["tender_number"] = gen["tender_number"]
+            tender_data["ref"] = gen["tender_number"]
+            tender_data["tender_id"] = gen["tender_number"]
+            tender_data["id"] = gen["internal_id"]
+        else:
+            raw_id_str = str(raw_id).strip()
+            if check_tender_id_exists(raw_id_str):
+                raise ValueError(f"Tender ID '{raw_id_str}' already exists in the registry. Please use a unique Tender ID.")
+            if not tender_data.get("id"):
+                tender_data["id"] = f"TND-{target_year}-{get_highest_tender_sequence(target_year) + 1:03d}"
+            if not tender_data.get("tender_number"):
+                tender_data["tender_number"] = raw_id_str
+            if not tender_data.get("ref"):
+                tender_data["ref"] = tender_data["tender_number"]
+            if not tender_data.get("tender_id"):
+                tender_data["tender_id"] = tender_data["tender_number"]
+
+        if not tender_data.get("organization"):
+            tender_data["organization"] = "Chennai Petroleum Corporation Limited (CPCL)"
+        if not tender_data.get("status"):
+            tender_data["status"] = "DRAFT"
+
+        SAMPLE_TENDERS.insert(0, tender_data)
+        return tender_data
 
 def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    tender = get_tender_by_id(tender_id)
-    if tender:
-        # Check duplicate if tender_number is being changed
-        new_num = patch_data.get("tender_number") or patch_data.get("tender_id")
-        if new_num and new_num != tender.get("tender_number") and check_tender_id_exists(new_num, exclude_id=tender.get("id")):
-            raise ValueError(f"Tender ID '{new_num}' already exists in the registry.")
-        tender.update(patch_data)
-        return tender
-    return None
+    with _tender_number_lock:
+        tender = get_tender_by_id(tender_id)
+        if tender:
+            # Check duplicate if tender_number is being changed
+            new_num = patch_data.get("tender_number") or patch_data.get("tender_id")
+            if new_num and new_num != tender.get("tender_number") and check_tender_id_exists(new_num, exclude_id=tender.get("id")):
+                raise ValueError(f"Tender ID '{new_num}' already exists in the registry.")
+            tender.update(patch_data)
+            return tender
+        return None
 
 def get_all_bidders(query: Optional[str] = None, tender_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
     results = list(SAMPLE_BIDDERS)
