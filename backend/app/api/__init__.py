@@ -5,6 +5,7 @@ from .compliance import router as compliance_router
 from .reports import router as reports_router
 from .audit import router as audit_router
 from .bidder_portal import router as bidder_portal_router
+from .dashboard import router as dashboard_router
 
 __all__ = [
     "auth_router",
@@ -13,5 +14,6 @@ __all__ = [
     "compliance_router",
     "reports_router",
     "audit_router",
-    "bidder_portal_router"
+    "bidder_portal_router",
+    "dashboard_router"
 ]

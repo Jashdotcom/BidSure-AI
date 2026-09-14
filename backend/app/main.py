@@ -15,7 +15,8 @@ from app.api import (
     compliance_router,
     reports_router,
     audit_router,
-    bidder_portal_router
+    bidder_portal_router,
+    dashboard_router
 )
 
 app = FastAPI(
@@ -48,6 +49,7 @@ app.include_router(compliance_router)
 app.include_router(reports_router)
 app.include_router(audit_router)
 app.include_router(bidder_portal_router)
+app.include_router(dashboard_router)
 
 # Include API Routers with /api prefix for proxy compatibility
 app.include_router(auth_router, prefix="/api")
@@ -57,6 +59,7 @@ app.include_router(compliance_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
 app.include_router(bidder_portal_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
 
 @app.get("/health", tags=["Health"])
 @app.get("/api/health", tags=["Health"])

@@ -40,6 +40,7 @@ SAMPLE_USERS: List[Dict[str, Any]] = [
     }
 ]
 
+# Centralized Database of 12 Authentic CPCL Procurement Tenders
 SAMPLE_TENDERS: List[Dict[str, Any]] = [
     {
         "id": "TND-2026-001",
@@ -228,6 +229,138 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "bids_count": 0,
         "verified_count": 0,
         "description": "Turnkey supply, calibration, and wireless integration of multi-gas detectors (H2S, LEL, CO, O2) across refinery processing blocks.",
+        "requirements": []
+    },
+    {
+        "id": "TND-2026-006",
+        "tender_number": "CPCL/PROC/2026/006",
+        "ref": "CPCL/PROC/2026/006",
+        "tender_id": "CPCL/PROC/2026/006",
+        "title": "Crude Distillation Unit Heat Exchanger Tubes",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Heat Transfer & Thermal Operations",
+        "status": "OPEN",
+        "estimated_value": 65000000.0,
+        "estimated_value_display": "₹ 6,50,00,000",
+        "emd_amount": 1300000.0,
+        "emd_amount_display": "₹ 13,00,000",
+        "publish_date": "2026-08-05T09:00:00Z",
+        "closing_date": "2026-10-18T15:00:00Z",
+        "deadline": "18 Oct 2026",
+        "category": "Thermal Equipment",
+        "bids_count": 3,
+        "verified_count": 2,
+        "description": "Supply and hydrostatic testing of titanium and duplex stainless steel seamless heat exchanger tube bundles for CDU pre-heat train.",
+        "requirements": []
+    },
+    {
+        "id": "TND-2026-007",
+        "tender_number": "CPCL/PROC/2026/007",
+        "ref": "CPCL/PROC/2026/007",
+        "tender_id": "CPCL/PROC/2026/007",
+        "title": "Centrifugal Process Pumps & Mechanical Seals",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Rotating Machinery Division",
+        "status": "OPEN",
+        "estimated_value": 48000000.0,
+        "estimated_value_display": "₹ 4,80,00,000",
+        "emd_amount": 960000.0,
+        "emd_amount_display": "₹ 9,60,000",
+        "publish_date": "2026-08-10T11:00:00Z",
+        "closing_date": "2026-10-25T17:00:00Z",
+        "deadline": "25 Oct 2026",
+        "category": "Rotating Machinery",
+        "bids_count": 4,
+        "verified_count": 3,
+        "description": "Procurement of API 610 compliant centrifugal hydrocarbon transfer pumps with dual pressurized dry gas cartridge seals.",
+        "requirements": []
+    },
+    {
+        "id": "TND-2026-008",
+        "tender_number": "CPCL/PROC/2026/008",
+        "ref": "CPCL/PROC/2026/008",
+        "tender_id": "CPCL/PROC/2026/008",
+        "title": "Refinery Effluent Treatment Plant Sludge Dewatering",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Environmental Management & ETP",
+        "status": "UNDER REVIEW",
+        "estimated_value": 36000000.0,
+        "estimated_value_display": "₹ 3,60,00,000",
+        "emd_amount": 720000.0,
+        "emd_amount_display": "₹ 7,20,000",
+        "publish_date": "2026-08-12T10:00:00Z",
+        "closing_date": "2026-10-30T16:00:00Z",
+        "deadline": "30 Oct 2026",
+        "category": "Water & Effluent Treatment",
+        "bids_count": 2,
+        "verified_count": 2,
+        "description": "Comprehensive service contract for continuous mechanical sludge dewatering, decanter centrifuge operations, and bio-sludge handling.",
+        "requirements": []
+    },
+    {
+        "id": "TND-2026-009",
+        "tender_number": "CPCL/PROC/2026/009",
+        "ref": "CPCL/PROC/2026/009",
+        "tender_id": "CPCL/PROC/2026/009",
+        "title": "Flame-Retardant Control & Power Cabling Systems",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Electrical Engineering Department",
+        "status": "DRAFT",
+        "estimated_value": 21000000.0,
+        "estimated_value_display": "₹ 2,10,00,000",
+        "emd_amount": 420000.0,
+        "emd_amount_display": "₹ 4,20,000",
+        "publish_date": "2026-08-15T09:00:00Z",
+        "closing_date": "2026-11-05T17:00:00Z",
+        "deadline": "05 Nov 2026",
+        "category": "Electrical Systems",
+        "bids_count": 0,
+        "verified_count": 0,
+        "description": "Supply of FRLS (Flame Retardant Low Smoke) XLPE insulated armored copper cables for refinery substation modernization.",
+        "requirements": []
+    },
+    {
+        "id": "TND-2026-010",
+        "tender_number": "CPCL/PROC/2026/010",
+        "ref": "CPCL/PROC/2026/010",
+        "tender_id": "CPCL/PROC/2026/010",
+        "title": "Nitrogen Generation & Cryogenic Storage Package",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Utilities & Offsites Division",
+        "status": "PUBLISHED",
+        "estimated_value": 79000000.0,
+        "estimated_value_display": "₹ 7,90,00,000",
+        "emd_amount": 1580000.0,
+        "emd_amount_display": "₹ 15,80,000",
+        "publish_date": "2026-08-18T10:00:00Z",
+        "closing_date": "2026-11-15T15:00:00Z",
+        "deadline": "15 Nov 2026",
+        "category": "Cryogenic & Gas Systems",
+        "bids_count": 1,
+        "verified_count": 1,
+        "description": "Design, engineering, supply, and commissioning of high-purity PSA nitrogen generation unit with vacuum-insulated liquid nitrogen buffer tank.",
+        "requirements": []
+    },
+    {
+        "id": "TND-2026-011",
+        "tender_number": "CPCL/PROC/2026/011",
+        "ref": "CPCL/PROC/2026/011",
+        "tender_id": "CPCL/PROC/2026/011",
+        "title": "SCADA & Distributed Control System (DCS) Upgradation",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Instrumentation & Control Engineering",
+        "status": "CLOSED",
+        "estimated_value": 124000000.0,
+        "estimated_value_display": "₹ 12,40,00,000",
+        "emd_amount": 2480000.0,
+        "emd_amount_display": "₹ 24,80,000",
+        "publish_date": "2026-06-01T09:00:00Z",
+        "closing_date": "2026-08-15T17:00:00Z",
+        "deadline": "15 Aug 2026",
+        "category": "Instrumentation & Automation",
+        "bids_count": 4,
+        "verified_count": 4,
+        "description": "Turnkey upgradation of Yokogawa/Honeywell DCS control consoles, safety instrumented system (SIS), and cybersecurity perimeter.",
         "requirements": []
     },
     {
@@ -519,7 +652,6 @@ SAMPLE_BIDDERS: List[Dict[str, Any]] = [
     }
 ]
 
-# Separate Multi-Bid Storage for Bidders
 SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = [
     {
         "id": "BID-DOC-001",
@@ -590,7 +722,7 @@ def add_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     return user_data
 
 def get_all_tenders(query: Optional[str] = None, status: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
-    results = SAMPLE_TENDERS
+    results = list(SAMPLE_TENDERS)
     if query:
         q = query.strip().lower()
         results = [
@@ -650,7 +782,7 @@ def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[s
     return None
 
 def get_all_bidders(query: Optional[str] = None, tender_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
-    results = SAMPLE_BIDDERS
+    results = list(SAMPLE_BIDDERS)
     if tender_id:
         results = [b for b in results if b.get("tender_id") == tender_id or b.get("tender_number") == tender_id]
     if query:
@@ -704,6 +836,33 @@ def get_bids_by_bidder_id(bidder_id: str) -> List[Dict[str, Any]]:
 def add_bid_for_bidder(bid_data: Dict[str, Any]) -> Dict[str, Any]:
     SAMPLE_BIDDER_BIDS.append(bid_data)
     return bid_data
+
+def get_dashboard_stats() -> Dict[str, Any]:
+    all_tenders = SAMPLE_TENDERS
+    all_bidders = SAMPLE_BIDDERS
+
+    total_tenders = len(all_tenders)
+    # Active/Total procurement tenders in system
+    active_tenders = len([t for t in all_tenders if t.get("status", "").upper() not in ["ARCHIVED", "CANCELLED"]])
+
+    # Bids calculation across tenders
+    total_bids = len(all_bidders)
+    under_verification = len([b for b in all_bidders if b.get("status") in ["UNDER_VERIFICATION", "PROCESSING", "UNDER REVIEW"]])
+    pending_review = len([b for b in all_bidders if b.get("compliance_status") in ["REQUIRES_REVIEW", "REVIEW_REQUIRED", "REVIEW"]])
+    compliant_bids = len([b for b in all_bidders if b.get("compliance_status") == "COMPLIANT"])
+    high_risk = len([b for b in all_bidders if b.get("risk_level") == "HIGH"])
+
+    return {
+        "active_tenders": active_tenders,
+        "total_tenders": total_tenders,
+        "total_bids": total_bids,
+        "total_bidders": total_bids,
+        "under_verification": under_verification,
+        "pending_review": pending_review,
+        "pending_reviews": pending_review,
+        "compliant_bids": compliant_bids,
+        "high_risk": high_risk
+    }
 
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = [
     {
