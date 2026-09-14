@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   UsersIcon,
   ShieldCheckIcon,
+  ScaleIcon,
   RefreshCwIcon,
   SettingsIcon,
   HelpCircleIcon,
@@ -23,6 +24,7 @@ const OFFICER_PRIMARY_NAV = [
   { name: "Tenders", href: "/tenders", icon: FileTextIcon },
   { name: "Bids & Submissions", href: "/bidders", icon: UsersIcon },
   { name: "Compliance", href: "/compliance", icon: ShieldCheckIcon },
+  { name: "Compare Bids", href: "/comparison", icon: ScaleIcon },
   { name: "Audit Trail", href: "/audit", icon: RefreshCwIcon },
 ];
 

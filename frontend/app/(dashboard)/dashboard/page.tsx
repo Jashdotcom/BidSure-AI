@@ -421,7 +421,7 @@ export default function OfficerDashboardPage() {
         </div>
 
         {/* Header Action Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Link href="/tenders">
             <Button
               size="sm"
@@ -429,6 +429,17 @@ export default function OfficerDashboardPage() {
             >
               <PlusIcon className="size-3.5" />
               Create Tender
+            </Button>
+          </Link>
+
+          <Link href="/comparison">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <ScaleIcon className="size-3.5 text-slate-500" />
+              Compare Bids
             </Button>
           </Link>
         </div>
