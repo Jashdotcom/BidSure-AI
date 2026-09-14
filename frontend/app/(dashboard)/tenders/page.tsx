@@ -734,14 +734,15 @@ export default function TendersPage() {
         </div>
 
         <div>
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-xs flex items-center gap-1.5"
-            size="sm"
-          >
-            <PlusIcon className="size-4" />
-            Create Tender
-          </Button>
+          <Link href="/tenders/create">
+            <Button
+              className="bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-xs flex items-center gap-1.5"
+              size="sm"
+            >
+              <PlusIcon className="size-4" />
+              Create Tender
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -874,6 +875,13 @@ export default function TendersPage() {
                       {/* DRAFT STATE: Analyze Document or Scrutinize */}
                       {tender.status === "DRAFT" && (
                         <>
+                          <Link
+                            href={`/tenders/create?draft=${encodeURIComponent(tender.id)}`}
+                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-1"
+                          >
+                            <EditIcon className="size-3 text-slate-500" />
+                            Edit Draft
+                          </Link>
                           <button
                             type="button"
                             onClick={() => handleAnalyzeTender(tender)}

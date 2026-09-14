@@ -422,7 +422,7 @@ export default function OfficerDashboardPage() {
 
         {/* Header Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link href="/tenders">
+          <Link href="/tenders/create">
             <Button
               size="sm"
               className="bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-xs flex items-center gap-1.5"

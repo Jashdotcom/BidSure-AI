@@ -1,10 +1,23 @@
 """
 Tender Management API Router
+Provides endpoints for listing, viewing, creating, updating, and publishing procurement tenders.
 """
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from typing import List, Dict, Any, Optional
+import time
+import hashlib
+from datetime import datetime
 from app.api.auth import get_current_user, require_roles
-from app.data.sample_data import get_all_tenders, get_tender_by_id, add_tender, update_tender
+from app.schemas.tender import TenderCreateSchema, TenderPatchSchema
+from app.data.sample_data import (
+    get_all_tenders,
+    get_tender_by_id,
+    add_tender,
+    update_tender,
+    check_tender_id_exists,
+    add_audit_log,
+    SAMPLE_TENDERS
+)
 
 router = APIRouter(prefix="/tenders", tags=["Tenders"])
 
@@ -17,6 +30,22 @@ async def list_tenders(
 ):
     """Returns list of active, evaluating, and published tenders with search & filter support."""
     return get_all_tenders(query=query, status=status, category=category)
+
+@router.get("/check-id/{check_tender_id}", response_model=Dict[str, Any])
+async def check_tender_id_uniqueness(
+    check_tender_id: str,
+    exclude_id: Optional[str] = Query(None, description="Exclude existing tender when editing"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Checks if a Tender ID is available or already in use.
+    """
+    exists = check_tender_id_exists(check_tender_id, exclude_id=exclude_id)
+    return {
+        "tender_id": check_tender_id,
+        "is_available": not exists,
+        "exists": exists
+    }
 
 @router.get("/{tender_id}", response_model=Dict[str, Any])
 async def get_tender_details(tender_id: str, current_user: Dict[str, Any] = Depends(get_current_user)):
@@ -31,36 +60,262 @@ async def get_tender_details(tender_id: str, current_user: Dict[str, Any] = Depe
 
 @router.post("", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def create_tender(
-    tender_payload: Dict[str, Any],
+    payload: TenderCreateSchema,
     current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
 ):
     """
-    Creates a new tender.
+    Creates a new tender as either DRAFT or PUBLISHED.
     RESTRICTED: Officer role only.
+
+    Validation rules:
+    - If status == 'PUBLISHED':
+      - Tender ID, Title, Organization, Category, Description, Deadline, Evaluation Method, and PDF document are mandatory.
+    - If status == 'DRAFT':
+      - Partial fields allowed for drafting.
+    - Tender ID uniqueness strictly enforced.
     """
-    created = add_tender(tender_payload)
+    tender_dict = payload.model_dump(exclude_none=False)
+
+    # Resolve tender identifiers
+    raw_tender_id = (
+        tender_dict.get("tender_number")
+        or tender_dict.get("tender_id")
+        or tender_dict.get("ref")
+        or tender_dict.get("id")
+    )
+
+    if not raw_tender_id:
+        raw_tender_id = f"CPCL/PROC/2026/{len(SAMPLE_TENDERS) + 1:03d}"
+
+    raw_tender_id = raw_tender_id.strip()
+
+    # 1. Enforce Duplicate Tender ID check
+    if check_tender_id_exists(raw_tender_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Tender ID '{raw_tender_id}' already exists in the registry. Please use a unique Tender ID."
+        )
+
+    target_status = (tender_dict.get("status") or "DRAFT").strip().upper()
+
+    # 2. Strict validation for PUBLISHED status
+    if target_status == "PUBLISHED":
+        errors = []
+        if not tender_dict.get("title") or len(tender_dict["title"].strip()) < 3:
+            errors.append("Tender Title is required (minimum 3 characters).")
+        if not tender_dict.get("organization"):
+            errors.append("Organization / Procuring Entity is required.")
+        if not tender_dict.get("category"):
+            errors.append("Tender Category is required.")
+        if not tender_dict.get("description") or len(tender_dict["description"].strip()) < 5:
+            errors.append("Tender Description is required.")
+        if not tender_dict.get("deadline") and not tender_dict.get("closing_date") and not tender_dict.get("submission_deadline"):
+            errors.append("Submission Deadline is required.")
+        if not tender_dict.get("evaluation_method"):
+            errors.append("Evaluation Method is required.")
+        if not tender_dict.get("file_name"):
+            errors.append("Tender Document (RFP PDF) is mandatory for publishing a tender.")
+
+        if errors:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"message": "Validation failed for publishing tender.", "errors": errors}
+            )
+
+    # 3. Format & sanitize stored tender model
+    internal_id = f"TND-2026-{len(SAMPLE_TENDERS) + 1:03d}"
+    submission_deadline = (
+        tender_dict.get("submission_deadline")
+        or tender_dict.get("closing_date")
+        or tender_dict.get("deadline")
+        or "2026-10-30"
+    )
+
+    # Compute clean deadline display
+    deadline_display = submission_deadline
+    if "T" in submission_deadline:
+        deadline_display = submission_deadline.split("T")[0]
+
+    # Clean estimated value numeric & display
+    raw_est = tender_dict.get("estimated_value")
+    est_num = 0.0
+    if raw_est is not None:
+        try:
+            if isinstance(raw_est, (int, float)):
+                est_num = float(raw_est)
+            else:
+                est_cleaned = str(raw_est).replace("₹", "").replace(",", "").replace("Cr", "").replace("L", "").strip()
+                est_num = float(est_cleaned)
+        except Exception:
+            est_num = 0.0
+
+    raw_emd = tender_dict.get("emd_amount")
+    emd_num = 0.0
+    if raw_emd is not None:
+        try:
+            if isinstance(raw_emd, (int, float)):
+                emd_num = float(raw_emd)
+            else:
+                emd_cleaned = str(raw_emd).replace("₹", "").replace(",", "").replace("L", "").replace("Cr", "").strip()
+                emd_num = float(emd_cleaned)
+        except Exception:
+            emd_num = 0.0
+
+    issue_date = tender_dict.get("issue_date") or tender_dict.get("publish_date") or datetime.utcnow().strftime("%Y-%m-%d")
+
+    tender_record: Dict[str, Any] = {
+        "id": internal_id,
+        "tender_number": raw_tender_id,
+        "ref": raw_tender_id,
+        "tender_id": raw_tender_id,
+        "title": tender_dict.get("title", "").strip(),
+        "organization": tender_dict.get("organization") or "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": tender_dict.get("department") or "Materials & Procurement Division",
+        "category": tender_dict.get("category") or "Goods",
+        "status": target_status,
+        "description": tender_dict.get("description", "").strip(),
+        "issue_date": issue_date,
+        "publish_date": f"{issue_date}T09:00:00Z" if "T" not in issue_date else issue_date,
+        "submission_deadline": submission_deadline,
+        "closing_date": f"{submission_deadline}T17:30:00Z" if "T" not in submission_deadline else submission_deadline,
+        "deadline": deadline_display,
+        "bid_opening_date": tender_dict.get("bid_opening_date"),
+        "estimated_value": est_num,
+        "emd_amount": emd_num,
+        "evaluation_method": tender_dict.get("evaluation_method") or "L1 / Lowest Price",
+        "performance_security": tender_dict.get("performance_security"),
+        "file_name": tender_dict.get("file_name") or (f"{raw_tender_id.replace('/', '_')}_RFP.pdf" if target_status == "PUBLISHED" else None),
+        "file_size_kb": tender_dict.get("file_size_kb") or 3420,
+        "bids_count": 0,
+        "verified_count": 0,
+        "requirements": tender_dict.get("requirements") or [
+            {
+                "id": "REQ-GEN-01",
+                "code": "TURNOVER",
+                "clause_reference": "Section II, Clause 3.1",
+                "category": "FINANCIAL",
+                "title": "Annual Financial Turnover Requirement",
+                "description": "Bidder must meet minimum annual average turnover benchmark.",
+                "threshold_value": ">= ₹3.00 Cr",
+                "mandatory": True,
+                "weight": 20
+            },
+            {
+                "id": "REQ-GEN-02",
+                "code": "EXPERIENCE",
+                "clause_reference": "Section III, Clause 4.2",
+                "category": "TECHNICAL",
+                "title": "Past Relevant PSU / Sector Experience",
+                "description": "Past work orders in similar scope over the last 3-5 years.",
+                "threshold_value": ">= 3 Years",
+                "mandatory": True,
+                "weight": 20
+            },
+            {
+                "id": "REQ-GEN-03",
+                "code": "OEM",
+                "clause_reference": "Section III, Clause 4.5",
+                "category": "OEM_AUTHORIZATION",
+                "title": "Manufacturer Authorization Form (MAF)",
+                "description": "Direct OEM authorization for tender scope.",
+                "threshold_value": "Direct OEM Authorization",
+                "mandatory": True,
+                "weight": 20
+            },
+            {
+                "id": "REQ-GEN-04",
+                "code": "MII",
+                "clause_reference": "Section I, Clause 1.4",
+                "category": "LOCAL_CONTENT",
+                "title": "Make in India (MII) Local Content",
+                "description": "Public Procurement Order domestic value addition self-declaration.",
+                "threshold_value": ">= 50% (Class-I)",
+                "mandatory": True,
+                "weight": 20
+            }
+        ]
+    }
+
+    try:
+        created = add_tender(tender_record)
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err)
+        )
+
+    # 4. Audit Trail Recording
+    action_type = "TENDER_PUBLISHED" if target_status == "PUBLISHED" else "TENDER_DRAFT_SAVED"
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": action_type,
+        "entity_type": "TENDER",
+        "entity_id": raw_tender_id,
+        "details": (
+            f"Tender '{tender_record['title']}' published live to procurement portal."
+            if target_status == "PUBLISHED"
+            else f"Draft tender '{tender_record['title']}' saved by officer."
+        ),
+        "status": "SUCCESS"
+    })
+
     return {
-        "message": "Tender created successfully.",
+        "message": "Tender published successfully." if target_status == "PUBLISHED" else "Tender saved as draft.",
         "tender": created
     }
 
 @router.patch("/{tender_id}", response_model=Dict[str, Any])
 async def patch_tender(
     tender_id: str,
-    patch_payload: Dict[str, Any],
+    payload: Dict[str, Any],
     current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
 ):
     """
-    Updates or closes a tender.
+    Updates, modifies, analyzes, or publishes an existing tender.
     RESTRICTED: Officer role only.
     """
-    updated = update_tender(tender_id, patch_payload)
+    try:
+        updated = update_tender(tender_id, payload)
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err)
+        )
+
     if not updated:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tender {tender_id} not found."
         )
+
+    # Audit logging for status change or update
+    new_status = payload.get("status")
+    if new_status == "PUBLISHED":
+        action = "TENDER_PUBLISHED"
+        details = f"Tender {tender_id} published live to public procurement registry."
+    elif new_status == "CLOSED":
+        action = "TENDER_CLOSED"
+        details = f"Tender {tender_id} closed and bidding sealed."
+    elif new_status == "ANALYZING":
+        action = "TENDER_ANALYSIS_STARTED"
+        details = f"AI clause analysis initiated for tender {tender_id}."
+    else:
+        action = "TENDER_UPDATED"
+        details = f"Tender {tender_id} details updated by officer."
+
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": action,
+        "entity_type": "TENDER",
+        "entity_id": updated.get("tender_number") or tender_id,
+        "details": details,
+        "status": "SUCCESS"
+    })
+
     return {
-        "message": "Tender updated successfully.",
+        "message": f"Tender {tender_id} updated successfully.",
         "tender": updated
     }
+

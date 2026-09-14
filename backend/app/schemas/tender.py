@@ -61,25 +61,78 @@ class TenderDetailSchema(BaseModel):
     tender_id: str
     title: str
     organization: str
-    refinery_location: str
+    refinery_location: Optional[str] = "Manali Refinery, Chennai"
     department: str
     category: str
-    estimated_value: str
-    tender_type: str
-    published_date: str
-    closing_date: str
-    evaluation_stage: str
+    estimated_value: Union[str, float, int]
+    tender_type: Optional[str] = "Open Competitive Bidding"
+    published_date: Optional[str] = None
+    closing_date: Optional[str] = None
+    evaluation_stage: Optional[str] = "Technical & Commercial"
     status: str
-    officer_assigned: str
-    officer_email: str
-    total_bidders_submitted: int
-    total_requirements_count: int
-    summary: str
-    file_name: Optional[str] = "CPCL_Tender_Safety_Helmets_2026.pdf"
+    officer_assigned: Optional[str] = "Rajesh Kumar"
+    officer_email: Optional[str] = "officer@cpcl.gov.in"
+    total_bidders_submitted: Optional[int] = 0
+    total_requirements_count: Optional[int] = 0
+    summary: Optional[str] = ""
+    file_name: Optional[str] = "CPCL_Tender_Document.pdf"
     file_size_kb: Optional[int] = 4280
     total_pages: Optional[int] = 14
     is_analyzed: Optional[bool] = True
-    requirements: List[RequirementSchema]
+    requirements: Optional[List[RequirementSchema]] = []
+
+class TenderCreateSchema(BaseModel):
+    id: Optional[str] = None
+    tender_id: Optional[str] = None
+    tender_number: Optional[str] = None
+    ref: Optional[str] = None
+    title: str = Field(..., min_length=2, description="Tender Title")
+    organization: Optional[str] = "Chennai Petroleum Corporation Limited (CPCL)"
+    department: Optional[str] = "Materials & Procurement Division"
+    category: Optional[str] = "Goods"
+    description: Optional[str] = ""
+    status: Optional[str] = "DRAFT"  # DRAFT, ANALYZING, REQUIREMENTS_REVIEW, PUBLISHED, CLOSED
+
+    # Section B: Timeline
+    issue_date: Optional[str] = None
+    publish_date: Optional[str] = None
+    submission_deadline: Optional[str] = None
+    closing_date: Optional[str] = None
+    deadline: Optional[str] = None
+    bid_opening_date: Optional[str] = None
+
+    # Section C: Procurement & Evaluation
+    estimated_value: Optional[Union[float, int, str]] = None
+    emd_amount: Optional[Union[float, int, str]] = None
+    evaluation_method: Optional[str] = "L1 / Lowest Price"
+    performance_security: Optional[Union[float, int, str]] = None
+
+    # Section D: Tender Document
+    file_name: Optional[str] = None
+    file_size_kb: Optional[int] = None
+    document_url: Optional[str] = None
+
+    # Requirements / Metadata
+    requirements: Optional[List[Dict[str, Any]]] = None
+
+class TenderPatchSchema(BaseModel):
+    title: Optional[str] = None
+    organization: Optional[str] = None
+    department: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    deadline: Optional[str] = None
+    closing_date: Optional[str] = None
+    issue_date: Optional[str] = None
+    bid_opening_date: Optional[str] = None
+    estimated_value: Optional[Union[float, int, str]] = None
+    emd_amount: Optional[Union[float, int, str]] = None
+    evaluation_method: Optional[str] = None
+    performance_security: Optional[Union[float, int, str]] = None
+    file_name: Optional[str] = None
+    file_size_kb: Optional[int] = None
+    requirements: Optional[List[Dict[str, Any]]] = None
 
 class TenderAnalysisResponseSchema(BaseModel):
     status: str

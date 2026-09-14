@@ -3,6 +3,9 @@ BidSure AI Sample & In-Memory Data Store
 Provides realistic mock tenders, bidders, and compliance records for CPCL evaluation workflows.
 """
 from typing import Dict, List, Any, Optional
+import time
+import hashlib
+from datetime import datetime
 
 SAMPLE_USERS: List[Dict[str, Any]] = [
     {
@@ -761,14 +764,41 @@ def get_tender_by_id(tender_id: str) -> Optional[Dict[str, Any]]:
             return t
     return None
 
+def check_tender_id_exists(tender_num_or_id: str, exclude_id: Optional[str] = None) -> bool:
+    """
+    Checks if a Tender ID or Tender Number already exists in the system.
+    Used to prevent duplicate tender creations.
+    """
+    if not tender_num_or_id:
+        return False
+    normalized = tender_num_or_id.strip().lower()
+    for t in SAMPLE_TENDERS:
+        if exclude_id and (t.get("id") == exclude_id or t.get("tender_number") == exclude_id):
+            continue
+        if (
+            (t.get("id") and t.get("id").strip().lower() == normalized)
+            or (t.get("tender_number") and t.get("tender_number").strip().lower() == normalized)
+            or (t.get("ref") and t.get("ref").strip().lower() == normalized)
+            or (t.get("tender_id") and t.get("tender_id").strip().lower() == normalized)
+        ):
+            return True
+    return False
+
 def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
-    # Assign ID if missing
+    # Check if duplicate ID exists
+    t_id = tender_data.get("tender_number") or tender_data.get("id") or tender_data.get("tender_id") or tender_data.get("ref")
+    if t_id and check_tender_id_exists(t_id):
+        raise ValueError(f"Tender ID '{t_id}' already exists in the registry. Please use a unique Tender ID.")
+
+    # Assign internal ID if missing
     if not tender_data.get("id"):
         tender_data["id"] = f"TND-2026-00{len(SAMPLE_TENDERS) + 1}"
     if not tender_data.get("tender_number") and tender_data.get("ref"):
         tender_data["tender_number"] = tender_data["ref"]
     elif not tender_data.get("ref") and tender_data.get("tender_number"):
         tender_data["ref"] = tender_data["tender_number"]
+    if not tender_data.get("tender_id"):
+        tender_data["tender_id"] = tender_data.get("tender_number") or tender_data.get("id")
     if not tender_data.get("organization"):
         tender_data["organization"] = "Chennai Petroleum Corporation Limited (CPCL)"
     if not tender_data.get("status"):
@@ -779,6 +809,10 @@ def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
 def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     tender = get_tender_by_id(tender_id)
     if tender:
+        # Check duplicate if tender_number is being changed
+        new_num = patch_data.get("tender_number") or patch_data.get("tender_id")
+        if new_num and new_num != tender.get("tender_number") and check_tender_id_exists(new_num, exclude_id=tender.get("id")):
+            raise ValueError(f"Tender ID '{new_num}' already exists in the registry.")
         tender.update(patch_data)
         return tender
     return None
@@ -911,3 +945,91 @@ def get_notifications_for_bidder(bidder_id: str) -> List[Dict[str, Any]]:
             }
         ]
     return notifs
+
+# Immutable Audit Trail Data Store
+SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = [
+    {
+        "id": "LOG-001",
+        "timestamp": "2026-09-14T10:15:22Z",
+        "user_email": "officer@cpcl.gov.in",
+        "user_role": "PROCUREMENT_OFFICER",
+        "action": "EVALUATE_COMPLIANCE",
+        "entity_type": "BIDDER",
+        "entity_id": "BID-001",
+        "details": "Deterministic rules evaluation executed for ABC Safety Solutions Pvt Ltd (Score: 100%).",
+        "status": "SUCCESS",
+        "actor": "officer@cpcl.gov.in",
+        "target": "BID-001",
+        "integrity_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+        "id": "LOG-002",
+        "timestamp": "2026-09-14T09:40:05Z",
+        "user_email": "cpo@cpcl.gov.in",
+        "user_role": "SENIOR_PROCUREMENT_OFFICER",
+        "action": "OVERRIDE_VERDICT",
+        "entity_type": "BIDDER",
+        "entity_id": "BID-003",
+        "details": "Senior Officer recorded commentary for SafeGuard Equipments regarding secondary OEM authorization.",
+        "status": "WARNING",
+        "actor": "cpo@cpcl.gov.in",
+        "target": "BID-003",
+        "integrity_hash": "a45c789123fe45b89a012cd34ef567890abcdef1234567890abcdef12345678"
+    },
+    {
+        "id": "LOG-003",
+        "timestamp": "2026-09-14T09:12:40Z",
+        "user_email": "officer@cpcl.gov.in",
+        "user_role": "PROCUREMENT_OFFICER",
+        "action": "EXTERNAL_API_VERIFY",
+        "entity_type": "GOV_PORTAL",
+        "entity_id": "GSTN-33AABCA1234F1Z5",
+        "details": "Automated GSTN active registration and return filing verification status returned SUCCESS.",
+        "status": "SUCCESS",
+        "actor": "officer@cpcl.gov.in",
+        "target": "GSTN-33AABCA1234F1Z5",
+        "integrity_hash": "d41d8cd98f00b204e9800998ecf8427e0123456789abcdef0123456789abcdef"
+    },
+    {
+        "id": "LOG-004",
+        "timestamp": "2026-09-14T08:30:12Z",
+        "user_email": "abc@abcsafety.com",
+        "user_role": "BIDDER",
+        "action": "BID_SUBMISSION",
+        "entity_type": "TENDER",
+        "entity_id": "CPCL/PROC/2026/001",
+        "details": "Bid package and 6 supporting PDF documents uploaded with SHA-256 integrity hash.",
+        "status": "SUCCESS",
+        "actor": "abc@abcsafety.com",
+        "target": "CPCL/PROC/2026/001",
+        "integrity_hash": "f62b8a0e1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8"
+    }
+]
+
+def get_all_audit_logs(query: Optional[str] = None) -> List[Dict[str, Any]]:
+    if not query:
+        return list(SAMPLE_AUDIT_LOGS)
+    q = query.strip().lower()
+    return [
+        log for log in SAMPLE_AUDIT_LOGS
+        if q in log.get("id", "").lower()
+        or q in log.get("user_email", "").lower()
+        or q in log.get("action", "").lower()
+        or q in log.get("entity_id", "").lower()
+        or q in log.get("details", "").lower()
+    ]
+
+def add_audit_log(entry: Dict[str, Any]) -> Dict[str, Any]:
+    if not entry.get("id"):
+        entry["id"] = f"LOG-{len(SAMPLE_AUDIT_LOGS) + 1:03d}"
+    if not entry.get("timestamp"):
+        entry["timestamp"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    if not entry.get("integrity_hash"):
+        h_src = f"{entry.get('id')}:{entry.get('action')}:{entry.get('entity_id')}:{time.time()}"
+        entry["integrity_hash"] = hashlib.sha256(h_src.encode()).hexdigest()
+    if not entry.get("actor") and entry.get("user_email"):
+        entry["actor"] = entry["user_email"]
+    if not entry.get("target") and entry.get("entity_id"):
+        entry["target"] = entry["entity_id"]
+    SAMPLE_AUDIT_LOGS.insert(0, entry)
+    return entry
