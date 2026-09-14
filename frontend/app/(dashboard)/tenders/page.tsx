@@ -8,16 +8,12 @@ import {
   FileTextIcon,
   SparklesIcon,
   CheckCircleIcon,
-  ShieldCheckIcon,
   RefreshCwIcon,
-  UploadCloudIcon,
   EditIcon,
   TrashIcon,
   PlusIcon,
-  AlertTriangleIcon,
   SearchIcon,
   XIcon,
-  EyeIcon,
   ClockIcon,
   BuildingIcon,
 } from "@/components/icons";
@@ -255,15 +251,6 @@ const DEFAULT_REQUIREMENTS: Requirement[] = [
   },
 ];
 
-const STATUS_TABS = [
-  { id: "ALL", label: "All Tenders" },
-  { id: "OPEN", label: "Open / Active" },
-  { id: "PUBLISHED", label: "Published" },
-  { id: "UNDER REVIEW", label: "Under Review" },
-  { id: "CLOSING SOON", label: "Closing Soon" },
-  { id: "CLOSED", label: "Closed" },
-];
-
 export default function TendersPage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -272,10 +259,8 @@ export default function TendersPage() {
 
   // URL state synchronization
   const initialQuery = searchParams.get("query") || "";
-  const initialStatus = searchParams.get("status") || "ALL";
 
   const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const [activeStatus, setActiveStatus] = useState(initialStatus);
   const [tenders, setTenders] = useState<Tender[]>(INITIAL_SAMPLE_TENDERS);
   const [loading, setLoading] = useState(false);
 
@@ -291,7 +276,6 @@ export default function TendersPage() {
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditTenderModalOpen, setIsEditTenderModalOpen] = useState(false);
   const [isAddReqModalOpen, setIsAddReqModalOpen] = useState(false);
   const [isEditReqModalOpen, setIsEditReqModalOpen] = useState(false);
   const [editingReq, setEditingReq] = useState<Requirement | null>(null);
@@ -323,17 +307,12 @@ export default function TendersPage() {
 
   // Push URL update helper
   const updateUrlParams = useCallback(
-    (query: string, status: string) => {
+    (query: string) => {
       const params = new URLSearchParams(searchParams.toString());
       if (query) {
         params.set("query", query);
       } else {
         params.delete("query");
-      }
-      if (status && status !== "ALL") {
-        params.set("status", status);
-      } else {
-        params.delete("status");
       }
       startTransition(() => {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -345,18 +324,17 @@ export default function TendersPage() {
   // Debounced search sync
   useEffect(() => {
     const handler = setTimeout(() => {
-      updateUrlParams(searchTerm, activeStatus);
+      updateUrlParams(searchTerm);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchTerm, activeStatus, updateUrlParams]);
+  }, [searchTerm, updateUrlParams]);
 
   // Fetch / filter tenders
-  const fetchTenders = useCallback(async (query: string, status: string) => {
+  const fetchTenders = useCallback(async (query: string) => {
     setLoading(true);
     try {
       const qParams = new URLSearchParams();
       if (query) qParams.set("query", query);
-      if (status && status !== "ALL") qParams.set("status", status);
 
       const qs = qParams.toString() ? `?${qParams.toString()}` : "";
       const res = await apiRequest<Tender[]>(`/tenders${qs}`);
@@ -364,16 +342,16 @@ export default function TendersPage() {
         setTenders(res);
       } else {
         // Local in-memory filter
-        filterLocalTenders(query, status);
+        filterLocalTenders(query);
       }
     } catch {
-      filterLocalTenders(query, status);
+      filterLocalTenders(query);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  function filterLocalTenders(query: string, status: string) {
+  function filterLocalTenders(query: string) {
     let list = [...INITIAL_SAMPLE_TENDERS];
     if (query) {
       const q = query.trim().toLowerCase();
@@ -390,31 +368,19 @@ export default function TendersPage() {
           t.description?.toLowerCase().includes(q)
       );
     }
-    if (status && status !== "ALL") {
-      const st = status.toUpperCase();
-      list = list.filter((t) => {
-        const itemStatus = t.status.toUpperCase();
-        if (st === "OPEN") return itemStatus === "OPEN" || itemStatus === "ACTIVE";
-        if (st === "UNDER REVIEW") return itemStatus === "UNDER REVIEW" || itemStatus === "EVALUATING";
-        return itemStatus === st;
-      });
-    }
     setTenders(list);
   }
 
   // Refetch when search params change
   useEffect(() => {
     const q = searchParams.get("query") || "";
-    const s = searchParams.get("status") || "ALL";
     setSearchTerm(q);
-    setActiveStatus(s);
-    fetchTenders(q, s);
+    fetchTenders(q);
   }, [searchParams, fetchTenders]);
 
   function handleClearSearch() {
     setSearchTerm("");
-    setActiveStatus("ALL");
-    updateUrlParams("", "ALL");
+    updateUrlParams("");
   }
 
   // Create Tender
@@ -537,52 +503,18 @@ export default function TendersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Action Controls */}
+      {/* Top Header & Create Tender Action */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-700 border border-blue-200">
-              Procurement Cell
-            </span>
-            <span className="text-xs text-slate-400">·</span>
-            <span className="text-xs font-medium text-slate-500">
-              Tender Notices & GFR 144 Rule Engine
-            </span>
-          </div>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             Tenders & RFP Clauses
           </h1>
-          <p className="text-xs text-slate-500 font-medium">
+          <p className="mt-1 text-xs text-slate-500 font-medium">
             Manage procurement notices, parse RFP clauses, and configure deterministic evaluation rules.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100/80 p-1 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setActiveView("LIST")}
-              className={`rounded-md px-3 py-1.5 transition-all ${
-                activeView === "LIST"
-                  ? "bg-white text-blue-700 font-bold shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              All Tenders ({tenders.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView("CLAUSE_SCRUTINY")}
-              className={`rounded-md px-3 py-1.5 transition-all ${
-                activeView === "CLAUSE_SCRUTINY"
-                  ? "bg-white text-blue-700 font-bold shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Clause Extractor ({requirements.length})
-            </button>
-          </div>
-
+        <div>
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             className="bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-xs flex items-center gap-1.5"
@@ -594,80 +526,28 @@ export default function TendersPage() {
         </div>
       </div>
 
-      {/* VIEW 1: ALL TENDERS MANAGEMENT WITH DEDICATED SEARCH & FILTERS */}
+      {/* VIEW 1: TENDERS LIST WITH DEDICATED SEARCH BAR */}
       {activeView === "LIST" && (
         <div className="space-y-4">
-          {/* Dedicated Functional Search & Status Filter Bar */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
-            <div className="flex flex-col md:flex-row gap-3 items-center justify-between">
-              {/* Search Field */}
-              <div className="relative w-full md:max-w-md">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search tenders..."
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/70 py-2 pl-9 pr-9 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 transition-all"
-                />
-                {searchTerm && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                    title="Clear search"
-                  >
-                    <XIcon className="size-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Status Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-                {STATUS_TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveStatus(tab.id)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
-                      activeStatus === tab.id
-                        ? "bg-blue-600 text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Active Filters / Results Indicator */}
-            {(searchTerm || activeStatus !== "ALL") && (
-              <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs text-slate-600">
-                <div className="flex items-center gap-2">
-                  <span>
-                    Showing <strong>{tenders.length}</strong> matching tender{tenders.length === 1 ? "" : "s"}
-                  </span>
-                  {searchTerm && (
-                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
-                      Query: &ldquo;{searchTerm}&rdquo;
-                    </span>
-                  )}
-                  {activeStatus !== "ALL" && (
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                      Status: {activeStatus}
-                    </span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                  Reset all filters
-                </button>
-              </div>
+          {/* Functional Search Field */}
+          <div className="relative w-full">
+            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search tenders..."
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-xs transition-all"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                title="Clear search"
+              >
+                <XIcon className="size-3.5" />
+              </button>
             )}
           </div>
 
@@ -678,14 +558,14 @@ export default function TendersPage() {
               <p className="text-xs font-medium">Filtering tender database...</p>
             </div>
           ) : tenders.length === 0 ? (
-            /* Empty State */
+            /* Clean Empty State */
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
               <div className="flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
                 <SearchIcon className="size-6" />
               </div>
               <h3 className="text-sm font-bold text-slate-900">No tenders found</h3>
               <p className="mt-1 max-w-sm text-xs text-slate-500">
-                No tender notices match &ldquo;{searchTerm}&rdquo; with status &ldquo;{activeStatus}&rdquo;. Try adjusting your search criteria.
+                No tender notices match &ldquo;{searchTerm}&rdquo;. Check your search keywords or clear search to view all tenders.
               </p>
               <Button
                 variant="outline"
@@ -798,7 +678,7 @@ export default function TendersPage() {
         </div>
       )}
 
-      {/* VIEW 2: AI CLAUSE SCRUTINY & RULE EXTRACTOR */}
+      {/* VIEW 2: AI CLAUSE SCRUTINY & RULE EXTRACTOR (Activated via "Scrutinize Clauses" on a tender card) */}
       {activeView === "CLAUSE_SCRUTINY" && (
         <div className="space-y-5 animate-in fade-in duration-150">
           {/* Scrutiny Header */}
