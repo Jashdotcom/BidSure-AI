@@ -974,7 +974,53 @@ def get_all_bidders(query: Optional[str] = None, tender_id: Optional[str] = None
         ]
     return results
 
-def get_bidders_for_tender(tender_id: str) -> List[Dict[str, Any]]:
+def delete_tender(tender_id: str) -> Dict[str, Any]:
+    """
+    Lifecycle-aware tender deletion.
+    - DRAFT with no dependent records: hard delete.
+    - Any other status: raises ValueError with appropriate message.
+    - If bids/compliance records reference the tender: raises ValueError.
+    Returns the deleted tender record on success.
+    """
+    with _tender_number_lock:
+        tender = get_tender_by_id(tender_id)
+        if not tender:
+            raise KeyError(f"Tender '{tender_id}' not found.")
+
+        t_status = (tender.get("status") or "DRAFT").strip().upper()
+
+        NON_DELETABLE = {"PUBLISHED", "REQUIREMENTS_REVIEW", "ANALYZING", "CLOSED", "AWARDED"}
+        if t_status in NON_DELETABLE:
+            raise ValueError(
+                f"Tenders with status '{t_status}' cannot be permanently deleted. "
+                f"Only DRAFT tenders with no submitted bids may be deleted."
+            )
+
+        # Check for dependent bid records
+        t_num = tender.get("tender_number") or tender.get("tender_id") or tender.get("ref") or tender.get("id")
+        t_internal_id = tender.get("id")
+        dependent_bids = [
+            b for b in SAMPLE_BIDDERS
+            if b.get("tender_id") == t_internal_id or b.get("tender_number") == t_num
+        ]
+        if dependent_bids:
+            raise ValueError(
+                f"Cannot delete tender '{t_num}': it has {len(dependent_bids)} associated bid(s). "
+                f"Delete the bids first or archive this tender instead."
+            )
+
+        # Safe to permanently delete
+        for i, t in enumerate(SAMPLE_TENDERS):
+            if (t.get("id") == tender_id
+                or t.get("tender_number") == tender_id
+                or t.get("ref") == tender_id
+                or t.get("tender_id") == tender_id):
+                SAMPLE_TENDERS.pop(i)
+                return tender
+
+        raise KeyError(f"Tender '{tender_id}' not found during removal.")
+
+
     return [
         b for b in SAMPLE_BIDDERS
         if b.get("tender_id") == tender_id or b.get("tender_number") == tender_id

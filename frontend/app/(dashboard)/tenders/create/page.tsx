@@ -302,10 +302,22 @@ export default function CreateTenderPage() {
     setSuccessMessage(null);
     setIsDrafting(true);
     try {
-      const res = await apiRequest<{ message: string; tender: Tender }>("/tenders", {
-        method: "POST",
-        body: buildPayload("DRAFT"),
-      });
+      let res: { message: string; tender: Tender } | null = null;
+
+      if (editId) {
+        // Editing an existing draft: PATCH the existing record
+        res = await apiRequest<{ message: string; tender: Tender }>(
+          `/tenders/${encodeURIComponent(editId)}`,
+          { method: "PATCH", body: buildPayload("DRAFT") }
+        );
+      } else {
+        // Creating a new tender
+        res = await apiRequest<{ message: string; tender: Tender }>("/tenders", {
+          method: "POST",
+          body: buildPayload("DRAFT"),
+        });
+      }
+
       // Update displayed tender number with what was actually assigned
       if (res?.tender?.tender_number) {
         setGeneratedTenderNumber(res.tender.tender_number);
@@ -333,10 +345,21 @@ export default function CreateTenderPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await apiRequest<{ message: string; tender: Tender }>("/tenders", {
-        method: "POST",
-        body: buildPayload("PUBLISHED"),
-      });
+      let res: { message: string; tender: Tender } | null = null;
+
+      if (editId) {
+        // Publishing from an existing draft: PATCH with PUBLISHED status
+        res = await apiRequest<{ message: string; tender: Tender }>(
+          `/tenders/${encodeURIComponent(editId)}`,
+          { method: "PATCH", body: buildPayload("PUBLISHED") }
+        );
+      } else {
+        res = await apiRequest<{ message: string; tender: Tender }>("/tenders", {
+          method: "POST",
+          body: buildPayload("PUBLISHED"),
+        });
+      }
+
       if (res?.tender?.tender_number) {
         setGeneratedTenderNumber(res.tender.tender_number);
       }

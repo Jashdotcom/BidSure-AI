@@ -394,6 +394,11 @@ export default function TendersPage() {
   const [isApproved, setIsApproved] = useState(true);
   const [approvalMessage, setApprovalMessage] = useState<string | null>(null);
 
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<Tender | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddReqModalOpen, setIsAddReqModalOpen] = useState(false);
@@ -636,6 +641,29 @@ export default function TendersPage() {
     } catch {
       // Offline fallback
     }
+  }
+
+  // Delete tender: DRAFT only, confirmed via modal
+  async function handleDeleteTender(tender: Tender) {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
+        method: "DELETE",
+      });
+    } catch (err: any) {
+      // If backend is offline, remove optimistically; else surface real error
+      const msg = err?.detail || err?.message;
+      if (msg && typeof msg === "string") {
+        setDeleteError(msg);
+        setIsDeleting(false);
+        return;
+      }
+    }
+    // Remove from local list on success (or offline fallback)
+    setTenders((prev) => prev.filter((t) => t.id !== tender.id));
+    setDeleteConfirm(null);
+    setIsDeleting(false);
   }
 
   // AI Clause Extraction on Scrutiny page
@@ -882,6 +910,18 @@ export default function TendersPage() {
                             <EditIcon className="size-3 text-slate-500" />
                             Edit Draft
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteConfirm(tender);
+                              setDeleteError(null);
+                            }}
+                            className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1"
+                            title="Delete draft tender"
+                          >
+                            <TrashIcon className="size-3 text-red-500" />
+                            Delete
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleAnalyzeTender(tender)}
@@ -1198,6 +1238,86 @@ export default function TendersPage() {
               </table>
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                <TrashIcon className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Delete Draft Tender?</h3>
+                <p className="mt-1 text-xs text-slate-600">
+                  This will permanently remove the following draft tender. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 space-y-1.5 text-xs">
+              <div>
+                <span className="font-semibold text-slate-500">Tender ID</span>
+                <p className="font-mono font-bold text-blue-700 mt-0.5">
+                  {deleteConfirm.tender_number || deleteConfirm.ref || deleteConfirm.id}
+                </p>
+              </div>
+              <div>
+                <span className="font-semibold text-slate-500">Title</span>
+                <p className="font-semibold text-slate-900 mt-0.5">{deleteConfirm.title}</p>
+              </div>
+              <div>
+                <span className="font-semibold text-slate-500">Status</span>
+                <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                  {deleteConfirm.status}
+                </span>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-xs font-semibold text-red-800">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => {
+                  setDeleteConfirm(null);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <button
+                type="button"
+                onClick={() => handleDeleteTender(deleteConfirm)}
+                disabled={isDeleting}
+                className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60 transition-colors shadow-xs"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="size-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <TrashIcon className="size-3.5" />
+                    Yes, Delete Draft
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

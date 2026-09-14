@@ -14,6 +14,7 @@ from app.data.sample_data import (
     get_tender_by_id,
     add_tender,
     update_tender,
+    delete_tender,
     check_tender_id_exists,
     add_audit_log,
     get_next_tender_number,
@@ -283,7 +284,62 @@ async def patch_tender(
     """
     Updates, modifies, analyzes, or publishes an existing tender.
     RESTRICTED: Officer role only.
+
+    Lifecycle-aware edit protection:
+    - DRAFT / ANALYZING / REQUIREMENTS_REVIEW: all non-ID fields are editable.
+    - PUBLISHED: only lifecycle status transitions (CLOSED) are permitted; content changes are blocked.
+    - CLOSED / AWARDED: read-only; no edits allowed.
     """
+    # Fetch tender first to enforce lifecycle rules
+    existing = get_tender_by_id(tender_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender {tender_id} not found."
+        )
+
+    current_status = (existing.get("status") or "DRAFT").strip().upper()
+
+    # Fields that are always immutable (never change after creation)
+    IMMUTABLE_FIELDS = {"tender_number", "ref", "tender_id", "id"}
+
+    # Block immutable field changes regardless of status
+    immutable_attempted = [f for f in IMMUTABLE_FIELDS if f in payload and payload[f] != existing.get(f)]
+    if immutable_attempted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The following fields are immutable and cannot be changed: {', '.join(immutable_attempted)}. "
+                   f"Tender ID remains {existing.get('tender_number') or existing.get('id')}."
+        )
+
+    # CLOSED / AWARDED: fully locked
+    if current_status in ("CLOSED", "AWARDED"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Tender with status '{current_status}' is sealed and cannot be edited. "
+                   f"No further modifications are permitted."
+        )
+
+    # PUBLISHED: only lifecycle status transitions allowed (e.g. CLOSED); content edits blocked
+    if current_status == "PUBLISHED":
+        new_status_in_payload = (payload.get("status") or "").strip().upper()
+        allowed_published_transitions = {"CLOSED"}
+        content_fields = set(payload.keys()) - {"status"}
+        if content_fields:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "message": "This tender is already published. Critical tender details cannot be edited directly.",
+                    "advice": "Create a tender amendment or contact the CPO for published tender modifications.",
+                    "allowed_action": "Only status transitions (e.g. CLOSED) are permitted for published tenders."
+                }
+            )
+        if new_status_in_payload and new_status_in_payload not in allowed_published_transitions:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Published tender can only transition to CLOSED, not '{new_status_in_payload}'."
+            )
+
     try:
         updated = update_tender(tender_id, payload)
     except ValueError as val_err:
@@ -298,20 +354,25 @@ async def patch_tender(
             detail=f"Tender {tender_id} not found."
         )
 
-    # Audit logging for status change or update
+    # Audit logging for status change or general update
     new_status = payload.get("status")
+    changed_fields = [k for k in payload if k not in IMMUTABLE_FIELDS]
     if new_status == "PUBLISHED":
         action = "TENDER_PUBLISHED"
-        details = f"Tender {tender_id} published live to public procurement registry."
+        details = f"Tender {updated.get('tender_number') or tender_id} published live to procurement registry."
     elif new_status == "CLOSED":
         action = "TENDER_CLOSED"
-        details = f"Tender {tender_id} closed and bidding sealed."
+        details = f"Tender {updated.get('tender_number') or tender_id} closed; bidding archive sealed."
     elif new_status == "ANALYZING":
         action = "TENDER_ANALYSIS_STARTED"
-        details = f"AI clause analysis initiated for tender {tender_id}."
+        details = f"AI clause analysis initiated for tender {updated.get('tender_number') or tender_id}."
     else:
         action = "TENDER_UPDATED"
-        details = f"Tender {tender_id} details updated by officer."
+        details = (
+            f"Tender {updated.get('tender_number') or tender_id} updated by officer "
+            f"({current_user.get('name', current_user.get('email', ''))}). "
+            f"Fields modified: {', '.join(changed_fields) or 'status'}."
+        )
 
     add_audit_log({
         "user_email": current_user.get("email", "officer@cpcl.gov.in"),
@@ -324,7 +385,68 @@ async def patch_tender(
     })
 
     return {
-        "message": f"Tender {tender_id} updated successfully.",
+        "message": f"Tender {updated.get('tender_number') or tender_id} updated successfully.",
         "tender": updated
+    }
+
+
+@router.delete("/{tender_id}", response_model=Dict[str, Any])
+async def delete_tender_endpoint(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Lifecycle-aware tender deletion.
+    RESTRICTED: Officer role only.
+
+    Rules:
+    - DRAFT with no associated bids: hard delete (permanent removal).
+    - PUBLISHED / REQUIREMENTS_REVIEW / ANALYZING / CLOSED / AWARDED: deletion blocked.
+    - If the tender has submitted bids: deletion blocked to protect procurement records.
+    - Bidders are never authorised to call this endpoint (enforced by RBAC).
+    - Audit event TENDER_DELETED is recorded even on successful deletion.
+    """
+    # Fetch first for audit context
+    existing = get_tender_by_id(tender_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender '{tender_id}' not found."
+        )
+
+    try:
+        deleted = delete_tender(tender_id)
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(val_err)
+        )
+    except KeyError as key_err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(key_err)
+        )
+
+    # Audit log (intentionally kept even after deletion — never removed alongside the tender)
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "TENDER_DELETED",
+        "entity_type": "TENDER",
+        "entity_id": deleted.get("tender_number") or tender_id,
+        "details": (
+            f"Draft tender '{deleted.get('tender_number') or tender_id}' "
+            f"('{deleted.get('title', 'Untitled')}') permanently deleted by officer "
+            f"({current_user.get('name', current_user.get('email', ''))}) "
+            f"from status '{deleted.get('status', 'DRAFT')}'."
+        ),
+        "status": "SUCCESS"
+    })
+
+    return {
+        "message": f"Draft tender '{deleted.get('tender_number') or tender_id}' deleted successfully.",
+        "deleted_tender_id": deleted.get("tender_number") or tender_id,
+        "deleted_tender_title": deleted.get("title", ""),
+        "previous_status": deleted.get("status", "DRAFT")
     }
 
