@@ -18,6 +18,7 @@ import {
   ArrowLeftIcon
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
+import { getToken } from "@/lib/session";
 import { Bidder, Tender } from "@/lib/types";
 
 export default function ComparisonPage() {
@@ -26,12 +27,16 @@ export default function ComparisonPage() {
   const [loadingTenders, setLoadingTenders] = useState(true);
   const [loadingBidders, setLoadingBidders] = useState(false);
   const [bidderError, setBidderError] = useState<string | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<string | null>(null);
 
   // Workflow State
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedTenderId, setSelectedTenderId] = useState<string>("");
   const [comparisonCount, setComparisonCount] = useState<number | null>(null);
   const [selectedBidderIds, setSelectedBidderIds] = useState<Set<string>>(new Set());
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +151,46 @@ export default function ComparisonPage() {
     setStep(2);
   }
 
+  async function handleExportCST(format: "xlsx" | "pdf") {
+    try {
+      setExportingFormat(format);
+      const token = getToken();
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${API_BASE}/api/bidders/compare/export`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          tender_id: selectedTenderId,
+          bidder_ids: Array.from(selectedBidderIds),
+          format,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate CST export.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const tenderNumClean = (selectedTender?.tender_number || selectedTenderId || "tender").replace(/\//g, "_");
+      a.download = `CST_${tenderNumClean}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("Failed to export Comparative Statement of Tenders. Please try again.");
+    } finally {
+      setExportingFormat(null);
+    }
+  }
+
   // Matrix Configuration
   function formatBidderValue(b: Bidder, key: string) {
     switch (key) {
@@ -211,12 +256,27 @@ export default function ComparisonPage() {
               <ArrowLeftIcon className="size-3.5" />
               Change Selection
             </Button>
-            <Link href="/reports">
-              <Button size="sm" className="bg-blue-700 hover:bg-blue-800">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleExportCST("xlsx")}
+                loading={exportingFormat === "xlsx"}
+                className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+              >
                 <DownloadIcon className="size-3.5" />
-                Export CST
+                Export Excel (.xlsx)
               </Button>
-            </Link>
+              <Button
+                size="sm"
+                className="bg-blue-700 hover:bg-blue-800"
+                onClick={() => handleExportCST("pdf")}
+                loading={exportingFormat === "pdf"}
+              >
+                <DownloadIcon className="size-3.5" />
+                Export PDF (.pdf)
+              </Button>
+            </div>
           </div>
         )}
       </div>
