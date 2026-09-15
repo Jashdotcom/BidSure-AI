@@ -60,21 +60,28 @@ export default function ComparisonPage() {
     }
   }
 
+  function handleTenderChange(tenderId: string) {
+    setSelectedTenderId(tenderId);
+    setComparisonCount(null);
+    setSelectedBidderIds(new Set());
+  }
+
   async function fetchBidders(tenderId: string) {
     try {
       setLoadingBidders(true);
-      const query = tenderId ? `?tender_id=${tenderId}` : "";
+      const query = tenderId ? `?tender_id=${tenderId}&eligible_only=true` : "";
       const data = await apiRequest<Bidder[]>(`api/bidders${query}`);
-      // Filter out draft bids for comparison
-      const submittedBidders = data.filter((b) => b.status !== "DRAFT");
+      // Filter out draft, cancelled, withdrawn bids
+      const submittedBidders = data.filter((b) => {
+        const st = (b.status || "").trim().toUpperCase();
+        return !["DRAFT", "CANCELLED", "WITHDRAWN"].includes(st);
+      });
       setBidders(submittedBidders);
-
-      // Auto-adjust comparison count if available bidders are fewer
-      if (submittedBidders.length > 0 && submittedBidders.length < comparisonCount) {
-        setComparisonCount(Math.max(2, submittedBidders.length));
-      }
+      setComparisonCount(null);
+      setSelectedBidderIds(new Set());
     } catch (err) {
       console.error("Failed to load bidders", err);
+      setBidders([]);
     } finally {
       setLoadingBidders(false);
     }
@@ -83,6 +90,13 @@ export default function ComparisonPage() {
   // Derived state
   const selectedTender = tenders.find((t) => t.id === selectedTenderId || t.tender_number === selectedTenderId);
   const tenderLabel = selectedTender ? selectedTender.tender_number : selectedTenderId === "ALL" ? "All Global Bidders" : "";
+
+  const eligibleBidCount = bidders.length;
+  const maxSelectable = Math.min(eligibleBidCount, 6);
+  const availableCountOptions = useMemo(() => {
+    if (eligibleBidCount < 2) return [];
+    return Array.from({ length: maxSelectable - 2 + 1 }, (_, i) => i + 2);
+  }, [eligibleBidCount, maxSelectable]);
 
   const filteredBidders = useMemo(() => {
     return bidders.filter((b) => {
@@ -217,7 +231,7 @@ export default function ComparisonPage() {
                 <select
                   className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 font-medium focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={selectedTenderId}
-                  onChange={(e) => setSelectedTenderId(e.target.value)}
+                  onChange={(e) => handleTenderChange(e.target.value)}
                 >
                   <option value="" disabled>-- Select a Tender --</option>
                   <option value="ALL">Global / All Tenders (System Wide)</option>
