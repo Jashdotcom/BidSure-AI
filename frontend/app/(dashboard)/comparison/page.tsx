@@ -25,6 +25,7 @@ export default function ComparisonPage() {
   const [bidders, setBidders] = useState<Bidder[]>([]);
   const [loadingTenders, setLoadingTenders] = useState(true);
   const [loadingBidders, setLoadingBidders] = useState(false);
+  const [bidderError, setBidderError] = useState<string | null>(null);
 
   // Workflow State
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -45,6 +46,9 @@ export default function ComparisonPage() {
       fetchBidders(selectedTenderId === "ALL" ? "" : selectedTenderId);
     } else {
       setBidders([]);
+      setBidderError(null);
+      setComparisonCount(null);
+      setSelectedBidderIds(new Set());
     }
   }, [selectedTenderId]);
 
@@ -64,11 +68,13 @@ export default function ComparisonPage() {
     setSelectedTenderId(tenderId);
     setComparisonCount(null);
     setSelectedBidderIds(new Set());
+    setBidderError(null);
   }
 
   async function fetchBidders(tenderId: string) {
     try {
       setLoadingBidders(true);
+      setBidderError(null);
       const query = tenderId ? `?tender_id=${tenderId}&eligible_only=true` : "";
       const data = await apiRequest<Bidder[]>(`api/bidders${query}`);
       // Filter out draft, cancelled, withdrawn bids
@@ -82,6 +88,9 @@ export default function ComparisonPage() {
     } catch (err) {
       console.error("Failed to load bidders", err);
       setBidders([]);
+      setBidderError("Unable to load submitted bids for this tender. Please try again.");
+      setComparisonCount(null);
+      setSelectedBidderIds(new Set());
     } finally {
       setLoadingBidders(false);
     }
@@ -241,7 +250,32 @@ export default function ComparisonPage() {
                     </option>
                   ))}
                 </select>
-                {selectedTenderId && !loadingBidders && (
+                {!selectedTenderId && (
+                  <p className="text-xs text-slate-500 font-medium px-1">
+                    Select a tender first to see available bids.
+                  </p>
+                )}
+                {selectedTenderId && loadingBidders && (
+                  <p className="text-xs text-blue-600 font-semibold px-1">
+                    Loading eligible bids...
+                  </p>
+                )}
+                {selectedTenderId && bidderError && (
+                  <p className="text-xs text-red-600 font-semibold px-1">
+                    {bidderError}
+                  </p>
+                )}
+                {selectedTenderId && !loadingBidders && !bidderError && bidders.length === 0 && (
+                  <p className="text-xs text-amber-600 font-semibold px-1">
+                    No submitted bids are available for comparison.
+                  </p>
+                )}
+                {selectedTenderId && !loadingBidders && !bidderError && bidders.length === 1 && (
+                  <p className="text-xs text-amber-600 font-semibold px-1">
+                    At least 2 submitted bids are required for comparison.
+                  </p>
+                )}
+                {selectedTenderId && !loadingBidders && !bidderError && bidders.length >= 2 && (
                   <p className="text-xs text-blue-700 font-semibold px-1">
                     {bidders.length} eligible submissions found for this selection.
                   </p>
@@ -252,7 +286,7 @@ export default function ComparisonPage() {
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-700">How many bidders to compare?</label>
                 <div className="flex flex-wrap gap-3">
                   {[2, 3, 4, 5, 6].map((num) => {
-                    const isDisabled = bidders.length > 0 && num > bidders.length;
+                    const isDisabled = !selectedTenderId || loadingBidders || !!bidderError || bidders.length < 2 || num > bidders.length;
                     return (
                       <button
                         key={num}
@@ -270,7 +304,19 @@ export default function ComparisonPage() {
                   })}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  You can compare up to {Math.min(6, Math.max(2, bidders.length || 6))} bidders horizontally on standard screens.
+                  {!selectedTenderId
+                    ? "Select a tender first to see available bids."
+                    : loadingBidders
+                    ? "Loading eligible bids..."
+                    : bidderError
+                    ? "Unable to load submitted bids for this tender. Please try again."
+                    : bidders.length === 0
+                    ? "No submitted bids are available for comparison."
+                    : bidders.length === 1
+                    ? "At least 2 submitted bids are required for comparison."
+                    : bidders.length <= 6
+                    ? `You can compare up to ${bidders.length} bidders for this tender.`
+                    : "You can compare up to 6 bidders at once."}
                 </p>
               </div>
             </div>
@@ -279,7 +325,7 @@ export default function ComparisonPage() {
               <Button
                 size="lg"
                 onClick={goToStep2}
-                disabled={!selectedTenderId || bidders.length < 2}
+                disabled={!selectedTenderId || comparisonCount === null || bidders.length < 2 || comparisonCount > bidders.length}
                 className="w-full sm:w-auto"
               >
                 Continue to Select Bidders
