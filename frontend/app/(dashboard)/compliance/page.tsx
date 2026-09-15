@@ -152,8 +152,10 @@ const FALLBACK_COMPLIANCE_ABC: ComplianceResult = {
 export default function CompliancePage() {
   const searchParams = useSearchParams();
   const bidderParam = searchParams.get("bidder") || "BID-001";
+  const tenderParam = searchParams.get("tender") || "TND-2024-001";
 
   const [selectedBidderId, setSelectedBidderId] = useState(bidderParam);
+  const [selectedTenderId, setSelectedTenderId] = useState(tenderParam);
   const [evalData, setEvalData] = useState<ComplianceResult>(FALLBACK_COMPLIANCE_ABC);
   const [loading, setLoading] = useState(false);
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
@@ -166,14 +168,21 @@ export default function CompliancePage() {
   }, [bidderParam, selectedBidderId]);
 
   useEffect(() => {
-    loadBidderCompliance(selectedBidderId);
-  }, [selectedBidderId]);
+    if (tenderParam && tenderParam !== selectedTenderId) {
+      setSelectedTenderId(tenderParam);
+    }
+  }, [tenderParam, selectedTenderId]);
 
-  async function loadBidderCompliance(bidderId: string) {
+  useEffect(() => {
+    loadBidderCompliance(selectedBidderId, selectedTenderId);
+  }, [selectedBidderId, selectedTenderId]);
+
+  async function loadBidderCompliance(bidderId: string, tenderId?: string) {
     setLoading(true);
+    const targetTender = tenderId || selectedTenderId || "TND-2024-001";
     try {
       const res = await apiRequest<any>(
-        `/compliance/evaluate/TND-2024-001/${bidderId}`,
+        `/compliance/evaluate/${targetTender}/${bidderId}`,
         { method: "POST" }
       );
       if (res?.results) {
@@ -238,7 +247,7 @@ export default function CompliancePage() {
             <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-800">
               Deterministic Compliance Engine
             </span>
-            <span className="text-xs text-slate-500">· CPCL/PROC/SAFETY/2024/09</span>
+            <span className="text-xs text-slate-500">· {evalData.tender_id || selectedTenderId || "CPCL/PROC/2026/001"}</span>
           </div>
           <h1 className="mt-1 text-2xl font-extrabold text-slate-900">
             Compliance Verification & Evidence
@@ -252,7 +261,7 @@ export default function CompliancePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => loadBidderCompliance(selectedBidderId)}
+            onClick={() => loadBidderCompliance(selectedBidderId, selectedTenderId)}
             loading={loading}
           >
             <RefreshCwIcon className="size-3.5" />

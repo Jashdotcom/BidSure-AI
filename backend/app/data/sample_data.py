@@ -1020,7 +1020,7 @@ def delete_tender(tender_id: str) -> Dict[str, Any]:
 
         raise KeyError(f"Tender '{tender_id}' not found during removal.")
 
-
+def get_bidders_for_tender(tender_id: str) -> List[Dict[str, Any]]:
     return [
         b for b in SAMPLE_BIDDERS
         if b.get("tender_id") == tender_id or b.get("tender_number") == tender_id
