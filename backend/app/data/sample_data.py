@@ -1020,11 +1020,26 @@ def delete_tender(tender_id: str) -> Dict[str, Any]:
 
         raise KeyError(f"Tender '{tender_id}' not found during removal.")
 
-def get_bidders_for_tender(tender_id: str) -> List[Dict[str, Any]]:
-    return [
+def get_bidders_for_tender(tender_id: str, eligible_only: bool = False) -> List[Dict[str, Any]]:
+    if not tender_id:
+        return []
+    tender = get_tender_by_id(tender_id)
+    matched_ids = {str(tender_id).strip()}
+    if tender:
+        for k in ["id", "tender_number", "ref", "tender_id"]:
+            if tender.get(k):
+                matched_ids.add(str(tender[k]).strip())
+    res = [
         b for b in SAMPLE_BIDDERS
-        if b.get("tender_id") == tender_id or b.get("tender_number") == tender_id
+        if (b.get("tender_id") and str(b.get("tender_id")).strip() in matched_ids)
+        or (b.get("tender_number") and str(b.get("tender_number")).strip() in matched_ids)
     ]
+    if eligible_only:
+        res = [
+            b for b in res
+            if (b.get("status") or "").strip().upper() not in ["DRAFT", "CANCELLED", "WITHDRAWN"]
+        ]
+    return res
 
 def get_bidder_by_id(bidder_id: str) -> Optional[Dict[str, Any]]:
     for b in SAMPLE_BIDDERS:

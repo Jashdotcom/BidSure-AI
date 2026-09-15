@@ -29,7 +29,7 @@ export default function ComparisonPage() {
   // Workflow State
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedTenderId, setSelectedTenderId] = useState<string>("");
-  const [comparisonCount, setComparisonCount] = useState<number>(3);
+  const [comparisonCount, setComparisonCount] = useState<number | null>(null);
   const [selectedBidderIds, setSelectedBidderIds] = useState<Set<string>>(new Set());
 
   // Search & Filter State
