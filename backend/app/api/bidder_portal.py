@@ -171,7 +171,7 @@ async def get_bidder_dashboard(current_user: Dict[str, Any] = Depends(require_ro
         }
 
     # 1. Available Tenders (Public procurement opportunities)
-    raw_tenders = get_all_tenders()
+    raw_tenders = get_all_tenders(status="PUBLISHED")
     available_tenders = [
         {
             "id": t["id"],
@@ -274,7 +274,7 @@ async def list_available_tenders_for_bidder(
     """
     Returns public active tenders available for bidding.
     """
-    raw_tenders = get_all_tenders()
+    raw_tenders = get_all_tenders(status="PUBLISHED")
     return [
         {
             "id": t["id"],

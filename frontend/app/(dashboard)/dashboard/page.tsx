@@ -56,59 +56,6 @@ interface ActiveTenderItem {
   status: "DRAFT" | "ANALYZING" | "REQUIREMENTS_REVIEW" | "PUBLISHED" | "CLOSED" | string;
 }
 
-const ACTIVE_TENDERS_DATA: ActiveTenderItem[] = [
-  {
-    id: "TND-2026-001",
-    ref: "CPCL/PROC/2026/001",
-    title: "Industrial Safety Helmets & Impact Visors",
-    category: "Industrial PPE",
-    deadline: "18 Sep 2026",
-    bids_count: 3,
-    verified_count: 2,
-    status: "PUBLISHED",
-  },
-  {
-    id: "TND-2026-002",
-    ref: "CPCL/PROC/2026/002",
-    title: "Industrial Protective Equipment & Harness Kits",
-    category: "Safety & Fall Protection",
-    deadline: "22 Sep 2026",
-    bids_count: 5,
-    verified_count: 3,
-    status: "PUBLISHED",
-  },
-  {
-    id: "TND-2026-003",
-    ref: "CPCL/PROC/2026/003",
-    title: "Fire Safety Equipment & Hydrant Valves",
-    category: "Fire & Safety Systems",
-    deadline: "25 Sep 2026",
-    bids_count: 2,
-    verified_count: 1,
-    status: "REQUIREMENTS_REVIEW",
-  },
-  {
-    id: "TND-2026-004",
-    ref: "CPCL/PROC/2026/004",
-    title: "High-Pressure Refinery Valve Assemblies",
-    category: "Piping & Instrumentation",
-    deadline: "02 Oct 2026",
-    bids_count: 4,
-    verified_count: 4,
-    status: "PUBLISHED",
-  },
-  {
-    id: "TND-2026-005",
-    ref: "CPCL/PROC/2026/005",
-    title: "Hazardous Gas Detection Sensors (Fixed & Portable)",
-    category: "Environmental Monitoring",
-    deadline: "12 Oct 2026",
-    bids_count: 0,
-    verified_count: 0,
-    status: "PUBLISHED",
-  },
-];
-
 const RECENT_ACTIVITY_DATA = [
   {
     id: "ACT-01",
@@ -150,6 +97,9 @@ const RECENT_ACTIVITY_DATA = [
 export default function OfficerDashboardPage() {
   const [stats, setStats] = useState<OfficerDashboardStats>(DEFAULT_DASHBOARD_STATS);
   const [user, setUser] = useState<User | null>(null);
+  const [activeTenders, setActiveTenders] = useState<ActiveTenderItem[]>([]);
+  const [loadingTenders, setLoadingTenders] = useState(true);
+
   useEffect(() => {
     const u = getUser<User>();
     if (u) setUser(u);
@@ -172,7 +122,33 @@ export default function OfficerDashboardPage() {
         // Retain standard default stats
       }
     }
+
+    async function fetchActiveTenders() {
+      setLoadingTenders(true);
+      try {
+        const res = await apiRequest<any[]>("/tenders?status=PUBLISHED");
+        if (res && Array.isArray(res)) {
+          const mapped = res.map((t) => ({
+            id: t.id,
+            ref: t.tender_number || t.ref || t.tender_id || t.id,
+            title: t.title || "Untitled Tender",
+            category: t.category || "General Procurement",
+            deadline: t.deadline || t.closing_date || "Open",
+            bids_count: t.bids_count ?? (Array.isArray(t.bidders) ? t.bidders.length : 0),
+            verified_count: t.verified_count ?? 0,
+            status: t.status || "PUBLISHED",
+          }));
+          setActiveTenders(mapped);
+        }
+      } catch {
+        // Fallback or empty
+      } finally {
+        setLoadingTenders(false);
+      }
+    }
+
     fetchStats();
+    fetchActiveTenders();
   }, []);
 
   const officerName = user?.name || "Procurement Officer";
@@ -275,23 +251,25 @@ export default function OfficerDashboardPage() {
       {/* ========================================================================= */}
       <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
         {/* Active Tenders */}
-        <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Active Tenders
-            </span>
-            <div className="rounded-lg bg-blue-50 p-1.5 text-blue-700 border border-blue-100">
-              <FileTextIcon className="size-3.5" />
+        <Link href="/tenders" className="block group">
+          <Card className="p-4 border-slate-200 group-hover:border-blue-300 group-hover:shadow-sm transition-all shadow-xs h-full">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 group-hover:text-blue-700 transition-colors">
+                Active Tenders
+              </span>
+              <div className="rounded-lg bg-blue-50 p-1.5 text-blue-700 border border-blue-100 group-hover:bg-blue-100 transition-colors">
+                <FileTextIcon className="size-3.5" />
+              </div>
             </div>
-          </div>
-          <p className="mt-2 text-2xl font-extrabold text-slate-900 leading-none">
-            {stats.active_tenders}
-          </p>
-          <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-blue-700">
-            <TrendingUpIcon className="size-3 text-blue-600" />
-            <span>+2 this month</span>
-          </div>
-        </Card>
+            <p className="mt-2 text-2xl font-extrabold text-slate-900 leading-none">
+              {stats.active_tenders}
+            </p>
+            <div className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-blue-700">
+              <TrendingUpIcon className="size-3 text-blue-600" />
+              <span>Live in system</span>
+            </div>
+          </Card>
+        </Link>
 
         {/* Total Bids */}
         <Card className="p-4 border-slate-200 hover:border-slate-300 transition-all shadow-xs">
@@ -425,71 +403,89 @@ export default function OfficerDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {ACTIVE_TENDERS_DATA.map((tender) => (
-                <tr
-                  key={tender.id}
-                  className="hover:bg-slate-50/70 transition-colors group"
-                >
-                  {/* Tender ID */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="font-mono font-bold text-blue-700 bg-blue-50/80 px-2 py-1 rounded border border-blue-200/60 text-[11px]">
-                      {tender.ref}
-                    </span>
-                  </td>
-
-                  {/* Tender Title */}
-                  <td className="px-4 py-3.5">
-                    <p className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-                      {tender.title}
-                    </p>
-                    <p className="text-[10px] text-slate-500 font-medium">
-                      Category: {tender.category}
-                    </p>
-                  </td>
-
-                  {/* Deadline */}
-                  <td className="px-4 py-3.5 whitespace-nowrap font-medium text-slate-700">
-                    <div className="flex items-center gap-1.5 text-slate-600">
-                      <ClockIcon className="size-3 text-slate-400" />
-                      <span>{tender.deadline}</span>
+              {loadingTenders ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="size-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                      <span className="font-medium text-xs">Loading active tenders...</span>
                     </div>
                   </td>
-
-                  {/* Bids */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="font-bold text-slate-800">
-                      {tender.bids_count} Bids
-                    </span>
-                  </td>
-
-                  {/* Verification */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50/60 px-2 py-0.5 rounded border border-emerald-200/60">
-                      <CheckCircleIcon className="size-3 text-emerald-600" />
-                      {tender.verified_count} Verified
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <TenderStatusBadge status={tender.status} />
-                  </td>
-
-                  {/* Action */}
-                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
-                    <Link href="/tenders">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                      >
-                        <EyeIcon className="size-3 text-slate-500" />
-                        View
-                      </Button>
-                    </Link>
+                </tr>
+              ) : activeTenders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    <p className="font-semibold text-xs text-slate-700">No active tenders found</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Published tenders will appear here.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                activeTenders.map((tender) => (
+                  <tr
+                    key={tender.id}
+                    className="hover:bg-slate-50/70 transition-colors group"
+                  >
+                    {/* Tender ID */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className="font-mono font-bold text-blue-700 bg-blue-50/80 px-2 py-1 rounded border border-blue-200/60 text-[11px]">
+                        {tender.ref}
+                      </span>
+                    </td>
+
+                    {/* Tender Title */}
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                        {tender.title}
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-medium">
+                        Category: {tender.category}
+                      </p>
+                    </td>
+
+                    {/* Deadline */}
+                    <td className="px-4 py-3.5 whitespace-nowrap font-medium text-slate-700">
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <ClockIcon className="size-3 text-slate-400" />
+                        <span>{tender.deadline}</span>
+                      </div>
+                    </td>
+
+                    {/* Bids */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className="font-bold text-slate-800">
+                        {tender.bids_count} Bids
+                      </span>
+                    </td>
+
+                    {/* Verification */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50/60 px-2 py-0.5 rounded border border-emerald-200/60">
+                        <CheckCircleIcon className="size-3 text-emerald-600" />
+                        {tender.verified_count} Verified
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <TenderStatusBadge status={tender.status} />
+                    </td>
+
+                    {/* Action */}
+                    <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                      <Link href="/tenders">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                        >
+                          <EyeIcon className="size-3 text-slate-500" />
+                          View
+                        </Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

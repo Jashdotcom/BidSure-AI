@@ -20,249 +20,6 @@ import {
 import { apiRequest } from "@/lib/api";
 import { Tender, Requirement } from "@/lib/types";
 
-const INITIAL_SAMPLE_TENDERS: Tender[] = [
-  {
-    id: "TND-2026-001",
-    tender_number: "CPCL/PROC/2026/001",
-    ref: "CPCL/PROC/2026/001",
-    tender_id: "CPCL/PROC/2026/001",
-    title: "Industrial Safety Helmets & Impact Visors",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Fire & Safety Department, Manali Refinery",
-    status: "PUBLISHED",
-    estimated_value: 45000000.0,
-    emd_amount: 900000.0,
-    publish_date: "2026-07-01T09:00:00Z",
-    closing_date: "2026-09-18T17:30:00Z",
-    deadline: "18 Sep 2026",
-    category: "Industrial PPE",
-    bids_count: 3,
-    verified_count: 2,
-    description:
-      "Annual procurement contract for supply and certification of industrial safety helmets, chemical impact visors, flame-resistant coveralls, and respiratory protection apparatus.",
-  },
-  {
-    id: "TND-2026-002",
-    tender_number: "CPCL/PROC/2026/002",
-    ref: "CPCL/PROC/2026/002",
-    tender_id: "CPCL/PROC/2026/002",
-    title: "Industrial Protective Equipment & Harness Kits",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Safety & Fall Protection Wing",
-    status: "PUBLISHED",
-    estimated_value: 32000000.0,
-    emd_amount: 640000.0,
-    publish_date: "2026-07-10T10:00:00Z",
-    closing_date: "2026-09-22T17:00:00Z",
-    deadline: "22 Sep 2026",
-    category: "Safety & Fall Protection",
-    bids_count: 5,
-    verified_count: 3,
-    description:
-      "Procurement of EN-certified full-body harnesses, shock-absorbing lanyards, and rescue winch kits for elevated refinery structures.",
-  },
-  {
-    id: "TND-2026-003",
-    tender_number: "CPCL/PROC/2026/003",
-    ref: "CPCL/PROC/2026/003",
-    tender_id: "CPCL/PROC/2026/003",
-    title: "Fire Safety Equipment & Hydrant Valves",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Fire & Safety Department",
-    status: "REQUIREMENTS_REVIEW",
-    estimated_value: 58000000.0,
-    emd_amount: 1160000.0,
-    publish_date: "2026-07-15T09:00:00Z",
-    closing_date: "2026-09-25T15:00:00Z",
-    deadline: "25 Sep 2026",
-    category: "Fire & Safety Systems",
-    bids_count: 2,
-    verified_count: 1,
-    description:
-      "Supply of UL/FM certified fire hydrant landing valves, high-pressure foam monitors, and breathing apparatus cylinders.",
-  },
-  {
-    id: "TND-2026-004",
-    tender_number: "CPCL/PROC/2026/004",
-    ref: "CPCL/PROC/2026/004",
-    tender_id: "CPCL/PROC/2026/004",
-    title: "High-Pressure Refinery Valve Assemblies",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Mechanical Engineering Division",
-    status: "PUBLISHED",
-    estimated_value: 82000000.0,
-    emd_amount: 1640000.0,
-    publish_date: "2026-07-20T10:00:00Z",
-    closing_date: "2026-10-02T15:00:00Z",
-    deadline: "02 Oct 2026",
-    category: "Piping & Instrumentation",
-    bids_count: 4,
-    verified_count: 4,
-    description:
-      "Supply of ASTM A335 Grade P91 seamless valves, alloy piping assemblies, and IBR certified flanged connections for Crude Distillation Unit.",
-  },
-  {
-    id: "TND-2026-005",
-    tender_number: "CPCL/PROC/2026/005",
-    ref: "CPCL/PROC/2026/005",
-    tender_id: "CPCL/PROC/2026/005",
-    title: "Hazardous Gas Detection Sensors (Fixed & Portable)",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Environmental & Safety Monitoring Wing",
-    status: "PUBLISHED",
-    estimated_value: 24000000.0,
-    emd_amount: 480000.0,
-    publish_date: "2026-08-01T10:00:00Z",
-    closing_date: "2026-10-12T17:00:00Z",
-    deadline: "12 Oct 2026",
-    category: "Environmental Monitoring",
-    bids_count: 0,
-    verified_count: 0,
-    description:
-      "Turnkey supply, calibration, and wireless integration of multi-gas detectors (H2S, LEL, CO, O2) across refinery processing blocks.",
-  },
-  {
-    id: "TND-2026-006",
-    tender_number: "CPCL/PROC/2026/006",
-    ref: "CPCL/PROC/2026/006",
-    tender_id: "CPCL/PROC/2026/006",
-    title: "Crude Distillation Unit Heat Exchanger Tubes",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Heat Transfer & Thermal Operations",
-    status: "ANALYZING",
-    estimated_value: 65000000.0,
-    emd_amount: 1300000.0,
-    publish_date: "2026-08-05T09:00:00Z",
-    closing_date: "2026-10-18T15:00:00Z",
-    deadline: "18 Oct 2026",
-    category: "Thermal Equipment",
-    bids_count: 3,
-    verified_count: 2,
-    description:
-      "Supply and hydrostatic testing of titanium and duplex stainless steel seamless heat exchanger tube bundles for CDU pre-heat train.",
-  },
-  {
-    id: "TND-2026-007",
-    tender_number: "CPCL/PROC/2026/007",
-    ref: "CPCL/PROC/2026/007",
-    tender_id: "CPCL/PROC/2026/007",
-    title: "Centrifugal Process Pumps & Mechanical Seals",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Rotating Machinery Division",
-    status: "PUBLISHED",
-    estimated_value: 48000000.0,
-    emd_amount: 960000.0,
-    publish_date: "2026-08-10T11:00:00Z",
-    closing_date: "2026-10-25T17:00:00Z",
-    deadline: "25 Oct 2026",
-    category: "Rotating Machinery",
-    bids_count: 4,
-    verified_count: 3,
-    description:
-      "Procurement of API 610 compliant centrifugal hydrocarbon transfer pumps with dual pressurized dry gas cartridge seals.",
-  },
-  {
-    id: "TND-2026-008",
-    tender_number: "CPCL/PROC/2026/008",
-    ref: "CPCL/PROC/2026/008",
-    tender_id: "CPCL/PROC/2026/008",
-    title: "Refinery Effluent Treatment Plant Sludge Dewatering",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Environmental Management & ETP",
-    status: "REQUIREMENTS_REVIEW",
-    estimated_value: 36000000.0,
-    emd_amount: 720000.0,
-    publish_date: "2026-08-12T10:00:00Z",
-    closing_date: "2026-10-30T16:00:00Z",
-    deadline: "30 Oct 2026",
-    category: "Water & Effluent Treatment",
-    bids_count: 2,
-    verified_count: 2,
-    description:
-      "Comprehensive service contract for continuous mechanical sludge dewatering, decanter centrifuge operations, and bio-sludge handling.",
-  },
-  {
-    id: "TND-2026-009",
-    tender_number: "CPCL/PROC/2026/009",
-    ref: "CPCL/PROC/2026/009",
-    tender_id: "CPCL/PROC/2026/009",
-    title: "Flame-Retardant Control & Power Cabling Systems",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Electrical Engineering Department",
-    status: "DRAFT",
-    estimated_value: 21000000.0,
-    emd_amount: 420000.0,
-    publish_date: "2026-08-15T09:00:00Z",
-    closing_date: "2026-11-05T17:00:00Z",
-    deadline: "05 Nov 2026",
-    category: "Electrical Systems",
-    bids_count: 0,
-    verified_count: 0,
-    description:
-      "Supply of FRLS (Flame Retardant Low Smoke) XLPE insulated armored copper cables for refinery substation modernization.",
-  },
-  {
-    id: "TND-2026-010",
-    tender_number: "CPCL/PROC/2026/010",
-    ref: "CPCL/PROC/2026/010",
-    tender_id: "CPCL/PROC/2026/010",
-    title: "Nitrogen Generation & Cryogenic Storage Package",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Utilities & Offsites Division",
-    status: "PUBLISHED",
-    estimated_value: 79000000.0,
-    emd_amount: 1580000.0,
-    publish_date: "2026-08-18T10:00:00Z",
-    closing_date: "2026-11-15T15:00:00Z",
-    deadline: "15 Nov 2026",
-    category: "Cryogenic & Gas Systems",
-    bids_count: 1,
-    verified_count: 1,
-    description:
-      "Design, engineering, supply, and commissioning of high-purity PSA nitrogen generation unit with vacuum-insulated liquid nitrogen buffer tank.",
-  },
-  {
-    id: "TND-2026-011",
-    tender_number: "CPCL/PROC/2026/011",
-    ref: "CPCL/PROC/2026/011",
-    tender_id: "CPCL/PROC/2026/011",
-    title: "SCADA & Distributed Control System (DCS) Upgradation",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Instrumentation & Control Engineering",
-    status: "CLOSED",
-    estimated_value: 124000000.0,
-    emd_amount: 2480000.0,
-    publish_date: "2026-06-01T09:00:00Z",
-    closing_date: "2026-08-15T17:00:00Z",
-    deadline: "15 Aug 2026",
-    category: "Instrumentation & Automation",
-    bids_count: 4,
-    verified_count: 4,
-    description:
-      "Turnkey upgradation of Yokogawa/Honeywell DCS control consoles, safety instrumented system (SIS), and cybersecurity perimeter.",
-  },
-  {
-    id: "TND-2024-001",
-    tender_number: "CPCL/PROC/SAFETY/2024/09",
-    ref: "CPCL/PROC/SAFETY/2024/09",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    title: "Supply and Maintenance of High-Grade Industrial Safety & Fire Protection Equipment",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Fire & Safety Department, Manali Refinery",
-    status: "CLOSED",
-    estimated_value: 45000000.0,
-    emd_amount: 900000.0,
-    publish_date: "2024-07-01T09:00:00Z",
-    closing_date: "2024-08-30T17:30:00Z",
-    deadline: "30 Aug 2024",
-    category: "Goods & Safety Systems",
-    bids_count: 3,
-    verified_count: 3,
-    description:
-      "Annual contract for supply of certified flame-resistant coveralls, SCBA breathing apparatus, chemical safety helmets, and fall protection harnesses.",
-  },
-];
-
 const DEFAULT_REQUIREMENTS: Requirement[] = [
   {
     id: "REQ-001",
@@ -381,12 +138,12 @@ export default function TendersPage() {
   const initialQuery = searchParams.get("query") || "";
 
   const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const [tenders, setTenders] = useState<Tender[]>(INITIAL_SAMPLE_TENDERS);
-  const [loading, setLoading] = useState(false);
+  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Active view: "LIST" or "CLAUSE_SCRUTINY"
   const [activeView, setActiveView] = useState<"LIST" | "CLAUSE_SCRUTINY">("LIST");
-  const [selectedTender, setSelectedTender] = useState<Tender>(INITIAL_SAMPLE_TENDERS[0]);
+  const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
 
   // Clause Extraction & Scrutiny State
   const [requirements, setRequirements] = useState<Requirement[]>(DEFAULT_REQUIREMENTS);
@@ -466,35 +223,14 @@ export default function TendersPage() {
       if (res && Array.isArray(res)) {
         setTenders(res);
       } else {
-        // Local in-memory filter
-        filterLocalTenders(query);
+        setTenders([]);
       }
     } catch {
-      filterLocalTenders(query);
+      setTenders([]);
     } finally {
       setLoading(false);
     }
   }, []);
-
-  function filterLocalTenders(query: string) {
-    let list = [...INITIAL_SAMPLE_TENDERS];
-    if (query) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (t) =>
-          t.tender_number?.toLowerCase().includes(q) ||
-          t.ref?.toLowerCase().includes(q) ||
-          t.tender_id?.toLowerCase().includes(q) ||
-          t.id?.toLowerCase().includes(q) ||
-          t.title?.toLowerCase().includes(q) ||
-          t.organization?.toLowerCase().includes(q) ||
-          t.department?.toLowerCase().includes(q) ||
-          t.category?.toLowerCase().includes(q) ||
-          t.description?.toLowerCase().includes(q)
-      );
-    }
-    setTenders(list);
-  }
 
   // Refetch when search params change
   useEffect(() => {
@@ -668,6 +404,7 @@ export default function TendersPage() {
 
   // AI Clause Extraction on Scrutiny page
   function handleAnalyze() {
+    if (!selectedTender) return;
     setAnalyzing(true);
     setIsApproved(false);
     setApprovalMessage(null);
@@ -679,7 +416,7 @@ export default function TendersPage() {
         setTenders((prev) =>
           prev.map((t) => (t.id === selectedTender.id ? { ...t, status: "REQUIREMENTS_REVIEW" } : t))
         );
-        setSelectedTender((prev) => ({ ...prev, status: "REQUIREMENTS_REVIEW" }));
+        setSelectedTender((prev) => (prev ? { ...prev, status: "REQUIREMENTS_REVIEW" } : null));
         try {
           await apiRequest(`/tenders/${encodeURIComponent(selectedTender.id)}`, {
             method: "PATCH",
@@ -730,7 +467,7 @@ export default function TendersPage() {
       weight: Number(newReq.weight) || 10,
       constraint_type: newReq.constraint_type as any,
       validation_source: "Officer Scrutiny & Rule Extractor",
-      source_document: `${selectedTender.tender_number?.replace(/\//g, "_") || "Tender_Document"}.pdf`,
+      source_document: `${selectedTender?.tender_number?.replace(/\//g, "_") || "Tender_Document"}.pdf`,
       source_page: 1,
       confidence: 0.96,
     };
@@ -1048,7 +785,7 @@ export default function TendersPage() {
       )}
 
       {/* VIEW 2: AI CLAUSE SCRUTINY & RULE EXTRACTOR (Activated via "Scrutinize Clauses" on a tender card) */}
-      {activeView === "CLAUSE_SCRUTINY" && (
+      {activeView === "CLAUSE_SCRUTINY" && selectedTender && (
         <div className="space-y-5 animate-in fade-in duration-150">
           {/* Scrutiny Header */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -1238,6 +975,17 @@ export default function TendersPage() {
               </table>
             </div>
           </Card>
+        </div>
+      )}
+
+      {activeView === "CLAUSE_SCRUTINY" && !selectedTender && (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
+          <FileTextIcon className="size-8 text-slate-400 mb-2" />
+          <h3 className="text-sm font-bold text-slate-900">No Tender Selected</h3>
+          <p className="mt-1 text-xs text-slate-500">Please select a tender from the list to view its clauses.</p>
+          <Button variant="outline" size="sm" onClick={() => setActiveView("LIST")} className="mt-4 text-xs font-semibold">
+            Back to Tenders
+          </Button>
         </div>
       )}
 

@@ -6,6 +6,15 @@ const backendUrl =
 
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: "/dashboard/tenders",
+        destination: "/tenders",
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
