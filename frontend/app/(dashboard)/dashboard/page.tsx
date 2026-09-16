@@ -586,12 +586,6 @@ export default function OfficerDashboardPage() {
                 Recent Bid Activity
               </h3>
             </div>
-            <Link
-              href="/audit"
-              className="text-[11px] font-bold text-blue-700 hover:underline"
-            >
-              Audit Trail
-            </Link>
           </div>
 
           <div className="divide-y divide-slate-100 p-2">
