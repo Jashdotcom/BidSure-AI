@@ -139,6 +139,27 @@ const DEFAULT_REQUIREMENTS: Requirement[] = [
 
 type LifecycleTab = "ACTIVE" | "INACTIVE" | "DRAFT" | "ALL";
 
+export type StatusFilterOption =
+  | "ALL"
+  | "ACTIVE"
+  | "INACTIVE"
+  | "CLOSING_SOON"
+  | "CLOSED"
+  | "PUBLISHED"
+  | "UNDER_REVIEW"
+  | "DRAFT";
+
+const STATUS_FILTER_OPTIONS: { value: StatusFilterOption; label: string }[] = [
+  { value: "ALL", label: "All Tenders" },
+  { value: "ACTIVE", label: "Active Tenders" },
+  { value: "INACTIVE", label: "Inactive Tenders" },
+  { value: "CLOSING_SOON", label: "Closing Soon" },
+  { value: "CLOSED", label: "Closed" },
+  { value: "PUBLISHED", label: "Published / Open" },
+  { value: "UNDER_REVIEW", label: "Under Review" },
+  { value: "DRAFT", label: "Drafts" },
+];
+
 export default function TendersPage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -154,6 +175,7 @@ export default function TendersPage() {
   const [activeTab, setActiveTab] = useState<LifecycleTab>(initialTab);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<StatusFilterOption>("ALL");
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -280,15 +302,58 @@ export default function TendersPage() {
     setSearchTerm(q);
   }, [searchParams]);
 
+  // Imminent deadline check for Closing Soon option
+  function isTenderClosingSoon(tender: Tender): boolean {
+    const st = (tender.status || "").toUpperCase();
+    if (st !== "PUBLISHED" && st !== "OPEN" && st !== "ACTIVE") {
+      return false;
+    }
+
+    const rawDate = tender.closing_date || tender.submission_deadline || tender.deadline;
+    if (!rawDate) return false;
+
+    try {
+      let closingDt: Date | null = null;
+      if (rawDate.includes("T")) {
+        closingDt = new Date(rawDate);
+      } else {
+        closingDt = new Date(rawDate.includes("-") ? `${rawDate}T23:59:59Z` : rawDate);
+      }
+
+      if (closingDt && !isNaN(closingDt.getTime())) {
+        const now = Date.now();
+        const diffMs = closingDt.getTime() - now;
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+        return diffDays >= -2 && diffDays <= 30;
+      }
+    } catch {
+      // fallback
+    }
+
+    const lower = String(rawDate).toLowerCase();
+    return lower.includes("sep 2026") || lower.includes("oct 2026") || lower.includes("soon");
+  }
+
   function handleTabChange(tab: LifecycleTab) {
     setActiveTab(tab);
+    setSelectedStatus("ALL");
     updateUrlParams(searchTerm, tab);
+  }
+
+  function handleStatusChange(newStatus: StatusFilterOption) {
+    setSelectedStatus(newStatus);
+    if (newStatus === "ALL") {
+      setActiveTab("ALL");
+      updateUrlParams(searchTerm, "ALL");
+    }
   }
 
   function handleClearFilters() {
     setSearchTerm("");
     setSelectedCategory("ALL");
-    updateUrlParams("", activeTab);
+    setSelectedStatus("ALL");
+    setActiveTab("ALL");
+    updateUrlParams("", "ALL");
   }
 
   // Extract unique categories for filter dropdown
@@ -325,31 +390,58 @@ export default function TendersPage() {
     };
   }, [tenders]);
 
-  // Filter tenders based on tab, search term, and category
+  // Filter tenders based on tab, status filter, search term, and category
   const filteredTenders = useMemo(() => {
     return tenders.filter((t) => {
       const st = (t.status || "DRAFT").toUpperCase();
+      const isTenderActive = st === "PUBLISHED" || st === "OPEN" || st === "ACTIVE";
+      const isTenderClosed = st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED" || st === "INACTIVE";
+      const isTenderDraft = st === "DRAFT" || st === "ANALYZING" || st === "REQUIREMENTS_REVIEW";
+      const isTenderUnderReview =
+        st === "ANALYZING" ||
+        st === "REQUIREMENTS_REVIEW" ||
+        st === "UNDER_REVIEW" ||
+        st === "EVALUATING" ||
+        st === "REVIEW";
+      const isTenderPublished = st === "PUBLISHED" || st === "OPEN";
 
-      // Tab filter
-      let matchesTab = true;
-      if (activeTab === "ACTIVE") {
-        matchesTab = st === "PUBLISHED" || st === "OPEN" || st === "ACTIVE";
-      } else if (activeTab === "INACTIVE") {
-        matchesTab = st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED";
-      } else if (activeTab === "DRAFT") {
-        matchesTab = st === "DRAFT" || st === "ANALYZING" || st === "REQUIREMENTS_REVIEW";
-      } else if (activeTab === "ALL") {
-        matchesTab = true;
+      // 1. Status Filter Evaluation
+      let matchesStatus = true;
+      if (selectedStatus === "ACTIVE") {
+        matchesStatus = isTenderActive;
+      } else if (selectedStatus === "INACTIVE") {
+        matchesStatus = isTenderClosed;
+      } else if (selectedStatus === "CLOSING_SOON") {
+        matchesStatus = isTenderClosingSoon(t);
+      } else if (selectedStatus === "CLOSED") {
+        matchesStatus = st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED";
+      } else if (selectedStatus === "PUBLISHED") {
+        matchesStatus = isTenderPublished;
+      } else if (selectedStatus === "UNDER_REVIEW") {
+        matchesStatus = isTenderUnderReview;
+      } else if (selectedStatus === "DRAFT") {
+        matchesStatus = isTenderDraft;
+      } else if (selectedStatus === "ALL") {
+        // Fallback to activeTab lifecycle tab when status filter is ALL
+        if (activeTab === "ACTIVE") {
+          matchesStatus = isTenderActive;
+        } else if (activeTab === "INACTIVE") {
+          matchesStatus = isTenderClosed;
+        } else if (activeTab === "DRAFT") {
+          matchesStatus = isTenderDraft;
+        } else if (activeTab === "ALL") {
+          matchesStatus = true;
+        }
       }
 
-      if (!matchesTab) return false;
+      if (!matchesStatus) return false;
 
-      // Category filter
+      // 2. Category filter
       if (selectedCategory !== "ALL" && t.category !== selectedCategory) {
         return false;
       }
 
-      // Keyword Search filter
+      // 3. Keyword Search filter
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
         const num = (t.tender_number || t.ref || t.tender_id || t.id || "").toLowerCase();
@@ -370,7 +462,7 @@ export default function TendersPage() {
 
       return true;
     });
-  }, [tenders, activeTab, selectedCategory, searchTerm]);
+  }, [tenders, selectedStatus, activeTab, selectedCategory, searchTerm]);
 
   // Open Manage Tender Modal (with sensible pre-filled deadline if available)
   function handleOpenManageModal(tender: Tender) {
@@ -936,10 +1028,10 @@ export default function TendersPage() {
             </div>
           </div>
 
-          {/* SEARCH & CATEGORY FILTER CONTROLS */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          {/* SEARCH, STATUS & CATEGORY FILTER CONTROLS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3 items-center">
             {/* Search Input */}
-            <div className="relative md:col-span-8">
+            <div className="relative col-span-1 sm:col-span-2 md:col-span-5">
               <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
               <input
                 type="text"
@@ -963,11 +1055,44 @@ export default function TendersPage() {
               )}
             </div>
 
-            {/* Category Filter Dropdown */}
-            <div className="relative md:col-span-4 flex items-center gap-2">
+            {/* Filter by Status Dropdown */}
+            <div className="relative col-span-1 sm:col-span-1 md:col-span-3">
               <div className="relative w-full">
+                <label htmlFor="status-filter" className="sr-only">
+                  Filter by Status
+                </label>
                 <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
                 <select
+                  id="status-filter"
+                  aria-label="Filter by Status"
+                  title="Filter by Status"
+                  value={selectedStatus}
+                  onChange={(e) => handleStatusChange(e.target.value as StatusFilterOption)}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-xs transition-all cursor-pointer appearance-none"
+                >
+                  {STATUS_FILTER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
+                  ▼
+                </div>
+              </div>
+            </div>
+
+            {/* Category Filter Dropdown & Reset */}
+            <div className="relative col-span-1 sm:col-span-1 md:col-span-4 flex items-center gap-2">
+              <div className="relative w-full">
+                <label htmlFor="category-filter" className="sr-only">
+                  Filter by Category
+                </label>
+                <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
+                <select
+                  id="category-filter"
+                  aria-label="Filter by Category"
+                  title="Filter by Category"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-xs transition-all cursor-pointer appearance-none"
@@ -984,7 +1109,7 @@ export default function TendersPage() {
                 </div>
               </div>
 
-              {(searchTerm || selectedCategory !== "ALL") && (
+              {(searchTerm || selectedCategory !== "ALL" || selectedStatus !== "ALL") && (
                 <button
                   type="button"
                   onClick={handleClearFilters}
@@ -1011,8 +1136,8 @@ export default function TendersPage() {
               </div>
               <h3 className="text-base font-bold text-slate-900">No tenders found in this view</h3>
               <p className="mt-1 max-w-md text-xs text-slate-500 leading-relaxed">
-                {searchTerm || selectedCategory !== "ALL"
-                  ? `No tender notices match the selected criteria (Tab: ${activeTab}, Search: "${searchTerm}", Category: ${selectedCategory}).`
+                {searchTerm || selectedCategory !== "ALL" || selectedStatus !== "ALL"
+                  ? `No tender notices match the selected criteria (${selectedStatus !== "ALL" ? `Status: ${STATUS_FILTER_OPTIONS.find((o) => o.value === selectedStatus)?.label}, ` : `Tab: ${activeTab}, `}${searchTerm ? `Search: "${searchTerm}", ` : ""}${selectedCategory !== "ALL" ? `Category: ${selectedCategory}` : ""}).`
                   : activeTab === "INACTIVE"
                   ? "There are currently no closed or archived tenders in the database."
                   : activeTab === "DRAFT"
@@ -1020,14 +1145,14 @@ export default function TendersPage() {
                   : "No active procurement notices available."}
               </p>
               <div className="mt-4 flex items-center gap-2">
-                {(searchTerm || selectedCategory !== "ALL") && (
+                {(searchTerm || selectedCategory !== "ALL" || selectedStatus !== "ALL") && (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleClearFilters}
                     className="text-xs font-semibold"
                   >
-                    Clear Search & Filters
+                    Clear Search &amp; Filters
                   </Button>
                 )}
                 {activeTab !== "ACTIVE" && (
