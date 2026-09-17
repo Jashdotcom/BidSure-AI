@@ -522,15 +522,21 @@ class RankingEngine:
 
         # Section A: Eligibility Analysis
         if elig_st == "NOT_ELIGIBLE":
-            fail_clauses = [f"{f['title']} ({f['clause_reference']})" for f in item["mandatory_failures"]]
-            elig_text = f"Disqualified: Failed mandatory procurement criteria: {', '.join(fail_clauses)}."
+            fail_clauses = [
+                f"{f.get('requirement_name') or f.get('title') or 'Mandatory Criteria'} ({f.get('clause_reference') or f.get('clause') or 'Clause'})"
+                for f in item.get("mandatory_failures", [])
+            ]
+            elig_text = f"Disqualified: Failed mandatory procurement criteria: {', '.join(fail_clauses) if fail_clauses else 'Mandatory requirements not met'}."
             elig_icon = "FAIL"
         elif elig_st == "REQUIRES_REVIEW":
-            rev_clauses = [f"{r['title']} ({r['clause_reference']})" for r in item["review_requirements"]]
-            elig_text = f"Provisional: {len(item['review_requirements'])} requirement(s) pending official committee review: {', '.join(rev_clauses)}."
+            rev_clauses = [
+                f"{r.get('requirement_name') or r.get('title') or 'Requirement'} ({r.get('clause_reference') or r.get('clause') or 'Clause'})"
+                for r in item.get("review_requirements", [])
+            ]
+            elig_text = f"Provisional: {len(item.get('review_requirements', []))} requirement(s) pending official committee review: {', '.join(rev_clauses) if rev_clauses else 'Pending review'}."
             elig_icon = "REVIEW"
         else:
-            elig_text = f"Qualified: Successfully satisfied all {len(item['passed_requirements'])} mandatory tender qualification criteria."
+            elig_text = f"Qualified: Successfully satisfied all {len(item.get('passed_requirements', []))} mandatory tender qualification criteria."
             elig_icon = "PASS"
 
         # Section B: Technical Compliance
@@ -580,11 +586,16 @@ class RankingEngine:
 
         # Section E: Narrative Summary & Primary Reason
         if elig_st == "NOT_ELIGIBLE":
-            first_fail = item["mandatory_failures"][0]
+            failures = item.get("mandatory_failures", [])
+            first_fail = failures[0] if failures else {}
+            req_title = first_fail.get("requirement_name") or first_fail.get("title") or "Mandatory Criteria"
+            req_clause = first_fail.get("clause_reference") or first_fail.get("clause") or "Clause"
+            req_val = first_fail.get("required_value") or "Mandatory requirement"
+            b_val = first_fail.get("bidder_value") or "Non-compliant"
             narrative = (
                 f"{b_name} is disqualified from financial evaluation because mandatory requirement "
-                f"'{first_fail['requirement_name']}' ({first_fail['clause_reference']}) was not met. "
-                f"Tender mandates '{first_fail['required_value']}', while submitted value was '{first_fail['bidder_value']}'."
+                f"'{req_title}' ({req_clause}) was not met. "
+                f"Tender mandates '{req_val}', while submitted value was '{b_val}'."
             )
         elif b_rank == 1 and method_type == "L1":
             narrative = (

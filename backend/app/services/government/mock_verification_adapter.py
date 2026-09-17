@@ -53,13 +53,13 @@ class MockGovernmentVerificationService:
         results["debarment"] = await self.blacklisting.verify(company_name, metadata)
 
         # 6. OEM Authorization
-        oem_claim = bidder_data.get("oem_authorization")
+        oem_claim = bidder_data.get("oem_authorization") or bidder_data.get("oem_status")
         if oem_claim:
             results["oem"] = await self.oem.verify(oem_claim, metadata)
 
         # 7. Make In India / Local Content
-        local_content = bidder_data.get("local_content")
-        if local_content:
+        local_content = bidder_data.get("local_content") if bidder_data.get("local_content") is not None else bidder_data.get("local_content_pct")
+        if local_content is not None:
             results["local_content"] = await self.local_content.verify(local_content, metadata)
 
         return results

@@ -6,6 +6,33 @@ Produces full audit trails with granular evidence, clause references, and verifi
 from typing import Dict, Any, List, Optional
 import re
 
+
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    if val is None:
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    try:
+        clean = re.sub(r"[^\d\.]", "", str(val))
+        return float(clean) if clean else default
+    except (ValueError, TypeError):
+        return default
+
+
+def _safe_int(val: Any, default: int = 0) -> int:
+    if val is None:
+        return default
+    if isinstance(val, int):
+        return val
+    if isinstance(val, float):
+        return int(val)
+    try:
+        clean = re.sub(r"[^\d]", "", str(val).split(".")[0])
+        return int(clean) if clean else default
+    except (ValueError, TypeError):
+        return default
+
+
 class RulesEngine:
     def __init__(self):
         pass
@@ -93,16 +120,16 @@ class RulesEngine:
         bidder_docs: Dict[str, Any],
         gov_verification: Dict[str, Any]
     ) -> Dict[str, Any]:
-        req_id = req.get("id", "")
+        req_id = req.get("id", "") or req.get("code", "")
         req_type = req.get("type", "").upper()
-        clause = req.get("clause", "Clause")
-        title = req.get("title", "")
+        clause = req.get("clause_reference") or req.get("clause") or "Clause"
+        title = req.get("title") or req.get("name") or "Requirement"
         mandatory = req.get("mandatory", True)
 
         # 1. Turnover Requirement
-        if "TURNOVER" in req_id or "TURNOVER" in req_type or "TURNOVER" in title.upper():
-            min_turnover = float(req.get("threshold", 3.0)) # in Cr
-            actual_turnover = float(bidder.get("annual_turnover_cr", 0.0))
+        if "TURNOVER" in req_id.upper() or "TURNOVER" in req_type or "TURNOVER" in title.upper():
+            min_turnover = _safe_float(req.get("threshold"), 3.0) # in Cr
+            actual_turnover = _safe_float(bidder.get("annual_turnover_cr"), 0.0)
             if actual_turnover >= min_turnover:
                 return {
                     "requirement_id": req_id,
@@ -131,9 +158,9 @@ class RulesEngine:
                 }
 
         # 2. Similar Experience / Past Work Orders
-        if "EXPERIENCE" in req_id or "EXPERIENCE" in req_type or "SIMILAR" in title.upper():
-            req_years = int(req.get("threshold", 3))
-            actual_years = int(bidder.get("years_experience", 0))
+        if "EXPERIENCE" in req_id.upper() or "EXPERIENCE" in req_type or "SIMILAR" in title.upper():
+            req_years = _safe_int(req.get("threshold"), 3)
+            actual_years = _safe_int(bidder.get("experience_years") if bidder.get("experience_years") is not None else bidder.get("years_experience"), 0)
             if actual_years >= req_years:
                 return {
                     "requirement_id": req_id,
@@ -162,7 +189,7 @@ class RulesEngine:
                 }
 
         # 3. GST Verification
-        if "GST" in req_id or "GSTIN" in title.upper():
+        if "GST" in req_id.upper() or "GSTIN" in title.upper():
             gst_res = gov_verification.get("gstin", {})
             status = gst_res.get("status", "VALID")
             return {
@@ -179,7 +206,7 @@ class RulesEngine:
             }
 
         # 4. Debarment / Blacklisting Check
-        if "DEBAR" in req_id or "BLACKLIST" in title.upper() or "VIGILANCE" in title.upper():
+        if "DEBAR" in req_id.upper() or "BLACKLIST" in title.upper() or "VIGILANCE" in title.upper():
             deb_res = gov_verification.get("debarment", {})
             is_clear = deb_res.get("status") == "CLEAR"
             return {
@@ -196,7 +223,7 @@ class RulesEngine:
             }
 
         # 5. OEM Authorization
-        if "OEM" in req_id or "OEM" in title.upper():
+        if "OEM" in req_id.upper() or "OEM" in title.upper():
             oem_res = gov_verification.get("oem", {})
             tier = oem_res.get("oem_tier", "DIRECT_OEM")
             if tier == "DIRECT_OEM":
@@ -215,7 +242,7 @@ class RulesEngine:
                 "title": title,
                 "status": status,
                 "mandatory": mandatory,
-                "claimed_value": bidder.get("oem_authorization", "OEM Certificate"),
+                "claimed_value": bidder.get("oem_authorization") or bidder.get("oem_status") or "OEM Certificate",
                 "required_value": "Direct OEM Authorization / Channel Partner",
                 "evidence_document": bidder_docs.get("oem_cert", "OEM_Auth_Letter_Honeywell.pdf"),
                 "page_number": 2,
@@ -223,9 +250,9 @@ class RulesEngine:
             }
 
         # 6. Make in India / Local Content
-        if "LOCAL_CONTENT" in req_id or "MAKE IN INDIA" in title.upper() or "MII" in title.upper():
+        if "LOCAL_CONTENT" in req_id.upper() or "MAKE IN INDIA" in title.upper() or "MII" in title.upper() or "LOCAL" in req_id.upper():
             mii_res = gov_verification.get("local_content", {})
-            val = mii_res.get("verified_value", 50.0)
+            val = _safe_float(mii_res.get("verified_value", bidder.get("local_content_pct", bidder.get("local_content", 50.0))), 50.0)
             if val >= 50.0:
                 return {
                     "requirement_id": req_id,
@@ -267,7 +294,7 @@ class RulesEngine:
                 }
 
         # 7. EMD / Tender Fee Exemption or Payment
-        if "EMD" in req_id or "EMD" in title.upper() or "TENDER FEE" in title.upper():
+        if "EMD" in req_id.upper() or "EMD" in title.upper() or "TENDER FEE" in title.upper():
             has_udyam = bool(bidder.get("udyam") or bidder.get("udyam_number"))
             emd_paid = bidder.get("emd_paid", False)
             if has_udyam or emd_paid:
