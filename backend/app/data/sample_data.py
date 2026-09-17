@@ -168,7 +168,86 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "bids_count": 5,
         "verified_count": 3,
         "description": "Procurement of EN-certified full-body harnesses, shock-absorbing lanyards, and rescue winch kits for elevated refinery structures.",
-        "requirements": []
+        "requirements": [
+            {
+                "id": "REQ-001",
+                "code": "TURNOVER",
+                "clause": "Clause 4.1.1",
+                "clause_reference": "Section II, Clause 3.1",
+                "category": "FINANCIAL",
+                "title": "Average Annual Financial Turnover",
+                "description": "Bidder must have minimum average annual financial turnover of ₹3.00 Crore during last 3 financial years.",
+                "threshold": 3.0,
+                "threshold_value": ">= ₹3.00 Cr",
+                "unit": "Crore INR",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-002",
+                "code": "EXPERIENCE",
+                "clause": "Clause 4.2.3",
+                "clause_reference": "Section III, Clause 4.2",
+                "category": "TECHNICAL",
+                "title": "Past Experience in Fall Protection / Safety Gear",
+                "description": "Bidder must have completed at least 3 similar supply contracts for fall arrest & harness systems in PSUs/Refineries in last 5 years.",
+                "threshold": 3,
+                "threshold_value": ">= 3 Years / Orders",
+                "unit": "Contracts",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-003",
+                "code": "OEM",
+                "clause": "Clause 5.1.0",
+                "clause_reference": "Section III, Clause 4.5",
+                "category": "OEM_AUTHORIZATION",
+                "title": "Direct OEM Authorization Certificate",
+                "description": "Direct OEM Authorization letter or Principal Manufacturer certificate specifically for this CPCL Tender.",
+                "threshold": 1,
+                "threshold_value": "Direct OEM Authorized",
+                "unit": "Authorization Letter",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-004",
+                "code": "MII",
+                "clause": "Clause 6.3.2",
+                "clause_reference": "Section IV, Clause 5.1",
+                "category": "STATUTORY",
+                "title": "Make In India (MII) Local Content Declaration",
+                "description": "Minimum 50% Local Content requirement for Class-I Local Supplier status.",
+                "threshold": 50.0,
+                "threshold_value": ">= 50% (Class-I)",
+                "unit": "Percentage",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-005",
+                "code": "GSTIN",
+                "clause": "Clause 2.4.0",
+                "clause_reference": "Section II, Clause 2.1",
+                "category": "STATUTORY",
+                "title": "GSTIN Registration & Compliance",
+                "description": "Valid Goods and Services Tax Identification Number (GSTIN) with regular return filings.",
+                "threshold": 1,
+                "threshold_value": "Active GSTIN",
+                "unit": "Registration",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-006",
+                "code": "DEBARMENT",
+                "clause": "Clause 7.1.1",
+                "clause_reference": "Section I, Clause 1.4",
+                "category": "VIGILANCE",
+                "title": "Debarment & Vigilance Integrity Clearance",
+                "description": "Bidder must not be under any active debarment or blacklisting by CVC, CPCL, GeM.",
+                "threshold": 0,
+                "threshold_value": "Clear / No Debarment",
+                "unit": "Debarments",
+                "mandatory": True
+            }
+        ]
     },
     {
         "id": "TND-2026-003",
@@ -190,7 +269,86 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "bids_count": 2,
         "verified_count": 1,
         "description": "Supply of UL/FM certified fire hydrant landing valves, high-pressure foam monitors, and breathing apparatus cylinders.",
-        "requirements": []
+        "requirements": [
+            {
+                "id": "REQ-001",
+                "code": "TURNOVER",
+                "clause": "Clause 4.1.1",
+                "clause_reference": "Section II, Clause 3.1",
+                "category": "FINANCIAL",
+                "title": "Average Annual Financial Turnover",
+                "description": "Bidder must have minimum average annual financial turnover of ₹5.00 Crore during last 3 financial years.",
+                "threshold": 5.0,
+                "threshold_value": ">= ₹5.00 Cr",
+                "unit": "Crore INR",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-002",
+                "code": "EXPERIENCE",
+                "clause": "Clause 4.2.3",
+                "clause_reference": "Section III, Clause 4.2",
+                "category": "TECHNICAL",
+                "title": "Past Experience in Fire Safety Supply",
+                "description": "Bidder must have completed at least 3 similar contracts in PSUs/Refineries in last 5 years.",
+                "threshold": 3,
+                "threshold_value": ">= 3 Years / Orders",
+                "unit": "Contracts",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-003",
+                "code": "OEM",
+                "clause": "Clause 5.1.0",
+                "clause_reference": "Section III, Clause 4.5",
+                "category": "OEM_AUTHORIZATION",
+                "title": "Direct OEM Authorization Certificate",
+                "description": "Direct OEM Authorization letter specifically for this CPCL Tender.",
+                "threshold": 1,
+                "threshold_value": "Direct OEM Authorized",
+                "unit": "Authorization Letter",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-004",
+                "code": "MII",
+                "clause": "Clause 6.3.2",
+                "clause_reference": "Section IV, Clause 5.1",
+                "category": "STATUTORY",
+                "title": "Make In India (MII) Local Content Declaration",
+                "description": "Minimum 50% Local Content requirement for Class-I Local Supplier status.",
+                "threshold": 50.0,
+                "threshold_value": ">= 50% (Class-I)",
+                "unit": "Percentage",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-005",
+                "code": "GSTIN",
+                "clause": "Clause 2.4.0",
+                "clause_reference": "Section II, Clause 2.1",
+                "category": "STATUTORY",
+                "title": "GSTIN Registration & Compliance",
+                "description": "Valid Goods and Services Tax Identification Number (GSTIN) with regular return filings.",
+                "threshold": 1,
+                "threshold_value": "Active GSTIN",
+                "unit": "Registration",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-006",
+                "code": "DEBARMENT",
+                "clause": "Clause 7.1.1",
+                "clause_reference": "Section I, Clause 1.4",
+                "category": "VIGILANCE",
+                "title": "Debarment & Vigilance Integrity Clearance",
+                "description": "Bidder must not be under any active debarment or blacklisting by CVC, CPCL, GeM.",
+                "threshold": 0,
+                "threshold_value": "Clear / No Debarment",
+                "unit": "Debarments",
+                "mandatory": True
+            }
+        ]
     },
     {
         "id": "TND-2026-004",
@@ -212,7 +370,86 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "bids_count": 4,
         "verified_count": 4,
         "description": "Supply of ASTM A335 Grade P91 seamless valves, alloy piping assemblies, and IBR certified flanged connections for Crude Distillation Unit.",
-        "requirements": []
+        "requirements": [
+            {
+                "id": "REQ-001",
+                "code": "TURNOVER",
+                "clause": "Clause 4.1.1",
+                "clause_reference": "Section II, Clause 3.1",
+                "category": "FINANCIAL",
+                "title": "Average Annual Financial Turnover",
+                "description": "Bidder must have minimum average annual financial turnover of ₹8.00 Crore during last 3 financial years.",
+                "threshold": 8.0,
+                "threshold_value": ">= ₹8.00 Cr",
+                "unit": "Crore INR",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-002",
+                "code": "EXPERIENCE",
+                "clause": "Clause 4.2.3",
+                "clause_reference": "Section III, Clause 4.2",
+                "category": "TECHNICAL",
+                "title": "Past Experience in Refinery Valve Supply",
+                "description": "Bidder must have completed at least 5 high-pressure valve supply contracts in PSU refineries in last 5 years.",
+                "threshold": 5,
+                "threshold_value": ">= 5 Years / Orders",
+                "unit": "Contracts",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-003",
+                "code": "OEM",
+                "clause": "Clause 5.1.0",
+                "clause_reference": "Section III, Clause 4.5",
+                "category": "OEM_AUTHORIZATION",
+                "title": "Direct OEM Authorization & IBR Certification",
+                "description": "Direct OEM Authorization letter and valid Indian Boiler Regulations (IBR) manufacturing license.",
+                "threshold": 1,
+                "threshold_value": "Direct OEM Authorized + IBR",
+                "unit": "Authorization Letter",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-004",
+                "code": "MII",
+                "clause": "Clause 6.3.2",
+                "clause_reference": "Section IV, Clause 5.1",
+                "category": "STATUTORY",
+                "title": "Make In India (MII) Local Content Declaration",
+                "description": "Minimum 50% Local Content requirement for Class-I Local Supplier status.",
+                "threshold": 50.0,
+                "threshold_value": ">= 50% (Class-I)",
+                "unit": "Percentage",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-005",
+                "code": "GSTIN",
+                "clause": "Clause 2.4.0",
+                "clause_reference": "Section II, Clause 2.1",
+                "category": "STATUTORY",
+                "title": "GSTIN Registration & Compliance",
+                "description": "Valid Goods and Services Tax Identification Number (GSTIN) with regular return filings.",
+                "threshold": 1,
+                "threshold_value": "Active GSTIN",
+                "unit": "Registration",
+                "mandatory": True
+            },
+            {
+                "id": "REQ-006",
+                "code": "DEBARMENT",
+                "clause": "Clause 7.1.1",
+                "clause_reference": "Section I, Clause 1.4",
+                "category": "VIGILANCE",
+                "title": "Debarment & Vigilance Integrity Clearance",
+                "description": "Bidder must not be under any active debarment or blacklisting by CVC, CPCL, GeM.",
+                "threshold": 0,
+                "threshold_value": "Clear / No Debarment",
+                "unit": "Debarments",
+                "mandatory": True
+            }
+        ]
     },
     {
         "id": "TND-2026-005",
@@ -1914,6 +2151,7 @@ def compute_tender_bid_counts(tender: Dict[str, Any]) -> Dict[str, Any]:
     """
     Dynamically computes bids_count (submitted bids only) and verified_count
     for a tender record based on live database state in SAMPLE_BIDDERS.
+    Also ensures tender has requirements populated for evaluation.
     """
     tender_copy = dict(tender)
     tid = tender.get("id") or tender.get("tender_number") or ""
@@ -1924,6 +2162,93 @@ def compute_tender_bid_counts(tender: Dict[str, Any]) -> Dict[str, Any]:
         if b.get("verification_status") in ["AUTHENTICATED", "COMPLETED", "VERIFIED"]
         or b.get("status") in ["COMPLETED", "AUTHENTICATED", "VERIFIED"]
     )
+    if not tender_copy.get("requirements"):
+        tender_copy["requirements"] = [
+            {
+                "id": "REQ-001",
+                "code": "TURNOVER",
+                "clause": "Clause 3.1.2",
+                "clause_reference": "Section III, Clause 3.1",
+                "category": "FINANCIAL",
+                "title": "Minimum Average Annual Financial Turnover",
+                "description": "Average Annual Financial Turnover during the last 3 financial years ending 31st March.",
+                "threshold": 3.0,
+                "threshold_value": ">= ₹3.00 Cr",
+                "unit": "Crore INR",
+                "mandatory": True,
+                "scoring_weight": 20.0
+            },
+            {
+                "id": "REQ-002",
+                "code": "EXPERIENCE",
+                "clause": "Clause 4.2.3",
+                "clause_reference": "Section III, Clause 4.2",
+                "category": "TECHNICAL",
+                "title": "Past Experience in PSU / Hydrocarbon Sector",
+                "description": "Bidder must have completed similar supply contracts in CPCL, IOCL, BPCL, ONGC in last 5 years.",
+                "threshold": 3,
+                "threshold_value": ">= 3 Years / Orders",
+                "unit": "Contracts",
+                "mandatory": True,
+                "scoring_weight": 20.0
+            },
+            {
+                "id": "REQ-003",
+                "code": "OEM",
+                "clause": "Clause 5.1.0",
+                "clause_reference": "Section III, Clause 4.5",
+                "category": "OEM_AUTHORIZATION",
+                "title": "Direct OEM Authorization Certificate",
+                "description": "Direct OEM Authorization letter specifically for this CPCL Tender.",
+                "threshold": 1,
+                "threshold_value": "Direct OEM Authorized",
+                "unit": "Authorization Letter",
+                "mandatory": True,
+                "scoring_weight": 15.0
+            },
+            {
+                "id": "REQ-004",
+                "code": "MII",
+                "clause": "Clause 6.3.2",
+                "clause_reference": "Section IV, Clause 5.1",
+                "category": "STATUTORY",
+                "title": "Make In India (MII) Local Content Declaration",
+                "description": "Minimum 50% Local Content requirement for Class-I Local Supplier status.",
+                "threshold": 50.0,
+                "threshold_value": ">= 50% (Class-I)",
+                "unit": "Percentage",
+                "mandatory": True,
+                "scoring_weight": 15.0
+            },
+            {
+                "id": "REQ-005",
+                "code": "GSTIN",
+                "clause": "Clause 2.4.0",
+                "clause_reference": "Section II, Clause 2.1",
+                "category": "STATUTORY",
+                "title": "GSTIN Registration & Compliance",
+                "description": "Valid Goods and Services Tax Identification Number (GSTIN) with regular return filings.",
+                "threshold": 1,
+                "threshold_value": "Active GSTIN",
+                "unit": "Registration",
+                "mandatory": True,
+                "scoring_weight": 15.0
+            },
+            {
+                "id": "REQ-006",
+                "code": "DEBARMENT",
+                "clause": "Clause 7.1.1",
+                "clause_reference": "Section I, Clause 1.4",
+                "category": "VIGILANCE",
+                "title": "Debarment & Vigilance Integrity Clearance",
+                "description": "Bidder must not be under any active debarment or blacklisting by CVC, CPCL, GeM.",
+                "threshold": 0,
+                "threshold_value": "Clear / No Debarment",
+                "unit": "Debarments",
+                "mandatory": True,
+                "scoring_weight": 15.0
+            }
+        ]
     return tender_copy
 
 def format_tender_deadline_display(val: Any) -> str:

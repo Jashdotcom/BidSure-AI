@@ -29,6 +29,30 @@ const nextConfig = {
         source: "/bidder-portal/:path*",
         destination: `${backendUrl}/bidder-portal/:path*`,
       },
+      {
+        source: "/bidders/:path*",
+        destination: `${backendUrl}/bidders/:path*`,
+      },
+      {
+        source: "/tenders/:path*",
+        destination: `${backendUrl}/tenders/:path*`,
+      },
+      {
+        source: "/compliance/:path*",
+        destination: `${backendUrl}/compliance/:path*`,
+      },
+      {
+        source: "/reports/:path*",
+        destination: `${backendUrl}/reports/:path*`,
+      },
+      {
+        source: "/audit/:path*",
+        destination: `${backendUrl}/audit/:path*`,
+      },
+      {
+        source: "/dashboard-api/:path*",
+        destination: `${backendUrl}/dashboard/:path*`,
+      },
     ];
   },
 };

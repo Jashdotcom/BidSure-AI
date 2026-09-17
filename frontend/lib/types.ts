@@ -154,7 +154,9 @@ export interface Tender {
   category: string;
   status: string;
   estimated_value?: string | number;
+  estimated_value_display?: string;
   emd_amount?: string | number;
+  emd_amount_display?: string;
   issue_date?: string;
   published_date?: string;
   publish_date?: string;
@@ -285,5 +287,137 @@ export interface TenderComparisonData {
   bidders: Bidder[];
   requirements: (Requirement | TenderRequirement)[];
   comparison_matrix: ComparisonMatrixRow[];
+}
+
+export interface PairwiseComparison {
+  peer_id: string;
+  peer_name: string;
+  peer_rank: number | null;
+  peer_rank_display: string;
+  comparison_status: "ABOVE" | "BELOW" | "EQUAL";
+  comparison_reason: string;
+  price_difference: string;
+  price_delta_numeric: number;
+  technical_score_difference: number;
+  total_score_difference: number;
+}
+
+export interface RankingExplanation {
+  title: string;
+  primary_reason: string;
+  eligibility_analysis: {
+    status: "ELIGIBLE" | "REQUIRES_REVIEW" | "NOT_ELIGIBLE";
+    summary: string;
+    mandatory_passed_count: number;
+    mandatory_failed_count: number;
+    review_pending_count: number;
+    mandatory_failures: EvidenceItem[];
+  };
+  technical_compliance: {
+    score: number;
+    summary: string;
+    experience_years: number;
+    oem_tier: string;
+    local_content_pct: number;
+  };
+  statutory_verification: {
+    summary: string;
+    checks: Record<string, any>;
+  };
+  financial_evaluation: {
+    submitted_bid: string;
+    submitted_bid_crores: string;
+    financial_score: number;
+    comparison_to_budget: string;
+    summary: string;
+  };
+  scoring_methodology: {
+    method_type: string;
+    method_display: string;
+    formula_display: string;
+    technical_score: number;
+    financial_score: number;
+    total_score: number;
+  };
+  pairwise_comparisons: PairwiseComparison[];
+}
+
+export interface RankedBidder {
+  bidder_id: string;
+  bidder_name: string;
+  bid_submission_id?: string;
+  contact_person?: string;
+  location?: string;
+  price_raw: string;
+  price_numeric: number;
+  price_display: string;
+  price_crores_display: string;
+  eligibility_status: "ELIGIBLE" | "REQUIRES_REVIEW" | "NOT_ELIGIBLE";
+  eligibility_label: string;
+  is_disqualified: boolean;
+  technical_score: number;
+  financial_score?: number;
+  total_score: number;
+  score_formula_display?: string;
+  rank: number | null;
+  rank_display: string;
+  is_l1?: boolean;
+  is_provisional?: boolean;
+  evaluation_badge: "QUALIFIED" | "PROVISIONAL" | "DISQUALIFIED";
+  statutory_verification_status: string;
+  risk_level: "LOW" | "MEDIUM" | "HIGH";
+  compliance_summary: {
+    pass_count: number;
+    fail_count: number;
+    review_count: number;
+    total_criteria: number;
+  };
+  mandatory_failures: EvidenceItem[];
+  review_requirements: EvidenceItem[];
+  passed_requirements: EvidenceItem[];
+  criteria_breakdown: EvidenceItem[];
+  statutory_checks: {
+    gstin: string;
+    pan: string;
+    udyam: string;
+    epfo: string;
+    annual_turnover_cr: number;
+    experience_years: number;
+    oem_status: string;
+    local_content_pct: number;
+    is_debarred: boolean;
+  };
+  documents?: Record<string, string>;
+  submitted_at?: string;
+  ranking_explanation?: RankingExplanation;
+}
+
+export interface TenderRankingResponse {
+  tender_id: string;
+  tender_number: string;
+  tender_title: string;
+  evaluation_method: string;
+  evaluation_method_display: string;
+  method_type: "L1" | "QCBS" | "QBS";
+  method_configured: boolean;
+  weights?: Record<string, number>;
+  ranking_status: "FINALIZED" | "PROVISIONAL" | "UNDER_EVALUATION" | "NOT_EVALUATED";
+  ranked_bidders: RankedBidder[];
+  l1_bidder?: {
+    id?: string | null;
+    name?: string | null;
+    bid_amount?: string | null;
+    total_score?: number | null;
+  } | null;
+  summary: {
+    total_submitted: number;
+    eligible_count: number;
+    disqualified_count: number;
+    review_count: number;
+    lowest_eligible_price: string;
+    lowest_eligible_price_numeric: number;
+  };
+  disclaimer: string;
+  generated_at: string;
 }
 

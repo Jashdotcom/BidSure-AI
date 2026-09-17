@@ -298,6 +298,22 @@ export function ArrowLeftIcon({ className = "size-4" }: { className?: string }) 
   );
 }
 
+export function TrophyIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4m-5-8a5 5 0 0010 0V5H7v4zm-2-2H3a2 2 0 002 2h2V7zm10 0h2a2 2 0 002-2h-4v2z" />
+    </svg>
+  );
+}
+
+export function AwardIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13A4 4 0 1012 0a4 4 0 000 8zm-7 9l7-4 7 4-2-8-5-3-5 3-2 8z" />
+    </svg>
+  );
+}
+
 
 
 

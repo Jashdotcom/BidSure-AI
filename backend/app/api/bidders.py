@@ -14,11 +14,13 @@ from reportlab.lib import colors
 from app.api.auth import get_current_user, require_roles
 from app.data.sample_data import get_all_bidders, get_bidders_for_tender, get_bidder_by_id, get_tender_by_id, add_audit_log
 from app.services.rules_engine import RulesEngine
+from app.services.ranking_engine import RankingEngine
 from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
 
 router = APIRouter(prefix="/bidders", tags=["Bidders"])
 
 rules_engine = RulesEngine()
+ranking_engine = RankingEngine()
 gov_service = MockGovernmentVerificationService(is_mock=True)
 
 
@@ -202,6 +204,75 @@ async def build_tender_comparison_data(tender_id: str) -> Dict[str, Any]:
         "requirements": requirements,
         "comparison_matrix": comparison_matrix,
     }
+
+
+async def build_tender_ranking_data(tender_id: str, current_user: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Computes the deterministic, explainable bid ranking for the selected tender.
+    Evaluates submitted bids against tender criteria using RulesEngine & MockGovernmentVerificationService,
+    then executes deterministic ranking calculation and generates 'Why This Rank?' explanations.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender '{tender_id}' not found."
+        )
+
+    # Single source of truth for submitted bids
+    submitted_bidders = get_bidders_for_tender(tender_id, eligible_only=True)
+
+    # Evaluate each bidder with rules_engine + gov_service
+    evaluations_by_bidder: Dict[str, Dict[str, Any]] = {}
+    for bidder in submitted_bidders:
+        gov_res = await gov_service.verify_all_for_bidder(bidder)
+        eval_res = rules_engine.evaluate_submission(tender, bidder, gov_verification=gov_res)
+        evaluations_by_bidder[bidder.get("id", "")] = eval_res
+
+    # Deterministic ranking calculation
+    ranking_data = ranking_engine.evaluate_and_rank_bidders(
+        tender=tender,
+        submitted_bidders=submitted_bidders,
+        evaluations_by_bidder=evaluations_by_bidder
+    )
+
+    # Record immutable audit log
+    if current_user:
+        add_audit_log({
+            "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+            "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+            "action": "BID_RANKING_GENERATED",
+            "entity_type": "TENDER",
+            "entity_id": tender.get("tender_number") or tender_id,
+            "details": f"Deterministic bid ranking calculated for tender {tender.get('tender_number')}. Method: {ranking_data.get('evaluation_method_display')}. Evaluated {len(submitted_bidders)} submitted bids.",
+            "status": "SUCCESS"
+        })
+
+    return ranking_data
+
+
+@router.get("/ranking", response_model=Dict[str, Any])
+async def get_tender_ranking_query(
+    tender_id: str = Query(..., description="Tender ID or Reference"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Returns deterministic bid ranking and 'Why This Rank?' explanations for the selected tender.
+    RESTRICTED: Officer role only.
+    """
+    return await build_tender_ranking_data(tender_id, current_user=current_user)
+
+
+@router.get("/ranking/{tender_id:path}", response_model=Dict[str, Any])
+async def get_tender_ranking_path(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Returns deterministic bid ranking and 'Why This Rank?' explanations for the selected tender by path.
+    RESTRICTED: Officer role only.
+    """
+    return await build_tender_ranking_data(tender_id, current_user=current_user)
 
 
 @router.get("/comparison", response_model=Dict[str, Any])

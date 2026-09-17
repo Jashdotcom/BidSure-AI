@@ -68,7 +68,7 @@ export async function apiRequest<T>(
     } catch {
       throw new ApiError(
         503,
-        "Unable to connect to the authentication service. Please try again."
+        "Unable to connect to the BidSure AI server. Please check your network connection and ensure the backend service is active."
       );
     }
   }
@@ -96,18 +96,18 @@ export async function apiRequest<T>(
     // Friendly formatted messages based on HTTP status code
     if (!message) {
       if (response.status === 401) {
-        message = "Invalid email or password.";
+        message = "Your session has expired or authentication is required. Please sign in again.";
       } else if (response.status === 403) {
         message = "Access denied. You do not have permission to access this resource.";
       } else if (response.status === 404) {
-        message = "Unable to connect to the authentication service. Please try again.";
+        message = "The requested resource could not be found.";
       } else if (response.status >= 500) {
-        message = "Authentication service encountered an error. Please try again later.";
+        message = "The server encountered an error while processing the request. Please try again later.";
       } else {
         message = "Unable to complete request. Please try again.";
       }
     } else if (response.status === 401 && message.toLowerCase().includes("unauthorized")) {
-      message = "Invalid email or password.";
+      message = "Your session has expired or authentication is required. Please sign in again.";
     }
 
     throw new ApiError(response.status, message);
