@@ -658,16 +658,78 @@ export default function AITenderAnalyzePage() {
           {/* Metrics Counters */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             {[
-              { label: "Total Clauses", count: totalCount, color: "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white" },
-              { label: "Verified", count: verifiedCount, color: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900" },
-              { label: "Needs Review", count: needsReviewCount, color: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900" },
-              { label: "Officer Edited", count: editedCount, color: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900" },
-              { label: "Manually Added", count: addedCount, color: "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900" },
-              { label: "Rejected", count: rejectedCount, color: "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900" }
+              {
+                label: "Total Clauses",
+                count: totalCount,
+                cardClass: "bg-[#1E293B] border-[#0F172A]",
+                labelClass: "text-white",
+                numberClass: "text-white",
+                style: { backgroundColor: "#1E293B", borderColor: "#0F172A" },
+                labelStyle: { color: "#FFFFFF" },
+                numberStyle: { color: "#FFFFFF" },
+              },
+              {
+                label: "Verified",
+                count: verifiedCount,
+                cardClass: "bg-[#DCFCE7] border-[#16A34A]",
+                labelClass: "text-[#15803D]",
+                numberClass: "text-[#166534]",
+                style: { backgroundColor: "#DCFCE7", borderColor: "#16A34A" },
+                labelStyle: { color: "#15803D" },
+                numberStyle: { color: "#166534" },
+              },
+              {
+                label: "Needs Review",
+                count: needsReviewCount,
+                cardClass: "bg-[#FEF3C7] border-[#F59E0B]",
+                labelClass: "text-[#B45309]",
+                numberClass: "text-[#92400E]",
+                style: { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" },
+                labelStyle: { color: "#B45309" },
+                numberStyle: { color: "#92400E" },
+              },
+              {
+                label: "Officer Edited",
+                count: editedCount,
+                cardClass: "bg-[#DBEAFE] border-[#2563EB]",
+                labelClass: "text-[#1D4ED8]",
+                numberClass: "text-[#1E40AF]",
+                style: { backgroundColor: "#DBEAFE", borderColor: "#2563EB" },
+                labelStyle: { color: "#1D4ED8" },
+                numberStyle: { color: "#1E40AF" },
+              },
+              {
+                label: "Manually Added",
+                count: addedCount,
+                cardClass: "bg-[#F3E8FF] border-[#9333EA]",
+                labelClass: "text-[#7E22CE]",
+                numberClass: "text-[#6B21A8]",
+                style: { backgroundColor: "#F3E8FF", borderColor: "#9333EA" },
+                labelStyle: { color: "#7E22CE" },
+                numberStyle: { color: "#6B21A8" },
+              },
+              {
+                label: "Rejected",
+                count: rejectedCount,
+                cardClass: "bg-[#FEE2E2] border-[#DC2626]",
+                labelClass: "text-[#B91C1C]",
+                numberClass: "text-[#991B1B]",
+                style: { backgroundColor: "#FEE2E2", borderColor: "#DC2626" },
+                labelStyle: { color: "#B91C1C" },
+                numberStyle: { color: "#991B1B" },
+              },
             ].map((m, idx) => (
-              <div key={idx} className={`p-4 rounded-2xl ${m.color} flex flex-col justify-between shadow-sm`}>
-                <span className="text-xs font-semibold opacity-80">{m.label}</span>
-                <span className="text-2xl font-black mt-2">{m.count}</span>
+              <div
+                key={idx}
+                style={m.style}
+                className={`p-4 rounded-2xl border ${m.cardClass} flex flex-col justify-between shadow-sm`}
+              >
+                <span style={m.labelStyle} className={`text-sm font-semibold ${m.labelClass}`}>
+                  {m.label}
+                </span>
+                <span style={m.numberStyle} className={`text-3xl font-extrabold mt-2 ${m.numberClass}`}>
+                  {m.count}
+                </span>
               </div>
             ))}
           </div>
