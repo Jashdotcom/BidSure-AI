@@ -18,222 +18,8 @@ import {
 import { apiRequest } from "@/lib/api";
 import { Bidder } from "@/lib/types";
 
-const INITIAL_SAMPLE_BIDDERS: Bidder[] = [
-  {
-    id: "BID-001",
-    name: "ABC Safety Solutions Pvt Ltd",
-    tender_id: "TND-2026-001",
-    tender_number: "CPCL/PROC/2026/001",
-    tender_title: "Industrial Safety Helmets & Impact Visors",
-    bid_submission_id: "BID/2024/0912-A",
-    contact_person: "Suresh Patel (Managing Director)",
-    email: "abc@abcsafety.com",
-    phone: "+91 98765 43210",
-    location: "Chennai, Tamil Nadu",
-    bid_amount: "₹ 4,42,00,000",
-    gstin: "33AABCA1234F1Z5",
-    pan: "AABCA1234F",
-    udyam: "UDYAM-TN-02-0012345",
-    experience_years: 5.0,
-    oem_status: "Direct OEM Tier 1 Authorization - Karam / Honeywell",
-    local_content_pct: 65.0,
-    is_debarred: false,
-    epfo_code: "TN/MAS/0099881",
-    submitted_at: "2026-08-20T14:30:00Z",
-    status: "SUBMITTED",
-    verification_status: "AUTHENTICATED",
-    compliance_status: "COMPLIANT",
-    compliance_score: 100,
-    risk_level: "LOW",
-    summary: {
-      pass_count: 6,
-      fail_count: 0,
-      review_count: 0,
-      total: 6,
-      total_requirements: 6,
-    },
-    highlight_issue: "Fully compliant across all mandatory statutory, financial, and technical criteria.",
-  },
-  {
-    id: "BID-002",
-    name: "SecureTech Industries Ltd",
-    tender_id: "TND-2026-001",
-    tender_number: "CPCL/PROC/2026/001",
-    tender_title: "Industrial Safety Helmets & Impact Visors",
-    bid_submission_id: "BID/2024/0914-B",
-    contact_person: "Rajiv Sharma (VP Business Dev)",
-    email: "contact@securetechind.com",
-    phone: "+91 98220 11223",
-    location: "Mumbai, Maharashtra",
-    bid_amount: "₹ 4,68,00,000",
-    gstin: "27AAACT5678B1Z2",
-    pan: "AAACT5678B",
-    udyam: "UDYAM-MH-18-0098765",
-    experience_years: 2.0,
-    oem_status: "Direct OEM Tier 1 Authorization",
-    local_content_pct: 52.0,
-    is_debarred: false,
-    epfo_code: "MH/BAN/0011223",
-    submitted_at: "2026-08-22T11:15:00Z",
-    status: "SUBMITTED",
-    verification_status: "AUTHENTICATED",
-    compliance_status: "NON_COMPLIANT",
-    compliance_score: 67,
-    risk_level: "HIGH",
-    summary: {
-      pass_count: 4,
-      fail_count: 2,
-      review_count: 0,
-      total: 6,
-      total_requirements: 6,
-    },
-    highlight_issue: "Mandatory turnover (₹2.2 Cr < ₹3.0 Cr) and experience requirements failed.",
-  },
-  {
-    id: "BID-003",
-    name: "SafeGuard Equipments Pvt Ltd",
-    tender_id: "TND-2026-001",
-    tender_number: "CPCL/PROC/2026/001",
-    tender_title: "Industrial Safety Helmets & Impact Visors",
-    bid_submission_id: "BID/2024/0915-C",
-    contact_person: "Kiran Rao (Partner)",
-    email: "tenders@safeguardequip.com",
-    phone: "+91 94440 55667",
-    location: "Bengaluru, Karnataka",
-    bid_amount: "₹ 4,29,00,000",
-    gstin: "29AABCS9012D1Z8",
-    pan: "AABCS9012D",
-    udyam: "UDYAM-KR-03-0045678",
-    experience_years: 4.0,
-    oem_status: "Secondary Distributor Letter",
-    local_content_pct: 35.0,
-    is_debarred: false,
-    epfo_code: "KN/BNG/0067890",
-    submitted_at: "2026-08-24T16:45:00Z",
-    status: "UNDER_VERIFICATION",
-    verification_status: "PROCESSING",
-    compliance_status: "REQUIRES_REVIEW",
-    compliance_score: 83,
-    risk_level: "MEDIUM",
-    summary: {
-      pass_count: 4,
-      fail_count: 0,
-      review_count: 2,
-      total: 6,
-      total_requirements: 6,
-    },
-    highlight_issue: "Secondary OEM letter submitted & Class-II local content (35%). Requires officer review.",
-  },
-  {
-    id: "BID-004",
-    name: "Chennai Valves & Fittings Corp",
-    tender_id: "TND-2026-004",
-    tender_number: "CPCL/PROC/2026/004",
-    tender_title: "High-Pressure Refinery Valve Assemblies",
-    bid_submission_id: "BID/2026/0401-A",
-    contact_person: "M. Venkatesh (Managing Director)",
-    email: "sales@chennaivalves.com",
-    phone: "+91 94441 22334",
-    location: "Chennai, Tamil Nadu",
-    bid_amount: "₹ 7,95,00,000",
-    gstin: "33AACCV5544E1Z1",
-    pan: "AACCV5544E",
-    udyam: "UDYAM-TN-02-0088776",
-    experience_years: 6.0,
-    oem_status: "Direct OEM Manufacturer",
-    local_content_pct: 70.0,
-    is_debarred: false,
-    epfo_code: "TN/MAS/0044556",
-    submitted_at: "2026-08-26T10:15:00Z",
-    status: "REVIEW",
-    verification_status: "PROCESSING",
-    compliance_status: "REVIEW",
-    compliance_score: 90,
-    risk_level: "MEDIUM",
-    summary: {
-      pass_count: 5,
-      fail_count: 0,
-      review_count: 1,
-      total: 6,
-      total_requirements: 6,
-    },
-    highlight_issue: "Turnover satisfies numerical threshold. CA certificate UDIN validation pending response.",
-  },
-  {
-    id: "BID-005",
-    name: "Apex Piping & Engineering Ltd",
-    tender_id: "TND-2026-004",
-    tender_number: "CPCL/PROC/2026/004",
-    tender_title: "High-Pressure Refinery Valve Assemblies",
-    bid_submission_id: "BID/2026/0402-B",
-    contact_person: "Anil Kulkarni (Director)",
-    email: "info@apexpiping.com",
-    phone: "+91 98230 99887",
-    location: "Pune, Maharashtra",
-    bid_amount: "₹ 8,15,00,000",
-    gstin: "27AAACA9988C1Z4",
-    pan: "AAACA9988C",
-    udyam: "UDYAM-MH-18-0044332",
-    experience_years: 8.0,
-    oem_status: "Direct OEM Manufacturer",
-    local_content_pct: 60.0,
-    is_debarred: false,
-    epfo_code: "MH/PUN/0099112",
-    submitted_at: "2026-08-28T14:00:00Z",
-    status: "COMPLETED",
-    verification_status: "AUTHENTICATED",
-    compliance_status: "COMPLIANT",
-    compliance_score: 95,
-    risk_level: "LOW",
-    summary: {
-      pass_count: 6,
-      fail_count: 0,
-      review_count: 0,
-      total: 6,
-      total_requirements: 6,
-    },
-    highlight_issue: "Complete IBR approval and ASTM A335 inspection credentials verified.",
-  },
-  {
-    id: "BID-006",
-    name: "Southern Safety Gears",
-    tender_id: "TND-2026-001",
-    tender_number: "CPCL/PROC/2026/001",
-    tender_title: "Industrial Safety Helmets & Impact Visors",
-    bid_submission_id: "BID/2026/0105-D",
-    contact_person: "K. Selvam (Partner)",
-    email: "selvam@southernsafety.in",
-    phone: "+91 94432 77665",
-    location: "Coimbatore, Tamil Nadu",
-    bid_amount: "₹ 4,35,00,000",
-    gstin: "33AAESS1122G1Z9",
-    pan: "AAESS1122G",
-    udyam: "UDYAM-TN-03-0055443",
-    experience_years: 3.0,
-    oem_status: "Authorized Channel Partner",
-    local_content_pct: 55.0,
-    is_debarred: false,
-    epfo_code: "TN/CBE/0033221",
-    submitted_at: "2026-09-01T09:30:00Z",
-    status: "DRAFT",
-    verification_status: "PENDING",
-    compliance_status: "PENDING",
-    compliance_score: 0,
-    risk_level: "LOW",
-    summary: {
-      pass_count: 0,
-      fail_count: 0,
-      review_count: 0,
-      total: 6,
-      total_requirements: 6,
-    },
-    highlight_issue: "Draft submission in preparation by vendor.",
-  },
-];
-
 const STATUS_FILTERS = [
-  { id: "ALL", label: "All Bids" },
-  { id: "DRAFT", label: "Draft" },
+  { id: "ALL", label: "All Received Bids" },
   { id: "SUBMITTED", label: "Submitted" },
   { id: "UNDER_VERIFICATION", label: "Under Verification" },
   { id: "REVIEW", label: "Review Required" },
@@ -253,8 +39,8 @@ export default function BiddersPage() {
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [activeStatus, setActiveStatus] = useState(initialStatus);
   const [selectedTenderId, setSelectedTenderId] = useState(initialTenderId);
-  const [bidders, setBidders] = useState<Bidder[]>(INITIAL_SAMPLE_BIDDERS);
-  const [loading, setLoading] = useState(false);
+  const [bidders, setBidders] = useState<Bidder[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Sync URL parameters
   const updateUrlParams = useCallback(
@@ -305,59 +91,16 @@ export default function BiddersPage() {
         if (res && Array.isArray(res)) {
           setBidders(res);
         } else {
-          filterLocalBidders(query, status, tenderId);
+          setBidders([]);
         }
       } catch {
-        filterLocalBidders(query, status, tenderId);
+        setBidders([]);
       } finally {
         setLoading(false);
       }
     },
     []
   );
-
-  function filterLocalBidders(query: string, status: string, tenderId: string) {
-    let list = [...INITIAL_SAMPLE_BIDDERS];
-    if (tenderId) {
-      const tid = tenderId.toLowerCase();
-      list = list.filter(
-        (b) =>
-          b.tender_id?.toLowerCase().includes(tid) ||
-          b.tender_number?.toLowerCase().includes(tid)
-      );
-    }
-    if (query) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (b) =>
-          b.name?.toLowerCase().includes(q) ||
-          b.id?.toLowerCase().includes(q) ||
-          b.bid_submission_id?.toLowerCase().includes(q) ||
-          b.tender_id?.toLowerCase().includes(q) ||
-          b.tender_number?.toLowerCase().includes(q) ||
-          b.tender_title?.toLowerCase().includes(q) ||
-          b.contact_person?.toLowerCase().includes(q) ||
-          b.email?.toLowerCase().includes(q) ||
-          b.location?.toLowerCase().includes(q) ||
-          b.status?.toLowerCase().includes(q) ||
-          b.compliance_status?.toLowerCase().includes(q)
-      );
-    }
-    if (status && status !== "ALL") {
-      const st = status.toUpperCase().replace(" ", "_");
-      list = list.filter((b) => {
-        const bStatus = (b.status || "").toUpperCase().replace(" ", "_");
-        const bComp = (b.compliance_status || "").toUpperCase().replace(" ", "_");
-        if (st === "DRAFT") return bStatus === "DRAFT";
-        if (st === "SUBMITTED") return bStatus === "SUBMITTED" || bComp === "COMPLIANT" || bComp === "NON_COMPLIANT";
-        if (st === "UNDER_VERIFICATION") return bStatus === "UNDER_VERIFICATION" || bStatus === "PROCESSING";
-        if (st === "REVIEW") return bStatus === "REVIEW" || bComp === "REQUIRES_REVIEW" || bComp === "REVIEW";
-        if (st === "COMPLETED") return bStatus === "COMPLETED" || b.verification_status === "AUTHENTICATED";
-        return bStatus === st || bComp === st;
-      });
-    }
-    setBidders(list);
-  }
 
   // Refetch when search params change
   useEffect(() => {

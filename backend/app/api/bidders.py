@@ -21,13 +21,18 @@ async def list_bidders(
     query: Optional[str] = Query(None, description="Search keyword across bidder name, bid ID, tender number, contact person"),
     tender_id: Optional[str] = Query(None, description="Filter by Tender ID / Reference"),
     status: Optional[str] = Query(None, description="Filter by status (DRAFT, SUBMITTED, UNDER_VERIFICATION, REVIEW, COMPLETED)"),
+    eligible_only: bool = Query(False, description="Filter to eligible submitted bids only"),
+    include_drafts: bool = Query(False, description="Include vendor draft submissions in officer listing"),
     current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
 ):
     """
     Returns list of bidder submissions with multi-field search and filter support.
+    By default, only formally submitted bids are returned to procurement officers.
     RESTRICTED: Officer role only.
     """
-    return get_all_bidders(query=query, tender_id=tender_id, status=status)
+    if eligible_only:
+        include_drafts = False
+    return get_all_bidders(query=query, tender_id=tender_id, status=status, include_drafts=include_drafts)
 
 @router.get("/{bidder_id}", response_model=Dict[str, Any])
 async def get_bidder_details(
@@ -79,7 +84,7 @@ async def export_cst(
     if not tender:
         raise HTTPException(status_code=404, detail=f"Tender {tender_id} not found.")
 
-    all_bidders = get_bidders_for_tender(tender_id, eligible_only=False)
+    all_bidders = get_bidders_for_tender(tender_id, eligible_only=True)
     selected_bidders = [b for b in all_bidders if b.get("id") in bidder_ids]
 
     if not selected_bidders:

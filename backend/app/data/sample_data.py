@@ -675,7 +675,8 @@ SAMPLE_BIDDERS: List[Dict[str, Any]] = [
             "total_requirements": 6
         },
         "highlight_issue": "Draft submission in preparation by vendor.",
-        "documents": {}
+        "documents": {},
+        "is_draft": True
     },
 
     # ─── TND-2026-002: Industrial Protective Equipment & Harness Kits (5 bids) ───
@@ -1563,7 +1564,191 @@ SAMPLE_BIDDERS: List[Dict[str, Any]] = [
         "highlight_issue": "Complete GIS substation type-test reports provided.",
         "documents": {
             "audited_balance_sheet": "VoltTech_FY24.pdf"
-        }
+        },
+        "is_draft": False
+    },
+
+    # ─── TND-2026-010: Cryogenic Storage Tanks & Vaporizer Units (1 submitted bid) ───
+    {
+        "id": "BID-031",
+        "bid_submission_id": "BID/2026/1001-A",
+        "tender_id": "TND-2026-010",
+        "tender_number": "CPCL/PROC/2026/010",
+        "tender_title": "Cryogenic Storage Tanks & Vaporizer Units",
+        "name": "CryoGas India Systems Ltd",
+        "contact_person": "P. N. Raman (General Manager)",
+        "email": "pn.raman@cryogasindia.com",
+        "phone": "+91 98402 33445",
+        "location": "Chennai, Tamil Nadu",
+        "bid_amount": "₹ 12,40,00,000",
+        "gstin": "33AAACC3456D1Z2",
+        "pan": "AAACC3456D",
+        "udyam": "UDYAM-TN-02-0056789",
+        "epfo_code": "TN/MAS/0056789",
+        "annual_turnover_cr": 35.0,
+        "years_experience": 15.0,
+        "experience_years": 15.0,
+        "oem_status": "Direct OEM Manufacturer - ASME Section VIII Div 1",
+        "local_content": 75.0,
+        "local_content_pct": 75.0,
+        "is_debarred": False,
+        "emd_paid": True,
+        "submitted_at": "2026-09-07T11:00:00Z",
+        "status": "SUBMITTED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 96.0,
+        "risk_level": "LOW",
+        "summary": {"pass_count": 6, "fail_count": 0, "review_count": 0, "total": 6, "total_requirements": 6},
+        "highlight_issue": "ASME cryogenic vessel manufacturing authorization with CCOE / PESO approval.",
+        "documents": {
+            "audited_balance_sheet": "CryoGas_FY24.pdf"
+        },
+        "is_draft": False
+    },
+
+    # ─── TND-2026-007: Centrifugal Process Pumps Draft Bid (Sample Vendor Draft) ───
+    {
+        "id": "BID-032",
+        "bid_submission_id": "BID/2026/0705-E",
+        "tender_id": "TND-2026-007",
+        "tender_number": "CPCL/PROC/2026/007",
+        "tender_title": "Centrifugal Process Pumps & Mechanical Seals",
+        "name": "Delta Pumps India Ltd",
+        "contact_person": "R. Anand (Business Development)",
+        "email": "anand@deltapumps.in",
+        "phone": "+91 98403 99887",
+        "location": "Coimbatore, Tamil Nadu",
+        "bid_amount": "₹ 3,25,00,000",
+        "gstin": "33AAACD6789E1Z4",
+        "pan": "AAACD6789E",
+        "udyam": "UDYAM-TN-03-0067890",
+        "epfo_code": "TN/CBE/0067890",
+        "annual_turnover_cr": 8.0,
+        "years_experience": 5.0,
+        "experience_years": 5.0,
+        "oem_status": "Authorized Distributor",
+        "local_content": 50.0,
+        "local_content_pct": 50.0,
+        "is_debarred": False,
+        "emd_paid": False,
+        "submitted_at": "2026-09-05T12:00:00Z",
+        "status": "DRAFT",
+        "verification_status": "PENDING",
+        "compliance_status": "PENDING",
+        "compliance_score": 0.0,
+        "risk_level": "LOW",
+        "summary": {"pass_count": 0, "fail_count": 0, "review_count": 0, "total": 6, "total_requirements": 6},
+        "highlight_issue": "Draft submission in preparation by vendor.",
+        "documents": {},
+        "is_draft": True
+    },
+
+    # ─── TND-2024-001: Past Closed Tender CPCL/PROC/SAFETY/2024/09 (3 completed bids) ───
+    {
+        "id": "BID-033",
+        "bid_submission_id": "BID/2024/0901-A",
+        "tender_id": "TND-2024-001",
+        "tender_number": "CPCL/PROC/SAFETY/2024/09",
+        "tender_title": "Annual Rate Contract for Refinery Personal Protective Equipment",
+        "name": "Karam Safety Private Limited",
+        "contact_person": "Ashok Kumar (Regional Head)",
+        "email": "ashok@karam.in",
+        "phone": "+91 98110 54321",
+        "location": "Lucknow, Uttar Pradesh",
+        "bid_amount": "₹ 1,85,00,000",
+        "gstin": "09AAACK1234F1Z8",
+        "pan": "AAACK1234F",
+        "udyam": "UDYAM-UP-01-0098765",
+        "epfo_code": "UP/LKO/0098765",
+        "annual_turnover_cr": 120.0,
+        "years_experience": 18.0,
+        "experience_years": 18.0,
+        "oem_status": "Direct OEM Manufacturer",
+        "local_content": 85.0,
+        "local_content_pct": 85.0,
+        "is_debarred": False,
+        "emd_paid": True,
+        "submitted_at": "2024-09-12T11:00:00Z",
+        "status": "COMPLETED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 98.0,
+        "risk_level": "LOW",
+        "summary": {"pass_count": 6, "fail_count": 0, "review_count": 0, "total": 6, "total_requirements": 6},
+        "highlight_issue": "Contract awarded in FY24 procurement cycle.",
+        "documents": {},
+        "is_draft": False
+    },
+    {
+        "id": "BID-034",
+        "bid_submission_id": "BID/2024/0902-B",
+        "tender_id": "TND-2024-001",
+        "tender_number": "CPCL/PROC/SAFETY/2024/09",
+        "tender_title": "Annual Rate Contract for Refinery Personal Protective Equipment",
+        "name": "Udyogi International Pvt Ltd",
+        "contact_person": "R. K. Sengupta (Director)",
+        "email": "rk.sengupta@udyogi.net",
+        "phone": "+91 98300 12345",
+        "location": "Kolkata, West Bengal",
+        "bid_amount": "₹ 1,92,00,000",
+        "gstin": "19AAACU5678G1Z3",
+        "pan": "AAACU5678G",
+        "udyam": "UDYAM-WB-10-0045678",
+        "epfo_code": "WB/KOL/0045678",
+        "annual_turnover_cr": 45.0,
+        "years_experience": 12.0,
+        "experience_years": 12.0,
+        "oem_status": "Direct OEM Manufacturer",
+        "local_content": 70.0,
+        "local_content_pct": 70.0,
+        "is_debarred": False,
+        "emd_paid": True,
+        "submitted_at": "2024-09-13T14:30:00Z",
+        "status": "COMPLETED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 92.0,
+        "risk_level": "LOW",
+        "summary": {"pass_count": 6, "fail_count": 0, "review_count": 0, "total": 6, "total_requirements": 6},
+        "highlight_issue": "Past evaluated L2 bid for FY24 cycle.",
+        "documents": {},
+        "is_draft": False
+    },
+    {
+        "id": "BID-035",
+        "bid_submission_id": "BID/2024/0903-C",
+        "tender_id": "TND-2024-001",
+        "tender_number": "CPCL/PROC/SAFETY/2024/09",
+        "tender_title": "Annual Rate Contract for Refinery Personal Protective Equipment",
+        "name": "SureSafe Industrial Solutions",
+        "contact_person": "V. Murugesan (Partner)",
+        "email": "sales@suresafe.in",
+        "phone": "+91 94440 98765",
+        "location": "Chennai, Tamil Nadu",
+        "bid_amount": "₹ 2,05,00,000",
+        "gstin": "33AAASS8901H1Z1",
+        "pan": "AAASS8901H",
+        "udyam": "UDYAM-TN-02-0078901",
+        "epfo_code": "TN/MAS/0078901",
+        "annual_turnover_cr": 15.0,
+        "years_experience": 8.0,
+        "experience_years": 8.0,
+        "oem_status": "Authorized Channel Partner",
+        "local_content": 60.0,
+        "local_content_pct": 60.0,
+        "is_debarred": False,
+        "emd_paid": True,
+        "submitted_at": "2024-09-14T16:00:00Z",
+        "status": "COMPLETED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 88.0,
+        "risk_level": "LOW",
+        "summary": {"pass_count": 5, "fail_count": 0, "review_count": 1, "total": 6, "total_requirements": 6},
+        "highlight_issue": "Past evaluated L3 bid for FY24 cycle.",
+        "documents": {},
+        "is_draft": False
     }
 ]
 
@@ -1636,8 +1821,80 @@ def add_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
     SAMPLE_USERS.append(user_data)
     return user_data
 
+NON_SUBMITTED_STATUSES = {"DRAFT", "CANCELLED", "WITHDRAWN"}
+
+def is_submitted_bid(bid: Optional[Dict[str, Any]]) -> bool:
+    """
+    Determines if a bid record represents a formally received and submitted bid.
+    Excludes DRAFT, CANCELLED, and WITHDRAWN bids from the officer received bids pool.
+    """
+    if not bid:
+        return False
+    if bid.get("is_draft", False) is True:
+        return False
+    status = (bid.get("status") or "").strip().upper()
+    if status in NON_SUBMITTED_STATUSES:
+        return False
+    return True
+
+def get_bidders_for_tender(tender_id: str, eligible_only: bool = True) -> List[Dict[str, Any]]:
+    """
+    Retrieves bidders associated with a tender ID or tender number.
+    By default (eligible_only=True), returns only formally submitted bids.
+    """
+    if not tender_id:
+        return []
+    tender = None
+    # Fast matching against SAMPLE_TENDERS directly to avoid recursion
+    for t in SAMPLE_TENDERS:
+        if (
+            t.get("id") == tender_id
+            or t.get("tender_number") == tender_id
+            or t.get("ref") == tender_id
+            or t.get("tender_id") == tender_id
+        ):
+            tender = t
+            break
+
+    matched_ids = {str(tender_id).strip()}
+    if tender:
+        for k in ["id", "tender_number", "ref", "tender_id"]:
+            if tender.get(k):
+                matched_ids.add(str(tender[k]).strip())
+
+    res = [
+        b for b in SAMPLE_BIDDERS
+        if (b.get("tender_id") and str(b.get("tender_id")).strip() in matched_ids)
+        or (b.get("tender_number") and str(b.get("tender_number")).strip() in matched_ids)
+    ]
+    if eligible_only:
+        res = [b for b in res if is_submitted_bid(b)]
+    return res
+
+def count_submitted_bids_for_tender(tender_id: str) -> int:
+    """
+    Single source of truth for count of submitted bids for a tender.
+    """
+    return len(get_bidders_for_tender(tender_id, eligible_only=True))
+
+def compute_tender_bid_counts(tender: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Dynamically computes bids_count (submitted bids only) and verified_count
+    for a tender record based on live database state in SAMPLE_BIDDERS.
+    """
+    tender_copy = dict(tender)
+    tid = tender.get("id") or tender.get("tender_number") or ""
+    submitted_bids = get_bidders_for_tender(tid, eligible_only=True)
+    tender_copy["bids_count"] = len(submitted_bids)
+    tender_copy["verified_count"] = sum(
+        1 for b in submitted_bids
+        if b.get("verification_status") in ["AUTHENTICATED", "COMPLETED", "VERIFIED"]
+        or b.get("status") in ["COMPLETED", "AUTHENTICATED", "VERIFIED"]
+    )
+    return tender_copy
+
 def get_all_tenders(query: Optional[str] = None, status: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
-    results = list(SAMPLE_TENDERS)
+    results = [compute_tender_bid_counts(t) for t in SAMPLE_TENDERS]
     if query:
         q = query.strip().lower()
         results = [
@@ -1673,7 +1930,7 @@ def get_tender_by_id(tender_id: str) -> Optional[Dict[str, Any]]:
             or t.get("ref") == tender_id
             or t.get("tender_id") == tender_id
         ):
-            return t
+            return compute_tender_bid_counts(t)
     return None
 
 _tender_number_lock = threading.Lock()
@@ -1851,10 +2108,34 @@ def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[s
             return tender
         return None
 
-def get_all_bidders(query: Optional[str] = None, tender_id: Optional[str] = None, status: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_all_bidders(
+    query: Optional[str] = None,
+    tender_id: Optional[str] = None,
+    status: Optional[str] = None,
+    include_drafts: bool = False
+) -> List[Dict[str, Any]]:
     results = list(SAMPLE_BIDDERS)
     if tender_id:
-        results = [b for b in results if b.get("tender_id") == tender_id or b.get("tender_number") == tender_id]
+        tender = None
+        for t in SAMPLE_TENDERS:
+            if (
+                t.get("id") == tender_id
+                or t.get("tender_number") == tender_id
+                or t.get("ref") == tender_id
+                or t.get("tender_id") == tender_id
+            ):
+                tender = t
+                break
+        matched_ids = {str(tender_id).strip()}
+        if tender:
+            for k in ["id", "tender_number", "ref", "tender_id"]:
+                if tender.get(k):
+                    matched_ids.add(str(tender[k]).strip())
+        results = [
+            b for b in results
+            if (b.get("tender_id") and str(b.get("tender_id")).strip() in matched_ids)
+            or (b.get("tender_number") and str(b.get("tender_number")).strip() in matched_ids)
+        ]
     if query:
         q = query.strip().lower()
         results = [
@@ -1871,17 +2152,24 @@ def get_all_bidders(query: Optional[str] = None, tender_id: Optional[str] = None
             or q in b.get("status", "").lower()
             or q in b.get("compliance_status", "").lower()
         ]
-    if status and status.upper() != "ALL":
-        st = status.strip().upper().replace(" ", "_")
+    st = (status or "ALL").strip().upper().replace(" ", "_")
+    if st == "DRAFT":
+        results = [b for b in results if not is_submitted_bid(b)]
+    elif st != "ALL" and st != "ALL_WITH_DRAFTS":
         results = [
             b for b in results
-            if b.get("status", "").upper().replace(" ", "_") == st
-            or b.get("compliance_status", "").upper().replace(" ", "_") == st
-            or (st == "REVIEW" and b.get("status", "").upper() in ["REVIEW", "UNDER_VERIFICATION", "REQUIRES_REVIEW"])
-            or (st == "UNDER_VERIFICATION" and b.get("status", "").upper() in ["UNDER_VERIFICATION", "REVIEW", "PROCESSING"])
-            or (st == "SUBMITTED" and b.get("status", "").upper() in ["SUBMITTED", "COMPLIANT", "NON_COMPLIANT"])
-            or (st == "COMPLETED" and b.get("status", "").upper() in ["COMPLETED", "AUTHENTICATED", "COMPLIANT"])
+            if is_submitted_bid(b) and (
+                b.get("status", "").upper().replace(" ", "_") == st
+                or b.get("compliance_status", "").upper().replace(" ", "_") == st
+                or (st == "REVIEW" and b.get("status", "").upper() in ["REVIEW", "UNDER_VERIFICATION", "REQUIRES_REVIEW"])
+                or (st == "UNDER_VERIFICATION" and b.get("status", "").upper() in ["UNDER_VERIFICATION", "REVIEW", "PROCESSING"])
+                or (st == "SUBMITTED" and b.get("status", "").upper() in ["SUBMITTED", "COMPLIANT", "NON_COMPLIANT"])
+                or (st == "COMPLETED" and b.get("status", "").upper() in ["COMPLETED", "AUTHENTICATED", "COMPLIANT"])
+            )
         ]
+    elif not include_drafts and st != "ALL_WITH_DRAFTS":
+        results = [b for b in results if is_submitted_bid(b)]
+
     return results
 
 def delete_tender(tender_id: str) -> Dict[str, Any]:
@@ -1930,27 +2218,6 @@ def delete_tender(tender_id: str) -> Dict[str, Any]:
 
         raise KeyError(f"Tender '{tender_id}' not found during removal.")
 
-def get_bidders_for_tender(tender_id: str, eligible_only: bool = False) -> List[Dict[str, Any]]:
-    if not tender_id:
-        return []
-    tender = get_tender_by_id(tender_id)
-    matched_ids = {str(tender_id).strip()}
-    if tender:
-        for k in ["id", "tender_number", "ref", "tender_id"]:
-            if tender.get(k):
-                matched_ids.add(str(tender[k]).strip())
-    res = [
-        b for b in SAMPLE_BIDDERS
-        if (b.get("tender_id") and str(b.get("tender_id")).strip() in matched_ids)
-        or (b.get("tender_number") and str(b.get("tender_number")).strip() in matched_ids)
-    ]
-    if eligible_only:
-        res = [
-            b for b in res
-            if (b.get("status") or "").strip().upper() not in ["DRAFT", "CANCELLED", "WITHDRAWN"]
-        ]
-    return res
-
 def get_bidder_by_id(bidder_id: str) -> Optional[Dict[str, Any]]:
     for b in SAMPLE_BIDDERS:
         if b.get("id") == bidder_id or b.get("bid_submission_id") == bidder_id:
@@ -1966,22 +2233,81 @@ def get_bids_by_bidder_id(bidder_id: str) -> List[Dict[str, Any]]:
 
 def add_bid_for_bidder(bid_data: Dict[str, Any]) -> Dict[str, Any]:
     SAMPLE_BIDDER_BIDS.append(bid_data)
+
+    # Synchronize with SAMPLE_BIDDERS so the officer portal updates in real time
+    target_tender_id = bid_data.get("tender_id")
+    target_tender_num = bid_data.get("tender_number")
+    bidder_id = bid_data.get("bidder_id")
+
+    # Check if there is an existing record (e.g. DRAFT) in SAMPLE_BIDDERS to promote
+    promoted = False
+    for b in SAMPLE_BIDDERS:
+        if (b.get("id") == bidder_id or b.get("bidder_id") == bidder_id) and (
+            (target_tender_id and b.get("tender_id") == target_tender_id) or
+            (target_tender_num and b.get("tender_number") == target_tender_num)
+        ):
+            b["status"] = bid_data.get("status", "SUBMITTED")
+            b["verification_status"] = bid_data.get("verification_status", "PROCESSING")
+            b["compliance_status"] = bid_data.get("compliance_status", "REVIEW_REQUIRED")
+            b["bid_amount"] = bid_data.get("bid_amount", b.get("bid_amount", "₹ 0"))
+            b["submitted_at"] = bid_data.get("submission_date") or datetime.utcnow().isoformat() + "Z"
+            b["is_draft"] = False
+            promoted = True
+            break
+
+    if not promoted:
+        new_bidder_entry = {
+            "id": bid_data.get("id") or f"BID-{len(SAMPLE_BIDDERS) + 1:03d}",
+            "bid_submission_id": bid_data.get("bid_submission_id") or f"SUB-{target_tender_id}-{len(SAMPLE_BIDDERS) + 1}",
+            "tender_id": target_tender_id,
+            "tender_number": target_tender_num or target_tender_id,
+            "tender_title": bid_data.get("tender_title", ""),
+            "name": bid_data.get("name", "Authorized Bidder"),
+            "contact_person": bid_data.get("contact_person", "Authorized Signatory"),
+            "email": bid_data.get("email", "bidder@vendor.com"),
+            "phone": bid_data.get("phone", "+91 98765 43210"),
+            "location": bid_data.get("location", "Chennai, Tamil Nadu"),
+            "bid_amount": bid_data.get("bid_amount", "₹ 0"),
+            "gstin": bid_data.get("gstin", "33AABCA1234F1Z5"),
+            "pan": bid_data.get("pan", "AABCA1234F"),
+            "udyam": bid_data.get("udyam", "UDYAM-TN-02-0012345"),
+            "epfo_code": bid_data.get("epfo_code", "TN/MAS/0012345"),
+            "annual_turnover_cr": float(bid_data.get("annual_turnover_cr", 5.0)),
+            "years_experience": float(bid_data.get("years_experience", 5.0)),
+            "experience_years": float(bid_data.get("years_experience", 5.0)),
+            "oem_status": bid_data.get("oem_status", "Direct OEM Authorization"),
+            "local_content": float(bid_data.get("local_content", 65.0)),
+            "local_content_pct": float(bid_data.get("local_content", 65.0)),
+            "is_debarred": False,
+            "emd_paid": True,
+            "submitted_at": bid_data.get("submission_date") or datetime.utcnow().isoformat() + "Z",
+            "status": bid_data.get("status", "SUBMITTED"),
+            "verification_status": bid_data.get("verification_status", "PROCESSING"),
+            "compliance_status": bid_data.get("compliance_status", "REVIEW_REQUIRED"),
+            "compliance_score": float(bid_data.get("compliance_score", 85.0)),
+            "risk_level": "LOW",
+            "summary": {"pass_count": 5, "fail_count": 0, "review_count": 1, "total": 6, "total_requirements": 6},
+            "highlight_issue": "Submitted via Bidder Self-Service Portal.",
+            "documents": {},
+            "is_draft": False
+        }
+        SAMPLE_BIDDERS.append(new_bidder_entry)
+
     return bid_data
 
 def get_dashboard_stats() -> Dict[str, Any]:
     all_tenders = SAMPLE_TENDERS
-    all_bidders = SAMPLE_BIDDERS
+    # Only submitted bids across the system are counted for officer dashboard stats
+    submitted_bidders = [b for b in SAMPLE_BIDDERS if is_submitted_bid(b)]
 
     total_tenders = len(all_tenders)
-    # Active/Total procurement tenders in system
     active_tenders = len([t for t in all_tenders if t.get("status", "").upper() in ["PUBLISHED", "OPEN", "ACTIVE"]])
 
-    # Bids calculation across tenders
-    total_bids = len(all_bidders)
-    under_verification = len([b for b in all_bidders if b.get("status") in ["UNDER_VERIFICATION", "PROCESSING", "UNDER REVIEW"]])
-    pending_review = len([b for b in all_bidders if b.get("compliance_status") in ["REQUIRES_REVIEW", "REVIEW_REQUIRED", "REVIEW"]])
-    compliant_bids = len([b for b in all_bidders if b.get("compliance_status") == "COMPLIANT"])
-    high_risk = len([b for b in all_bidders if b.get("risk_level") == "HIGH"])
+    total_bids = len(submitted_bidders)
+    under_verification = len([b for b in submitted_bidders if b.get("status") in ["UNDER_VERIFICATION", "PROCESSING", "UNDER REVIEW"]])
+    pending_review = len([b for b in submitted_bidders if b.get("compliance_status") in ["REQUIRES_REVIEW", "REVIEW_REQUIRED", "REVIEW"]])
+    compliant_bids = len([b for b in submitted_bidders if b.get("compliance_status") == "COMPLIANT"])
+    high_risk = len([b for b in submitted_bidders if b.get("risk_level") == "HIGH"])
 
     return {
         "active_tenders": active_tenders,
