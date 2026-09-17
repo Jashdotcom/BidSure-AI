@@ -179,3 +179,67 @@ export interface Tender {
   closed_at?: string;
   closed_reason?: string;
 }
+
+export type RequirementReviewStatus =
+  | "NEEDS_REVIEW"
+  | "VERIFIED"
+  | "EDITED"
+  | "ADDED_MANUALLY"
+  | "REJECTED";
+
+export interface OriginalRequirementData {
+  name?: string;
+  clause_reference?: string;
+  category?: string;
+  threshold_value?: any;
+  unit?: string;
+  mandatory?: boolean;
+  description?: string;
+}
+
+export interface ExtractedRequirement {
+  id: string;
+  code: string;
+  clause_reference: string;
+  name: string;
+  category: string;
+  type?: string;
+  mandatory: boolean;
+  description: string;
+  threshold_value: any;
+  unit?: string;
+  confidence: number;
+  review_status: RequirementReviewStatus;
+  source_document: string;
+  source_page: number;
+  evidence_text: string;
+  validation_source?: string;
+  weight?: number;
+  original_data?: OriginalRequirementData;
+  rejection_reason?: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+}
+
+export interface DocumentSection {
+  title: string;
+  page_start: number;
+  page_end: number;
+  type: string;
+}
+
+export interface TenderAnalysisJob {
+  job_id: string;
+  tender_id?: string;
+  tender_title?: string;
+  filename: string;
+  file_size_kb: number;
+  total_pages: number;
+  ocr_confidence: number;
+  document_type: string;
+  status: "COMPLETED" | "PROCESSING" | "FAILED";
+  detected_sections: DocumentSection[];
+  requirements: ExtractedRequirement[];
+  created_at: string;
+}
+

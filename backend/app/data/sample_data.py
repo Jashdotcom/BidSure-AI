@@ -2795,3 +2795,335 @@ def add_audit_log(entry: Dict[str, Any]) -> Dict[str, Any]:
         entry["target"] = entry["entity_id"]
     SAMPLE_AUDIT_LOGS.insert(0, entry)
     return entry
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Tender Analysis & Document Intelligence In-Memory Store & Operations
+# ─────────────────────────────────────────────────────────────────────────────
+SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
+
+def create_analysis_job(job_dict: Dict[str, Any]) -> Dict[str, Any]:
+    job_id = job_dict.get("job_id") or f"JOB-AI-{len(SAMPLE_ANALYSIS_JOBS) + 1:03d}"
+    job_dict["job_id"] = job_id
+    if not job_dict.get("created_at"):
+        job_dict["created_at"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    SAMPLE_ANALYSIS_JOBS[job_id] = job_dict
+
+    # Also key by tender_id if present
+    tender_id = job_dict.get("tender_id")
+    if tender_id:
+        SAMPLE_ANALYSIS_JOBS[str(tender_id)] = job_dict
+
+    return job_dict
+
+def get_analysis_job(job_id_or_tender_id: str) -> Optional[Dict[str, Any]]:
+    if not job_id_or_tender_id:
+        return None
+    key = str(job_id_or_tender_id).strip()
+    if key in SAMPLE_ANALYSIS_JOBS:
+        return SAMPLE_ANALYSIS_JOBS[key]
+
+    for job in SAMPLE_ANALYSIS_JOBS.values():
+        if (
+            job.get("job_id") == key
+            or job.get("tender_id") == key
+            or job.get("filename") == key
+        ):
+            return job
+    return None
+
+def verify_analysis_requirement(
+    job_id_or_tender_id: str,
+    req_id: str,
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    job = get_analysis_job(job_id_or_tender_id)
+    if not job:
+        raise KeyError(f"Analysis job '{job_id_or_tender_id}' not found.")
+
+    reqs = job.get("requirements", [])
+    target_req = None
+    for r in reqs:
+        if r.get("id") == req_id or r.get("code") == req_id:
+            target_req = r
+            break
+
+    if not target_req:
+        raise KeyError(f"Requirement '{req_id}' not found in analysis job.")
+
+    officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+    officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+    officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+    now_ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    target_req["review_status"] = "VERIFIED"
+    target_req["reviewed_by"] = officer_name
+    target_req["reviewed_at"] = now_ts
+    target_req["rejection_reason"] = None
+
+    t_ref = job.get("tender_id") or job.get("filename") or "TENDER"
+    add_audit_log({
+        "user_email": officer_email,
+        "user_role": officer_role,
+        "action": "TENDER_REQUIREMENT_VERIFIED",
+        "entity_type": "REQUIREMENT",
+        "entity_id": f"{t_ref}:{target_req.get('clause_reference') or req_id}",
+        "details": f"Officer verified clause '{target_req.get('name')}' ({target_req.get('clause_reference')}) with {int(target_req.get('confidence', 1.0) * 100)}% AI confidence.",
+        "status": "SUCCESS"
+    })
+
+    return target_req
+
+def update_analysis_requirement(
+    job_id_or_tender_id: str,
+    req_id: str,
+    update_payload: Dict[str, Any],
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    job = get_analysis_job(job_id_or_tender_id)
+    if not job:
+        raise KeyError(f"Analysis job '{job_id_or_tender_id}' not found.")
+
+    reqs = job.get("requirements", [])
+    target_req = None
+    for r in reqs:
+        if r.get("id") == req_id or r.get("code") == req_id:
+            target_req = r
+            break
+
+    if not target_req:
+        raise KeyError(f"Requirement '{req_id}' not found in analysis job.")
+
+    officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+    officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+    officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+    now_ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Store original data if not already captured
+    if not target_req.get("original_data"):
+        target_req["original_data"] = {
+            "name": target_req.get("name"),
+            "clause_reference": target_req.get("clause_reference"),
+            "category": target_req.get("category"),
+            "threshold_value": target_req.get("threshold_value"),
+            "unit": target_req.get("unit"),
+            "mandatory": target_req.get("mandatory"),
+            "description": target_req.get("description")
+        }
+
+    # Apply updates
+    for field in ["name", "clause_reference", "category", "mandatory", "description", "threshold_value", "unit", "weight"]:
+        if field in update_payload and update_payload[field] is not None:
+            target_req[field] = update_payload[field]
+
+    target_req["review_status"] = "EDITED"
+    target_req["reviewed_by"] = officer_name
+    target_req["reviewed_at"] = now_ts
+    target_req["rejection_reason"] = None
+
+    edit_reason = update_payload.get("edit_reason") or "Officer modified extracted threshold/details."
+    t_ref = job.get("tender_id") or job.get("filename") or "TENDER"
+    add_audit_log({
+        "user_email": officer_email,
+        "user_role": officer_role,
+        "action": "TENDER_REQUIREMENT_EDITED",
+        "entity_type": "REQUIREMENT",
+        "entity_id": f"{t_ref}:{target_req.get('clause_reference') or req_id}",
+        "details": f"Officer edited requirement '{target_req.get('name')}'. Justification: {edit_reason}",
+        "status": "SUCCESS"
+    })
+
+    return target_req
+
+def reject_analysis_requirement(
+    job_id_or_tender_id: str,
+    req_id: str,
+    reason: str,
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    job = get_analysis_job(job_id_or_tender_id)
+    if not job:
+        raise KeyError(f"Analysis job '{job_id_or_tender_id}' not found.")
+
+    if not reason or len(reason.strip()) < 3:
+        raise ValueError("A formal rejection reason (minimum 3 characters) is required.")
+
+    reqs = job.get("requirements", [])
+    target_req = None
+    for r in reqs:
+        if r.get("id") == req_id or r.get("code") == req_id:
+            target_req = r
+            break
+
+    if not target_req:
+        raise KeyError(f"Requirement '{req_id}' not found in analysis job.")
+
+    officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+    officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+    officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+    now_ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    target_req["review_status"] = "REJECTED"
+    target_req["rejection_reason"] = reason.strip()
+    target_req["reviewed_by"] = officer_name
+    target_req["reviewed_at"] = now_ts
+
+    t_ref = job.get("tender_id") or job.get("filename") or "TENDER"
+    add_audit_log({
+        "user_email": officer_email,
+        "user_role": officer_role,
+        "action": "TENDER_REQUIREMENT_REJECTED",
+        "entity_type": "REQUIREMENT",
+        "entity_id": f"{t_ref}:{target_req.get('clause_reference') or req_id}",
+        "details": f"Officer excluded/rejected clause '{target_req.get('name')}' ({target_req.get('clause_reference')}). Reason: {reason.strip()}",
+        "status": "SUCCESS"
+    })
+
+    return target_req
+
+def add_analysis_requirement(
+    job_id_or_tender_id: str,
+    req_data: Dict[str, Any],
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    job = get_analysis_job(job_id_or_tender_id)
+    if not job:
+        raise KeyError(f"Analysis job '{job_id_or_tender_id}' not found.")
+
+    if not job.get("requirements"):
+        job["requirements"] = []
+
+    officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+    officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+    officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+    now_ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    seq = len(job["requirements"]) + 1
+    new_req = {
+        "id": f"REQ-MAN-{seq:03d}",
+        "code": req_data.get("code") or f"CUSTOM_REQ_{seq}",
+        "clause_reference": req_data.get("clause_reference", f"Clause Special-{seq}"),
+        "name": req_data.get("name", "Custom Requirement"),
+        "category": req_data.get("category", "TECHNICAL"),
+        "type": req_data.get("type", "GENERAL"),
+        "mandatory": bool(req_data.get("mandatory", True)),
+        "description": req_data.get("description", ""),
+        "threshold_value": req_data.get("threshold_value", 1),
+        "unit": req_data.get("unit"),
+        "confidence": 1.0,
+        "review_status": "ADDED_MANUALLY",
+        "source_document": job.get("filename", "Manual_Addition.pdf"),
+        "source_page": req_data.get("source_page", 1),
+        "evidence_text": req_data.get("description", "Manually inserted by procurement officer."),
+        "validation_source": req_data.get("validation_source", "Manual Tender Clause Addition"),
+        "weight": req_data.get("weight", 10),
+        "reviewed_by": officer_name,
+        "reviewed_at": now_ts
+    }
+
+    job["requirements"].append(new_req)
+
+    t_ref = job.get("tender_id") or job.get("filename") or "TENDER"
+    add_audit_log({
+        "user_email": officer_email,
+        "user_role": officer_role,
+        "action": "TENDER_REQUIREMENT_ADDED",
+        "entity_type": "REQUIREMENT",
+        "entity_id": f"{t_ref}:{new_req.get('clause_reference')}",
+        "details": f"Officer manually added new requirement '{new_req.get('name')}' ({new_req.get('clause_reference')}).",
+        "status": "SUCCESS"
+    })
+
+    return new_req
+
+def finalize_tender_requirements(
+    job_id_or_tender_id: str,
+    target_tender_id: Optional[str] = None,
+    override_existing: bool = True,
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    job = get_analysis_job(job_id_or_tender_id)
+    if not job:
+        raise KeyError(f"Analysis job '{job_id_or_tender_id}' not found.")
+
+    tid = target_tender_id or job.get("tender_id") or "TND-2026-001"
+    tender = get_tender_by_id(tid)
+    if not tender:
+        raise KeyError(f"Target tender '{tid}' not found in registry.")
+
+    officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+    officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+    officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+    now_ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Filter out REJECTED requirements
+    active_reqs = [
+        r for r in job.get("requirements", [])
+        if r.get("review_status") != "REJECTED"
+    ]
+
+    # Convert to standard tender requirement format
+    converted_reqs = []
+    for r in active_reqs:
+        converted_reqs.append({
+            "id": r.get("id"),
+            "code": r.get("code", r.get("id")),
+            "clause_reference": r.get("clause_reference"),
+            "clause": r.get("clause_reference"),
+            "title": r.get("name"),
+            "name": r.get("name"),
+            "category": r.get("category"),
+            "type": r.get("category"),
+            "mandatory": r.get("mandatory", True),
+            "description": r.get("description"),
+            "threshold_value": r.get("threshold_value"),
+            "threshold": r.get("threshold_value"),
+            "unit": r.get("unit"),
+            "scoring_weight": r.get("weight", 10),
+            "weight": r.get("weight", 10),
+            "confidence": r.get("confidence", 1.0),
+            "review_status": r.get("review_status", "VERIFIED"),
+            "source_document": r.get("source_document"),
+            "source_page": r.get("source_page", 1),
+            "evidence_text": r.get("evidence_text"),
+            "validation_source": r.get("validation_source", "Tender Document Analysis")
+        })
+
+    with _tender_number_lock:
+        if override_existing:
+            tender["requirements"] = converted_reqs
+        else:
+            tender["requirements"] = (tender.get("requirements") or []) + converted_reqs
+
+        tender["requirements_count"] = len(tender["requirements"])
+        tender["total_requirements_count"] = len(tender["requirements"])
+        tender["is_analyzed"] = True
+        tender["requirements_finalized_at"] = now_ts
+        tender["requirements_finalized_by"] = officer_name
+
+        # Update in SAMPLE_TENDERS directly
+        for idx, t in enumerate(SAMPLE_TENDERS):
+            if t.get("id") == tender.get("id") or t.get("tender_number") == tender.get("tender_number"):
+                SAMPLE_TENDERS[idx] = tender
+                break
+
+    add_audit_log({
+        "user_email": officer_email,
+        "user_role": officer_role,
+        "action": "TENDER_REQUIREMENTS_FINALIZED",
+        "entity_type": "TENDER",
+        "entity_id": tender.get("tender_number") or tender.get("id"),
+        "details": f"Officer finalized {len(converted_reqs)} evaluation criteria for tender {tender.get('tender_number') or tender.get('id')}. Evaluation engine updated.",
+        "status": "SUCCESS"
+    })
+
+    return {
+        "tender_id": tender.get("id"),
+        "tender_number": tender.get("tender_number"),
+        "requirements_count": len(converted_reqs),
+        "requirements": converted_reqs,
+        "finalized_at": now_ts,
+        "finalized_by": officer_name,
+        "message": f"Successfully finalized {len(converted_reqs)} evaluation criteria for {tender.get('tender_number') or tender.get('id')}."
+    }
+

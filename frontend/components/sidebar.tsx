@@ -7,6 +7,7 @@ import { Logo } from "@/components/logo";
 import {
   BarChart3Icon,
   FileTextIcon,
+  SparklesIcon,
   UsersIcon,
   ShieldCheckIcon,
   ScaleIcon,
@@ -22,6 +23,7 @@ import { User } from "@/lib/types";
 const OFFICER_PRIMARY_NAV = [
   { name: "Dashboard", href: "/dashboard", icon: BarChart3Icon },
   { name: "Tenders", href: "/tenders", icon: FileTextIcon },
+  { name: "AI Tender Analyze", href: "/ai-tender-analyze", icon: SparklesIcon },
   { name: "Bids & Submissions", href: "/bidders", icon: UsersIcon },
   { name: "Compliance", href: "/compliance", icon: ShieldCheckIcon },
   { name: "Compare Bids", href: "/comparison", icon: ScaleIcon },

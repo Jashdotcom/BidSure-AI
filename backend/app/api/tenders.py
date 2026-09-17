@@ -2,13 +2,17 @@
 Tender Management API Router
 Provides endpoints for listing, viewing, creating, updating, and publishing procurement tenders.
 """
-from fastapi import APIRouter, HTTPException, Depends, status, Query
+from fastapi import APIRouter, HTTPException, Depends, status, Query, UploadFile, File, Form
 from typing import List, Dict, Any, Optional
 import time
 import hashlib
 from datetime import datetime
 from app.api.auth import get_current_user, require_roles
-from app.schemas.tender import TenderCreateSchema, TenderPatchSchema, TenderDeadlineExtensionSchema, TenderCloseSchema
+from app.schemas.tender import (
+    TenderCreateSchema, TenderPatchSchema, TenderDeadlineExtensionSchema, TenderCloseSchema,
+    TenderAnalysisRequestSchema, RequirementVerifySchema, RequirementUpdateSchema,
+    RequirementCreateSchema, RequirementRejectSchema, FinalizeRequirementsSchema,
+)
 from app.data.sample_data import (
     get_all_tenders,
     get_tender_by_id,
@@ -20,8 +24,17 @@ from app.data.sample_data import (
     get_next_tender_number,
     extend_tender_deadline,
     close_tender,
-    SAMPLE_TENDERS
+    SAMPLE_TENDERS,
+    create_analysis_job,
+    get_analysis_job,
+    verify_analysis_requirement,
+    update_analysis_requirement,
+    reject_analysis_requirement,
+    add_analysis_requirement,
+    finalize_tender_requirements,
 )
+from app.services.ocr_service import OCRService
+from app.services.ai_service import AIService
 
 router = APIRouter(prefix="/tenders", tags=["Tenders"])
 
@@ -524,3 +537,262 @@ async def close_tender_endpoint(
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# AI Tender Document Analysis & Intelligent Extraction Endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/analyze-document", response_model=Dict[str, Any])
+async def analyze_tender_document(
+    payload: TenderAnalysisRequestSchema,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Executes Smart OCR / IDP + AI requirement extraction on a tender document.
+    Accepts a preloaded filename or raw text override.
+    Creates an analysis job with extracted requirements ready for human-in-the-loop review.
+    """
+    filename = payload.filename or "CPCL_Tender_Safety_Helmets_2026.pdf"
+    tender_id = payload.tender_id
+
+    # 1. Smart OCR / Intelligent Document Processing
+    ocr_service = OCRService()
+    doc_profile = await ocr_service.process_document(file_bytes=None, filename=filename)
+
+    # 2. AI Requirement Extraction
+    ai_service = AIService()
+    raw_text = payload.raw_text
+    requirements = await ai_service.extract_tender_requirements(
+        tender_text=raw_text,
+        doc_profile=doc_profile,
+        filename=filename,
+    )
+
+    # Ensure all requirements have review_status defaulting to NEEDS_REVIEW
+    for r in requirements:
+        if not r.get("review_status"):
+            r["review_status"] = "NEEDS_REVIEW"
+
+    # 3. Build analysis job record
+    job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
+    job = create_analysis_job({
+        "job_id": job_id,
+        "tender_id": tender_id,
+        "tender_title": doc_profile.get("title", filename),
+        "filename": filename,
+        "file_size_kb": doc_profile.get("file_size_kb", 4280),
+        "total_pages": doc_profile.get("page_count", 14),
+        "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
+        "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
+        "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),
+        "detected_sections": doc_profile.get("detected_sections", []),
+        "status": "COMPLETED",
+        "requirements": requirements,
+    })
+
+    # 4. Audit trail
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "TENDER_AI_ANALYSIS_STARTED",
+        "entity_type": "TENDER_DOCUMENT",
+        "entity_id": tender_id or filename,
+        "details": (
+            f"AI Document Analysis initiated for '{filename}' "
+            f"({doc_profile.get('page_count', 14)} pages, {doc_profile.get('ocr_confidence', 0.99)*100:.1f}% OCR). "
+            f"Extracted {len(requirements)} evaluation criteria."
+        ),
+        "status": "SUCCESS"
+    })
+
+    return {
+        "status": "COMPLETED",
+        "job_id": job_id,
+        "tender_id": tender_id,
+        "title": doc_profile.get("title", filename),
+        "organization": doc_profile.get("organization", "CPCL"),
+        "filename": filename,
+        "file_size_kb": doc_profile.get("file_size_kb", 4280),
+        "total_pages_parsed": doc_profile.get("page_count", 14),
+        "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
+        "detected_sections": doc_profile.get("detected_sections", []),
+        "extracted_count": len(requirements),
+        "requirements": requirements,
+        "message": f"Successfully extracted {len(requirements)} evaluation criteria from '{filename}'."
+    }
+
+
+@router.post("/upload-document", response_model=Dict[str, Any])
+async def upload_tender_document(
+    file: UploadFile = File(...),
+    tender_id: Optional[str] = Form(None),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Uploads a tender PDF document and runs OCR + AI extraction pipeline.
+    Returns extracted requirements for human-in-the-loop review.
+    """
+    file_bytes = await file.read()
+    filename = file.filename or "uploaded_tender.pdf"
+    file_size_kb = len(file_bytes) // 1024
+
+    # Smart OCR
+    ocr_service = OCRService()
+    doc_profile = await ocr_service.process_document(file_bytes=file_bytes, filename=filename)
+
+    # AI Extraction
+    ai_service = AIService()
+    requirements = await ai_service.extract_tender_requirements(
+        doc_profile=doc_profile, filename=filename
+    )
+    for r in requirements:
+        if not r.get("review_status"):
+            r["review_status"] = "NEEDS_REVIEW"
+
+    job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
+    job = create_analysis_job({
+        "job_id": job_id,
+        "tender_id": tender_id,
+        "tender_title": doc_profile.get("title", filename),
+        "filename": filename,
+        "file_size_kb": file_size_kb,
+        "total_pages": doc_profile.get("page_count", 14),
+        "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
+        "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
+        "organization": doc_profile.get("organization", "CPCL"),
+        "detected_sections": doc_profile.get("detected_sections", []),
+        "status": "COMPLETED",
+        "requirements": requirements,
+    })
+
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "TENDER_AI_ANALYSIS_STARTED",
+        "entity_type": "TENDER_DOCUMENT",
+        "entity_id": tender_id or filename,
+        "details": f"Uploaded '{filename}' ({file_size_kb} KB). Extracted {len(requirements)} criteria.",
+        "status": "SUCCESS"
+    })
+
+    return {
+        "status": "COMPLETED",
+        "job_id": job_id,
+        "tender_id": tender_id,
+        "filename": filename,
+        "file_size_kb": file_size_kb,
+        "pages_detected": doc_profile.get("page_count", 14),
+        "message": f"Document uploaded and analyzed. {len(requirements)} criteria extracted.",
+        "title": doc_profile.get("title", filename),
+        "organization": doc_profile.get("organization", "CPCL"),
+        "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
+        "detected_sections": doc_profile.get("detected_sections", []),
+        "extracted_count": len(requirements),
+        "requirements": requirements,
+    }
+
+
+@router.get("/{tender_id}/analysis", response_model=Dict[str, Any])
+async def get_tender_analysis(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """Returns the current analysis job for a tender, including extracted requirements and review states."""
+    job = get_analysis_job(tender_id)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No analysis job found for '{tender_id}'."
+        )
+    return job
+
+
+@router.post("/{tender_id}/requirements/{req_id}/verify", response_model=Dict[str, Any])
+async def verify_requirement(
+    tender_id: str,
+    req_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """Marks an extracted requirement as VERIFIED by the procurement officer."""
+    try:
+        req = verify_analysis_requirement(tender_id, req_id, officer_user=current_user)
+    except KeyError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return {"message": f"Requirement '{req.get('name')}' verified.", "requirement": req}
+
+
+@router.patch("/{tender_id}/requirements/{req_id}", response_model=Dict[str, Any])
+async def edit_requirement(
+    tender_id: str,
+    req_id: str,
+    payload: RequirementUpdateSchema,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """Edits an extracted requirement. Preserves original_data for diff tracking."""
+    try:
+        req = update_analysis_requirement(
+            tender_id, req_id,
+            update_payload=payload.model_dump(exclude_none=True),
+            officer_user=current_user
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return {"message": f"Requirement '{req.get('name')}' updated.", "requirement": req}
+
+
+@router.post("/{tender_id}/requirements", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def add_requirement(
+    tender_id: str,
+    payload: RequirementCreateSchema,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """Adds a new officer-authored requirement to the analysis job."""
+    try:
+        req = add_analysis_requirement(
+            tender_id,
+            req_data=payload.model_dump(exclude_none=True),
+            officer_user=current_user
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return {"message": f"Requirement '{req.get('name')}' added manually.", "requirement": req}
+
+
+@router.post("/{tender_id}/requirements/{req_id}/reject", response_model=Dict[str, Any])
+async def reject_requirement(
+    tender_id: str,
+    req_id: str,
+    payload: RequirementRejectSchema,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """Rejects an extracted requirement with a mandatory justification."""
+    try:
+        req = reject_analysis_requirement(tender_id, req_id, reason=payload.reason, officer_user=current_user)
+    except KeyError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return {"message": f"Requirement '{req.get('name')}' rejected.", "requirement": req}
+
+
+@router.post("/{tender_id}/finalize-requirements", response_model=Dict[str, Any])
+async def finalize_requirements(
+    tender_id: str,
+    payload: Optional[FinalizeRequirementsSchema] = None,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Finalizes all non-rejected requirements into the tender's canonical record.
+    Updates the tender and enables deterministic RulesEngine evaluation.
+    """
+    target_tid = (payload.tender_id if payload else None) or tender_id
+    override = (payload.override_existing if payload else True)
+    try:
+        result = finalize_tender_requirements(
+            job_id_or_tender_id=tender_id,
+            target_tender_id=target_tid,
+            override_existing=override,
+            officer_user=current_user,
+        )
+    except KeyError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return result

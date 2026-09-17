@@ -25,22 +25,49 @@ class RequirementSchema(BaseModel):
     source_document: Optional[str] = "CPCL_Tender_Safety_Helmets_2026.pdf"
     source_page: Optional[int] = 1
     confidence: Optional[float] = 0.95
+    review_status: Optional[str] = "VERIFIED"
+    evidence_text: Optional[str] = None
+    original_data: Optional[Dict[str, Any]] = None
+    rejection_reason: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
 
-class RequirementCreateSchema(BaseModel):
+class AnalysisRequirementSchema(BaseModel):
+    id: str
+    code: str
     name: str
-    code: Optional[str] = None
     clause_reference: str
-    category: str = "Technical"
-    type: str = "VALUE_MATCH"
+    category: str
+    type: Optional[str] = "GENERAL"
     mandatory: bool = True
     description: str
     threshold_value: Any
     unit: Optional[str] = None
-    validation_source: str = "Tender Compliance Scrutiny"
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    review_status: str = Field("NEEDS_REVIEW", description="NEEDS_REVIEW, VERIFIED, EDITED, ADDED_MANUALLY, REJECTED")
+    source_document: str = "Tender_Document.pdf"
+    source_page: int = 1
+    evidence_text: str = ""
+    validation_source: Optional[str] = "Tender Document Analysis"
     weight: int = 10
-    constraint_type: str = "text"
-    constraint: Optional[Dict[str, Any]] = None
-    source_document: Optional[str] = "Uploaded_Tender.pdf"
+    original_data: Optional[Dict[str, Any]] = None
+    rejection_reason: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[str] = None
+
+class RequirementCreateSchema(BaseModel):
+    name: str = Field(..., min_length=2, description="Requirement name / title")
+    code: Optional[str] = None
+    clause_reference: str = Field(..., min_length=2, description="Clause reference number (e.g. Clause 4.1.2)")
+    category: str = Field("TECHNICAL", description="FINANCIAL, TECHNICAL, OEM_AUTHORIZATION, LOCAL_CONTENT, STATUTORY, VIGILANCE, COMMERCIAL")
+    type: Optional[str] = "GENERAL"
+    mandatory: bool = True
+    description: str = Field(..., min_length=5, description="Detailed clause specification")
+    threshold_value: Any = Field(..., description="Target threshold or required qualification value")
+    unit: Optional[str] = None
+    validation_source: Optional[str] = "Manual Tender Clause Addition"
+    weight: Optional[int] = 10
+    source_document: Optional[str] = "Manual_Addition.pdf"
     source_page: Optional[int] = 1
     confidence: Optional[float] = 1.0
 
@@ -53,8 +80,44 @@ class RequirementUpdateSchema(BaseModel):
     threshold_value: Optional[Any] = None
     unit: Optional[str] = None
     weight: Optional[int] = None
-    constraint_type: Optional[str] = None
-    constraint: Optional[Dict[str, Any]] = None
+    edit_reason: Optional[str] = Field(None, description="Officer's justification for modifying the AI extracted clause")
+
+class RequirementVerifySchema(BaseModel):
+    officer_notes: Optional[str] = None
+
+class RequirementRejectSchema(BaseModel):
+    reason: str = Field(..., min_length=3, description="Mandatory official justification for excluding/rejecting this clause")
+
+class FinalizeRequirementsSchema(BaseModel):
+    tender_id: Optional[str] = Field(None, description="Target tender ID to attach finalized requirements to (e.g. TND-2026-001)")
+    override_existing: Optional[bool] = Field(True, description="Whether to replace current requirements on the tender")
+    notes: Optional[str] = Field(None, description="Procurement officer's finalization summary notes")
+
+class TenderAnalysisRequestSchema(BaseModel):
+    filename: Optional[str] = Field("CPCL_Tender_Safety_Helmets_2026.pdf", description="Preloaded or uploaded PDF document name")
+    tender_id: Optional[str] = Field(None, description="Optional target tender ID to associate with analysis")
+    raw_text: Optional[str] = Field(None, description="Optional raw document text override")
+
+class DocumentSectionSchema(BaseModel):
+    title: str
+    page_start: int
+    page_end: int
+    type: str
+
+class TenderAnalysisResponseSchema(BaseModel):
+    status: str
+    job_id: str
+    tender_id: Optional[str] = None
+    title: str
+    organization: str
+    filename: str
+    file_size_kb: int
+    total_pages_parsed: int
+    ocr_confidence: float
+    detected_sections: List[DocumentSectionSchema] = []
+    extracted_count: int
+    requirements: List[AnalysisRequirementSchema]
+    message: str
 
 class TenderDetailSchema(BaseModel):
     id: str
@@ -133,17 +196,6 @@ class TenderPatchSchema(BaseModel):
     file_name: Optional[str] = None
     file_size_kb: Optional[int] = None
     requirements: Optional[List[Dict[str, Any]]] = None
-
-class TenderAnalysisResponseSchema(BaseModel):
-    status: str
-    tender_id: str
-    title: str
-    organization: str
-    estimated_value: str
-    total_pages_parsed: int
-    extracted_count: int
-    requirements: List[RequirementSchema]
-    message: str
 
 class TenderDeadlineExtensionSchema(BaseModel):
     new_deadline: str = Field(..., description="New submission deadline (ISO timestamp or YYYY-MM-DD format)")
