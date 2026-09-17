@@ -3,9 +3,11 @@ Compliance Evaluation API Router
 Orchestrates AI extraction, deterministic rules engine, and government registry verification.
 Provides complete, detailed bidder compliance evaluation scoped strictly to selected tenders.
 """
-from fastapi import APIRouter, HTTPException, Depends, status, Query
-from typing import Dict, Any, List, Optional
-from datetime import datetime, timezone
+from fastapi.responses import Response, StreamingResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from io import BytesIO
+import io
 
 from app.api.auth import get_current_user, require_roles
 from app.data.sample_data import (
