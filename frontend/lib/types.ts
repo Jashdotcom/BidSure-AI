@@ -129,6 +129,20 @@ export interface Requirement {
   unit?: string;
 }
 
+export interface TenderAmendment {
+  id: string;
+  amendment_number?: string;
+  tender_id?: string;
+  previous_deadline: string;
+  previous_deadline_display?: string;
+  new_deadline: string;
+  new_deadline_display?: string;
+  reason: string;
+  changed_by?: string;
+  changed_by_email?: string;
+  changed_at: string;
+}
+
 export interface Tender {
   id: string;
   tender_id?: string;
@@ -141,14 +155,27 @@ export interface Tender {
   status: string;
   estimated_value?: string | number;
   emd_amount?: string | number;
+  issue_date?: string;
   published_date?: string;
   publish_date?: string;
   closing_date?: string;
+  submission_deadline?: string;
   deadline?: string;
+  bid_opening_date?: string;
+  evaluation_method?: string;
+  performance_security?: string;
+  file_name?: string;
+  file_size_kb?: number;
   bids_count?: number;
   bidders_count?: number;
   verified_count?: number;
   description?: string;
   requirements_count?: number;
   requirements?: TenderRequirement[] | Requirement[];
+  deadline_history?: TenderAmendment[];
+  amendments?: TenderAmendment[];
+  last_amended_at?: string;
+  last_amendment_reason?: string;
+  closed_at?: string;
+  closed_reason?: string;
 }

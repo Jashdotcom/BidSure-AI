@@ -7,7 +7,7 @@ import time
 import hashlib
 import threading
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 SAMPLE_USERS: List[Dict[str, Any]] = [
     {
@@ -410,7 +410,40 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "bids_count": 3,
         "verified_count": 3,
         "description": "Annual contract for supply of certified flame-resistant coveralls, SCBA breathing apparatus, chemical safety helmets, and fall protection harnesses.",
-        "requirements": []
+        "requirements": [],
+        "deadline_history": [
+            {
+                "id": "AMD-CPCL-PROC-SAFETY-2024-09-01",
+                "amendment_number": "Corrigendum-01",
+                "tender_id": "CPCL/PROC/SAFETY/2024/09",
+                "previous_deadline": "2024-08-15T17:30:00Z",
+                "previous_deadline_display": "15 Aug 2024, 05:30 PM",
+                "new_deadline": "2024-08-30T17:30:00Z",
+                "new_deadline_display": "30 Aug 2024, 05:30 PM",
+                "reason": "Corrigendum-01: Technical query resolution window extended for prospective PPE vendors.",
+                "changed_by": "Rajesh Kumar",
+                "changed_by_email": "officer@cpcl.gov.in",
+                "changed_at": "2024-08-10T11:00:00Z"
+            }
+        ],
+        "amendments": [
+            {
+                "id": "AMD-CPCL-PROC-SAFETY-2024-09-01",
+                "amendment_number": "Corrigendum-01",
+                "tender_id": "CPCL/PROC/SAFETY/2024/09",
+                "previous_deadline": "2024-08-15T17:30:00Z",
+                "previous_deadline_display": "15 Aug 2024, 05:30 PM",
+                "new_deadline": "2024-08-30T17:30:00Z",
+                "new_deadline_display": "30 Aug 2024, 05:30 PM",
+                "reason": "Corrigendum-01: Technical query resolution window extended for prospective PPE vendors.",
+                "changed_by": "Rajesh Kumar",
+                "changed_by_email": "officer@cpcl.gov.in",
+                "changed_at": "2024-08-10T11:00:00Z"
+            }
+        ],
+        "closed_at": "2024-08-30T17:30:00Z",
+        "closed_by": "Rajesh Kumar",
+        "close_reason": "Bidding window concluded and sealed for evaluation."
     }
 ]
 
@@ -1893,6 +1926,40 @@ def compute_tender_bid_counts(tender: Dict[str, Any]) -> Dict[str, Any]:
     )
     return tender_copy
 
+def format_tender_deadline_display(val: Any) -> str:
+    """Formats an ISO timestamp or date string into a readable format (e.g., '18 Sep 2026, 05:30 PM')."""
+    if not val:
+        return "Not Specified"
+    val_str = str(val).strip()
+    try:
+        if "T" in val_str:
+            clean_str = val_str.replace("Z", "+00:00")
+            dt = datetime.fromisoformat(clean_str)
+            return dt.strftime("%d %b %Y, %I:%M %p")
+        else:
+            dt = datetime.fromisoformat(val_str)
+            return dt.strftime("%d %b %Y")
+    except Exception:
+        return val_str
+
+def parse_deadline_datetime(dt_input: str) -> datetime:
+    """Parses various date/time input formats into a UTC-aware datetime."""
+    s = str(dt_input).strip()
+    s = s.replace("Z", "+00:00")
+    if " " in s and "T" not in s:
+        s = s.replace(" ", "T")
+    try:
+        if "T" in s:
+            dt = datetime.fromisoformat(s)
+        else:
+            # Default closing time: 17:30:00 UTC
+            dt = datetime.fromisoformat(f"{s}T17:30:00+00:00")
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception as err:
+        raise ValueError(f"Invalid date format for deadline: '{dt_input}'. Expected YYYY-MM-DD or ISO 8601 timestamp.") from err
+
 def get_all_tenders(query: Optional[str] = None, status: Optional[str] = None, category: Optional[str] = None) -> List[Dict[str, Any]]:
     results = [compute_tender_bid_counts(t) for t in SAMPLE_TENDERS]
     if query:
@@ -1911,12 +1978,18 @@ def get_all_tenders(query: Optional[str] = None, status: Optional[str] = None, c
         ]
     if status and status.upper() != "ALL":
         st = status.strip().upper()
-        results = [
-            t for t in results
-            if t.get("status", "").upper() == st
-            or (st in ["OPEN", "ACTIVE", "PUBLISHED"] and t.get("status", "").upper() in ["OPEN", "ACTIVE", "PUBLISHED"])
-            or (st in ["UNDER REVIEW", "EVALUATING", "REVIEW"] and t.get("status", "").upper() in ["UNDER REVIEW", "EVALUATING", "REVIEW"])
-        ]
+        if st in ["ACTIVE", "OPEN", "PUBLISHED"]:
+            results = [t for t in results if t.get("status", "").upper() in ["ACTIVE", "OPEN", "PUBLISHED"]]
+        elif st in ["INACTIVE", "CLOSED", "CANCELLED", "ARCHIVED"]:
+            results = [t for t in results if t.get("status", "").upper() in ["INACTIVE", "CLOSED", "CANCELLED", "ARCHIVED"]]
+        elif st in ["DRAFT", "ANALYZING", "REQUIREMENTS_REVIEW"]:
+            results = [t for t in results if t.get("status", "").upper() in ["DRAFT", "ANALYZING", "REQUIREMENTS_REVIEW"]]
+        else:
+            results = [
+                t for t in results
+                if t.get("status", "").upper() == st
+                or (st in ["UNDER REVIEW", "EVALUATING", "REVIEW"] and t.get("status", "").upper() in ["UNDER REVIEW", "EVALUATING", "REVIEW"])
+            ]
     if category and category.upper() != "ALL":
         cat = category.strip().lower()
         results = [t for t in results if cat in t.get("category", "").lower()]
@@ -2098,15 +2171,184 @@ def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     with _tender_number_lock:
-        tender = get_tender_by_id(tender_id)
+        tender = None
+        for t in SAMPLE_TENDERS:
+            if (
+                t.get("id") == tender_id
+                or t.get("tender_number") == tender_id
+                or t.get("ref") == tender_id
+                or t.get("tender_id") == tender_id
+            ):
+                tender = t
+                break
         if tender:
             # Check duplicate if tender_number is being changed
             new_num = patch_data.get("tender_number") or patch_data.get("tender_id")
             if new_num and new_num != tender.get("tender_number") and check_tender_id_exists(new_num, exclude_id=tender.get("id")):
                 raise ValueError(f"Tender ID '{new_num}' already exists in the registry.")
             tender.update(patch_data)
-            return tender
+            return compute_tender_bid_counts(tender)
         return None
+
+def extend_tender_deadline(
+    tender_id: str,
+    new_deadline: str,
+    reason: str,
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Extends or updates the submission deadline of an active/published tender.
+    Thread-safe, validates future timestamp, appends to deadline_history,
+    and logs immutable TENDER_DEADLINE_UPDATED audit log.
+    """
+    with _tender_number_lock:
+        tender = None
+        for t in SAMPLE_TENDERS:
+            if (
+                t.get("id") == tender_id
+                or t.get("tender_number") == tender_id
+                or t.get("ref") == tender_id
+                or t.get("tender_id") == tender_id
+            ):
+                tender = t
+                break
+
+        if not tender:
+            raise ValueError(f"Tender '{tender_id}' not found.")
+
+        current_status = (tender.get("status") or "DRAFT").strip().upper()
+        if current_status in ["CLOSED", "CANCELLED", "ARCHIVED"]:
+            raise ValueError(f"Cannot extend deadline for a tender in '{current_status}' status.")
+
+        if not reason or len(reason.strip()) < 3:
+            raise ValueError("An official justification / corrigendum rationale is required (minimum 3 characters).")
+
+        new_dt = parse_deadline_datetime(new_deadline)
+        now_dt = datetime.now(timezone.utc)
+
+        if new_dt <= now_dt:
+            raise ValueError(
+                f"New deadline must be in the future. Provided: {new_dt.strftime('%d %b %Y, %I:%M %p UTC')}, Current UTC time: {now_dt.strftime('%d %b %Y, %I:%M %p UTC')}."
+            )
+
+        prev_deadline_raw = tender.get("closing_date") or tender.get("submission_deadline") or tender.get("deadline") or ""
+        if prev_deadline_raw:
+            try:
+                prev_dt = parse_deadline_datetime(prev_deadline_raw)
+                if new_dt <= prev_dt:
+                    raise ValueError(
+                        f"New deadline ({new_dt.strftime('%d %b %Y, %I:%M %p')}) must be strictly later than current deadline ({prev_dt.strftime('%d %b %Y, %I:%M %p')})."
+                    )
+            except ValueError as ve:
+                if "must be strictly later" in str(ve):
+                    raise
+                pass
+
+        prev_deadline_display = format_tender_deadline_display(prev_deadline_raw)
+        iso_new_deadline = new_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        new_deadline_display = new_dt.strftime("%d %b %Y, %I:%M %p")
+        short_deadline = new_dt.strftime("%d %b %Y")
+
+        if "deadline_history" not in tender or not isinstance(tender["deadline_history"], list):
+            tender["deadline_history"] = []
+
+        seq_num = len(tender["deadline_history"]) + 1
+        t_ref = (tender.get("tender_number") or tender.get("id") or tender_id).replace("/", "-")
+        amd_id = f"AMD-{t_ref}-{seq_num:02d}"
+
+        officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+        officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+        officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+        changed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        amendment_entry = {
+            "id": amd_id,
+            "amendment_number": f"Corrigendum-{seq_num:02d}",
+            "tender_id": tender.get("tender_number") or tender.get("id"),
+            "previous_deadline": prev_deadline_raw,
+            "previous_deadline_display": prev_deadline_display,
+            "new_deadline": iso_new_deadline,
+            "new_deadline_display": new_deadline_display,
+            "reason": reason.strip(),
+            "changed_by": officer_name,
+            "changed_by_email": officer_email,
+            "changed_at": changed_at
+        }
+        tender["deadline_history"].append(amendment_entry)
+        tender["amendments"] = list(tender["deadline_history"])
+
+        tender["closing_date"] = iso_new_deadline
+        tender["submission_deadline"] = iso_new_deadline
+        tender["deadline"] = short_deadline
+        tender["last_amended_at"] = changed_at
+        tender["last_amendment_reason"] = reason.strip()
+
+        add_audit_log({
+            "user_email": officer_email,
+            "user_role": officer_role,
+            "action": "TENDER_DEADLINE_UPDATED",
+            "entity_type": "TENDER",
+            "entity_id": tender.get("tender_number") or tender.get("id"),
+            "details": f"Submission deadline extended from '{prev_deadline_display}' to '{new_deadline_display}' ({amendment_entry['amendment_number']}). Justification: {reason.strip()}",
+            "status": "SUCCESS"
+        })
+
+        return compute_tender_bid_counts(tender)
+
+def close_tender(
+    tender_id: str,
+    reason: Optional[str] = None,
+    officer_user: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Closes an active tender and seals its bidding archive.
+    Thread-safe, transitions status to CLOSED, records closed_at/closed_by,
+    and logs immutable TENDER_CLOSED audit log.
+    """
+    with _tender_number_lock:
+        tender = None
+        for t in SAMPLE_TENDERS:
+            if (
+                t.get("id") == tender_id
+                or t.get("tender_number") == tender_id
+                or t.get("ref") == tender_id
+                or t.get("tender_id") == tender_id
+            ):
+                tender = t
+                break
+
+        if not tender:
+            raise ValueError(f"Tender '{tender_id}' not found.")
+
+        current_status = (tender.get("status") or "DRAFT").strip().upper()
+        if current_status == "CLOSED":
+            raise ValueError(f"Tender '{tender.get('tender_number') or tender_id}' is already closed.")
+
+        officer_name = (officer_user.get("name") if officer_user else None) or "Procurement Officer"
+        officer_email = (officer_user.get("email") if officer_user else None) or "officer@cpcl.gov.in"
+        officer_role = (officer_user.get("role") if officer_user else None) or "PROCUREMENT_OFFICER"
+
+        close_reason = (reason or "").strip() or "Bidding window concluded and sealed by Procurement Officer."
+        closed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        old_status = tender.get("status", "PUBLISHED")
+        tender["status"] = "CLOSED"
+        tender["closed_at"] = closed_at
+        tender["closed_by"] = officer_name
+        tender["closed_by_email"] = officer_email
+        tender["close_reason"] = close_reason
+
+        add_audit_log({
+            "user_email": officer_email,
+            "user_role": officer_role,
+            "action": "TENDER_CLOSED",
+            "entity_type": "TENDER",
+            "entity_id": tender.get("tender_number") or tender.get("id"),
+            "details": f"Tender {tender.get('tender_number') or tender.get('id')} status changed from {old_status} to CLOSED. Reason: {close_reason}",
+            "status": "SUCCESS"
+        })
+
+        return compute_tender_bid_counts(tender)
 
 def get_all_bidders(
     query: Optional[str] = None,

@@ -10,6 +10,7 @@ SECURITY GUARANTEES:
 """
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import Dict, Any, List, Optional
+from datetime import datetime, timezone
 from app.api.auth import get_current_user, require_roles
 from app.data.sample_data import (
     get_all_tenders,
@@ -352,6 +353,29 @@ async def submit_bid(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Tender {tender_id} is in {tender_status} stage. Bids can only be submitted for PUBLISHED tenders."
         )
+
+    # Validate tender submission deadline
+    closing_raw = tender.get("closing_date") or tender.get("submission_deadline") or tender.get("deadline")
+    if closing_raw:
+        try:
+            closing_str = str(closing_raw).replace("Z", "+00:00")
+            if " " in closing_str and "T" not in closing_str:
+                closing_str = closing_str.replace(" ", "T")
+            if "T" in closing_str:
+                closing_dt = datetime.fromisoformat(closing_str)
+            else:
+                closing_dt = datetime.fromisoformat(f"{closing_str}T23:59:59+00:00")
+            if closing_dt.tzinfo is None:
+                closing_dt = closing_dt.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > closing_dt:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Tender {tender_id} submission deadline ({tender.get('deadline') or closing_raw}) has expired. Submissions are no longer accepted."
+                )
+        except HTTPException:
+            raise
+        except Exception:
+            pass
 
     bidder_id = current_user.get("bidder_id") or "BID-001"
     new_bid = {

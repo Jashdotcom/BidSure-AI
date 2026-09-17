@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
+import React, { useState, useEffect, useTransition, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { Card, Button, StatusBadge, TenderStatusBadge } from "@/components/ui";
@@ -16,9 +16,18 @@ import {
   XIcon,
   ClockIcon,
   BuildingIcon,
+  ShieldCheckIcon,
+  SlidersIcon,
+  AlertTriangleIcon,
+  FilterIcon,
+  ArrowRightIcon,
+  LockIcon,
+  CheckIcon,
+  FileCheckIcon,
+  InfoIcon,
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
-import { Tender, Requirement } from "@/lib/types";
+import { Tender, Requirement, TenderAmendment } from "@/lib/types";
 
 const DEFAULT_REQUIREMENTS: Requirement[] = [
   {
@@ -128,16 +137,23 @@ const DEFAULT_REQUIREMENTS: Requirement[] = [
   },
 ];
 
+type LifecycleTab = "ACTIVE" | "INACTIVE" | "DRAFT" | "ALL";
+
 export default function TendersPage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // URL state synchronization
   const initialQuery = searchParams.get("query") || "";
+  const initialTabParam = (searchParams.get("status") || "ACTIVE").toUpperCase() as LifecycleTab;
+  const validTabs: LifecycleTab[] = ["ACTIVE", "INACTIVE", "DRAFT", "ALL"];
+  const initialTab = validTabs.includes(initialTabParam) ? initialTabParam : "ACTIVE";
 
+  const [activeTab, setActiveTab] = useState<LifecycleTab>(initialTab);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -156,24 +172,28 @@ export default function TendersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Modals
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  // Manage Tender Modal State (for Active Tenders)
+  const [manageModalTender, setManageModalTender] = useState<Tender | null>(null);
+  const [manageModalTab, setManageModalTab] = useState<"OVERVIEW" | "EXTEND_DEADLINE" | "CLOSE" | "AMENDMENTS">("OVERVIEW");
+  const [newDeadlineInput, setNewDeadlineInput] = useState<string>("");
+  const [deadlineReasonInput, setDeadlineReasonInput] = useState<string>("");
+  const [isExtendingDeadline, setIsExtendingDeadline] = useState(false);
+  const [deadlineActionError, setDeadlineActionError] = useState<string | null>(null);
+  const [deadlineActionSuccess, setDeadlineActionSuccess] = useState<string | null>(null);
+
+  // Close Tender in Manage Modal State
+  const [closeReasonInput, setCloseReasonInput] = useState<string>("Bidding window concluded and sealed by Procurement Officer.");
+  const [isClosingTender, setIsClosingTender] = useState(false);
+  const [closeActionError, setCloseActionError] = useState<string | null>(null);
+  const [closeActionSuccess, setCloseActionSuccess] = useState<string | null>(null);
+
+  // Amendment History Quick Modal State (for Inactive/Closed or Active cards)
+  const [amendmentHistoryModalTender, setAmendmentHistoryModalTender] = useState<Tender | null>(null);
+
+  // Modals for Clause Scrutiny Rules
   const [isAddReqModalOpen, setIsAddReqModalOpen] = useState(false);
   const [isEditReqModalOpen, setIsEditReqModalOpen] = useState(false);
   const [editingReq, setEditingReq] = useState<Requirement | null>(null);
-
-  // New Tender Form State
-  const [newTender, setNewTender] = useState({
-    title: "",
-    tender_number: "",
-    organization: "Chennai Petroleum Corporation Limited (CPCL)",
-    department: "Materials & Procurement Division",
-    category: "Industrial PPE",
-    estimated_value: "45000000",
-    emd_amount: "900000",
-    deadline: "2026-10-15",
-    description: "",
-  });
 
   // New Requirement Form State
   const [newReq, setNewReq] = useState({
@@ -189,12 +209,17 @@ export default function TendersPage() {
 
   // Push URL update helper
   const updateUrlParams = useCallback(
-    (query: string) => {
+    (query: string, tab: LifecycleTab) => {
       const params = new URLSearchParams(searchParams.toString());
       if (query) {
         params.set("query", query);
       } else {
         params.delete("query");
+      }
+      if (tab && tab !== "ACTIVE") {
+        params.set("status", tab);
+      } else {
+        params.delete("status");
       }
       startTransition(() => {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
@@ -206,20 +231,16 @@ export default function TendersPage() {
   // Debounced search sync
   useEffect(() => {
     const handler = setTimeout(() => {
-      updateUrlParams(searchTerm);
+      updateUrlParams(searchTerm, activeTab);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchTerm, updateUrlParams]);
+  }, [searchTerm, activeTab, updateUrlParams]);
 
-  // Fetch / filter tenders
-  const fetchTenders = useCallback(async (query: string) => {
+  // Fetch all tenders from backend source of truth
+  const fetchTenders = useCallback(async () => {
     setLoading(true);
     try {
-      const qParams = new URLSearchParams();
-      if (query) qParams.set("query", query);
-
-      const qs = qParams.toString() ? `?${qParams.toString()}` : "";
-      const res = await apiRequest<Tender[]>(`/tenders${qs}`);
+      const res = await apiRequest<Tender[]>("/tenders");
       if (res && Array.isArray(res)) {
         setTenders(res);
       } else {
@@ -232,66 +253,227 @@ export default function TendersPage() {
     }
   }, []);
 
-  // Refetch when search params change
+  useEffect(() => {
+    fetchTenders();
+  }, [fetchTenders]);
+
+  // Sync search params on load
   useEffect(() => {
     const q = searchParams.get("query") || "";
+    const tabParam = (searchParams.get("status") || "ACTIVE").toUpperCase() as LifecycleTab;
+    if (validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
     setSearchTerm(q);
-    fetchTenders(q);
-  }, [searchParams, fetchTenders]);
+  }, [searchParams]);
 
-  function handleClearSearch() {
-    setSearchTerm("");
-    updateUrlParams("");
+  function handleTabChange(tab: LifecycleTab) {
+    setActiveTab(tab);
+    updateUrlParams(searchTerm, tab);
   }
 
-  // Create Tender (starts in DRAFT stage)
-  async function handleCreateTender(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newTender.title) return;
+  function handleClearFilters() {
+    setSearchTerm("");
+    setSelectedCategory("ALL");
+    updateUrlParams("", activeTab);
+  }
 
-    const num = newTender.tender_number || `CPCL/PROC/2026/00${tenders.length + 1}`;
-    const tenderPayload: Tender = {
-      id: `TND-2026-00${tenders.length + 1}`,
-      tender_number: num,
-      ref: num,
-      tender_id: num,
-      title: newTender.title,
-      organization: newTender.organization,
-      department: newTender.department,
-      category: newTender.category,
-      status: "DRAFT",
-      estimated_value: parseFloat(newTender.estimated_value) || 30000000,
-      emd_amount: parseFloat(newTender.emd_amount) || 600000,
-      deadline: newTender.deadline,
-      closing_date: `${newTender.deadline}T17:30:00Z`,
-      publish_date: new Date().toISOString(),
-      bids_count: 0,
-      verified_count: 0,
-      description: newTender.description || `Procurement contract for ${newTender.title}`,
+  // Extract unique categories for filter dropdown
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    tenders.forEach((t) => {
+      if (t.category) set.add(t.category);
+    });
+    return Array.from(set).sort();
+  }, [tenders]);
+
+  // Tab count badges computed dynamically from loaded tenders
+  const tabCounts = useMemo(() => {
+    let active = 0;
+    let inactive = 0;
+    let draft = 0;
+
+    tenders.forEach((t) => {
+      const st = (t.status || "DRAFT").toUpperCase();
+      if (st === "PUBLISHED" || st === "OPEN" || st === "ACTIVE") {
+        active++;
+      } else if (st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED") {
+        inactive++;
+      } else if (st === "DRAFT" || st === "ANALYZING" || st === "REQUIREMENTS_REVIEW") {
+        draft++;
+      }
+    });
+
+    return {
+      ACTIVE: active,
+      INACTIVE: inactive,
+      DRAFT: draft,
+      ALL: tenders.length,
     };
+  }, [tenders]);
 
+  // Filter tenders based on tab, search term, and category
+  const filteredTenders = useMemo(() => {
+    return tenders.filter((t) => {
+      const st = (t.status || "DRAFT").toUpperCase();
+
+      // Tab filter
+      let matchesTab = true;
+      if (activeTab === "ACTIVE") {
+        matchesTab = st === "PUBLISHED" || st === "OPEN" || st === "ACTIVE";
+      } else if (activeTab === "INACTIVE") {
+        matchesTab = st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED";
+      } else if (activeTab === "DRAFT") {
+        matchesTab = st === "DRAFT" || st === "ANALYZING" || st === "REQUIREMENTS_REVIEW";
+      } else if (activeTab === "ALL") {
+        matchesTab = true;
+      }
+
+      if (!matchesTab) return false;
+
+      // Category filter
+      if (selectedCategory !== "ALL" && t.category !== selectedCategory) {
+        return false;
+      }
+
+      // Keyword Search filter
+      if (searchTerm.trim()) {
+        const query = searchTerm.toLowerCase();
+        const num = (t.tender_number || t.ref || t.tender_id || t.id || "").toLowerCase();
+        const title = (t.title || "").toLowerCase();
+        const org = (t.organization || "").toLowerCase();
+        const dept = (t.department || "").toLowerCase();
+        const cat = (t.category || "").toLowerCase();
+        const desc = (t.description || "").toLowerCase();
+        return (
+          num.includes(query) ||
+          title.includes(query) ||
+          org.includes(query) ||
+          dept.includes(query) ||
+          cat.includes(query) ||
+          desc.includes(query)
+        );
+      }
+
+      return true;
+    });
+  }, [tenders, activeTab, selectedCategory, searchTerm]);
+
+  // Open Manage Tender Modal (with sensible pre-filled deadline if available)
+  function handleOpenManageModal(tender: Tender) {
+    setManageModalTender(tender);
+    setManageModalTab("OVERVIEW");
+    setDeadlineActionError(null);
+    setDeadlineActionSuccess(null);
+    setCloseActionError(null);
+    setCloseActionSuccess(null);
+
+    // Prepare default new deadline (7 days after current or 2026-10-15T17:30)
+    const currentRaw = tender.closing_date || tender.submission_deadline || tender.deadline || "2026-10-15";
+    let defaultNewIso = "2026-10-30T17:30";
     try {
-      await apiRequest("/tenders", {
-        method: "POST",
-        body: tenderPayload,
-      });
+      const dt = new Date(currentRaw.includes("T") ? currentRaw : `${currentRaw}T17:30:00Z`);
+      if (!isNaN(dt.getTime())) {
+        dt.setDate(dt.getDate() + 14); // default +14 days extension
+        const yyyy = dt.getFullYear();
+        const mm = String(dt.getMonth() + 1).padStart(2, "0");
+        const dd = String(dt.getDate()).padStart(2, "0");
+        defaultNewIso = `${yyyy}-${mm}-${dd}T17:30`;
+      }
     } catch {
-      // Offline fallback
+      defaultNewIso = "2026-10-30T17:30";
+    }
+    setNewDeadlineInput(defaultNewIso);
+    setDeadlineReasonInput(`Corrigendum: Extension of submission deadline for prospective vendors.`);
+  }
+
+  // Handle Extend Deadline Submission
+  async function handleConfirmExtendDeadline(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manageModalTender) return;
+
+    setDeadlineActionError(null);
+    setDeadlineActionSuccess(null);
+
+    if (!newDeadlineInput) {
+      setDeadlineActionError("Please select a new submission deadline date and time.");
+      return;
+    }
+    if (!deadlineReasonInput || deadlineReasonInput.trim().length < 3) {
+      setDeadlineActionError("Please provide an official justification / rationale for the deadline extension (minimum 3 characters).");
+      return;
     }
 
-    setTenders([tenderPayload, ...tenders]);
-    setIsCreateModalOpen(false);
-    setNewTender({
-      title: "",
-      tender_number: "",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      department: "Materials & Procurement Division",
-      category: "Industrial PPE",
-      estimated_value: "45000000",
-      emd_amount: "900000",
-      deadline: "2026-10-15",
-      description: "",
-    });
+    setIsExtendingDeadline(true);
+    try {
+      const tenderId = manageModalTender.id;
+      const res = await apiRequest<{ message: string; tender: Tender }>(
+        `/tenders/${encodeURIComponent(tenderId)}/extend-deadline`,
+        {
+          method: "POST",
+          body: {
+            new_deadline: newDeadlineInput,
+            reason: deadlineReasonInput.trim(),
+          },
+        }
+      );
+
+      if (res && res.tender) {
+        // Update local tenders state
+        setTenders((prev) =>
+          prev.map((t) => (t.id === tenderId ? { ...t, ...res.tender } : t))
+        );
+        setManageModalTender(res.tender);
+        setDeadlineActionSuccess(res.message || "Submission deadline extended successfully.");
+      } else {
+        setDeadlineActionSuccess("Submission deadline extended successfully.");
+        await fetchTenders();
+      }
+    } catch (err: any) {
+      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to extend deadline.";
+      setDeadlineActionError(typeof msg === "string" ? msg : JSON.stringify(msg));
+    } finally {
+      setIsExtendingDeadline(false);
+    }
+  }
+
+  // Handle Close Tender Submission
+  async function handleConfirmCloseTender(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manageModalTender) return;
+
+    setCloseActionError(null);
+    setCloseActionSuccess(null);
+
+    setIsClosingTender(true);
+    try {
+      const tenderId = manageModalTender.id;
+      const res = await apiRequest<{ message: string; tender: Tender }>(
+        `/tenders/${encodeURIComponent(tenderId)}/close`,
+        {
+          method: "POST",
+          body: {
+            reason: closeReasonInput.trim() || "Bidding window concluded and sealed by Procurement Officer.",
+          },
+        }
+      );
+
+      if (res && res.tender) {
+        setTenders((prev) =>
+          prev.map((t) => (t.id === tenderId ? { ...t, ...res.tender } : t))
+        );
+        setManageModalTender(res.tender);
+        setCloseActionSuccess(res.message || "Tender has been closed and sealed.");
+      } else {
+        setCloseActionSuccess("Tender closed successfully.");
+        await fetchTenders();
+      }
+    } catch (err: any) {
+      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to close tender.";
+      setCloseActionError(typeof msg === "string" ? msg : JSON.stringify(msg));
+    } finally {
+      setIsClosingTender(false);
+    }
   }
 
   // Lifecycle Transition 1: DRAFT -> ANALYZING -> REQUIREMENTS_REVIEW
@@ -302,11 +484,10 @@ export default function TendersPage() {
     setIsApproved(false);
     setApprovalMessage(null);
 
-    // Update local and remote status to ANALYZING
     setTenders((prev) =>
       prev.map((t) => (t.id === tender.id ? { ...t, status: "ANALYZING" } : t))
     );
-    setSelectedTender((prev) => ({ ...prev, status: "ANALYZING" }));
+    setSelectedTender((prev) => ({ ...prev, status: "ANALYZING" } as Tender));
 
     try {
       await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
@@ -317,7 +498,6 @@ export default function TendersPage() {
       // Offline fallback
     }
 
-    // AI clause extraction completion -> transitions to REQUIREMENTS_REVIEW
     setTimeout(async () => {
       setAnalyzing(false);
       setIsApproved(false);
@@ -327,7 +507,7 @@ export default function TendersPage() {
       setTenders((prev) =>
         prev.map((t) => (t.id === tender.id ? { ...t, status: "REQUIREMENTS_REVIEW" } : t))
       );
-      setSelectedTender((prev) => ({ ...prev, status: "REQUIREMENTS_REVIEW" }));
+      setSelectedTender((prev) => ({ ...prev, status: "REQUIREMENTS_REVIEW" } as Tender));
 
       try {
         await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
@@ -349,30 +529,12 @@ export default function TendersPage() {
     setTenders((prev) =>
       prev.map((t) => (t.id === tender.id ? { ...t, status: "PUBLISHED" } : t))
     );
-    setSelectedTender((prev) => ({ ...prev, status: "PUBLISHED" }));
+    setSelectedTender((prev) => ({ ...prev, status: "PUBLISHED" } as Tender));
 
     try {
       await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
         method: "PATCH",
         body: { status: "PUBLISHED" },
-      });
-    } catch {
-      // Offline fallback
-    }
-  }
-
-  // Lifecycle Transition 3: PUBLISHED -> CLOSED
-  async function handleCloseTender(tender: Tender) {
-    setTenders((prev) =>
-      prev.map((t) => (t.id === tender.id ? { ...t, status: "CLOSED" } : t))
-    );
-    setSelectedTender((prev) => ({ ...prev, status: "CLOSED" }));
-    setApprovalMessage("✓ Tender closed. Bidding archive sealed; no new submissions accepted.");
-
-    try {
-      await apiRequest(`/tenders/${encodeURIComponent(tender.id)}`, {
-        method: "PATCH",
-        body: { status: "CLOSED" },
       });
     } catch {
       // Offline fallback
@@ -388,7 +550,6 @@ export default function TendersPage() {
         method: "DELETE",
       });
     } catch (err: any) {
-      // If backend is offline, remove optimistically; else surface real error
       const msg = err?.detail || err?.message;
       if (msg && typeof msg === "string") {
         setDeleteError(msg);
@@ -396,7 +557,6 @@ export default function TendersPage() {
         return;
       }
     }
-    // Remove from local list on success (or offline fallback)
     setTenders((prev) => prev.filter((t) => t.id !== tender.id));
     setDeleteConfirm(null);
     setIsDeleting(false);
@@ -485,20 +645,72 @@ export default function TendersPage() {
     });
   }
 
+  // Format monetary value helper
+  function formatMoney(val: string | number | undefined, def = "₹ 4.50 Cr"): string {
+    if (val === undefined || val === null) return def;
+    if (typeof val === "number") {
+      if (val >= 10000000) return `₹ ${(val / 10000000).toFixed(2)} Cr`;
+      if (val >= 100000) return `₹ ${(val / 100000).toFixed(2)} L`;
+      return `₹ ${val.toLocaleString("en-IN")}`;
+    }
+    return String(val);
+  }
+
+  // Format date helper
+  function formatDeadlineDisplay(dateStr: string | undefined): string {
+    if (!dateStr) return "18 Sep 2026, 05:30 PM";
+    if (dateStr.includes("T")) {
+      try {
+        const dt = new Date(dateStr);
+        if (!isNaN(dt.getTime())) {
+          return dt.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        }
+      } catch {
+        // return fallback
+      }
+    }
+    return dateStr;
+  }
+
   return (
     <div className="space-y-6">
       {/* Top Header & Create Tender Action */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Tenders & RFP Clauses
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+              Procurement Officer Workspace
+            </span>
+            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+              GFR 2017 & CVC Compliant
+            </span>
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+            Tenders & RFP Lifecycle Management
           </h1>
-          <p className="mt-1 text-xs text-slate-500 font-medium">
-            Manage procurement notices, parse RFP clauses, and configure deterministic evaluation rules.
+          <p className="text-xs text-slate-500 font-medium">
+            Manage procurement notices, track deadlines, configure deterministic evaluation rules, and oversee sealed archives.
           </p>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchTenders}
+            loading={loading}
+            className="text-xs font-semibold"
+          >
+            <RefreshCwIcon className="size-3.5" />
+            Refresh
+          </Button>
+
           <Link href="/tenders/create">
             <Button
               className="bg-blue-700 hover:bg-blue-800 text-white font-bold shadow-xs flex items-center gap-1.5"
@@ -511,280 +723,502 @@ export default function TendersPage() {
         </div>
       </div>
 
-      {/* VIEW 1: TENDERS LIST WITH DEDICATED SEARCH BAR */}
+      {/* VIEW 1: TENDERS LIFECYCLE LIST & TABS */}
       {activeView === "LIST" && (
         <div className="space-y-4">
-          {/* Functional Search Field */}
-          <div className="relative w-full">
-            <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search tenders..."
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-xs transition-all"
-            />
-            {searchTerm && (
+          {/* TABBED LIFECYCLE NAVIGATION BAR */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-1">
+            <div className="flex flex-wrap items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200">
+              {/* Tab 1: Active Tenders */}
               <button
                 type="button"
-                onClick={handleClearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-                title="Clear search"
+                onClick={() => handleTabChange("ACTIVE")}
+                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                  activeTab === "ACTIVE"
+                    ? "bg-white text-blue-700 shadow-xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
               >
-                <XIcon className="size-3.5" />
+                <CheckCircleIcon className={`size-3.5 ${activeTab === "ACTIVE" ? "text-emerald-600" : "text-slate-400"}`} />
+                <span>Active Tenders</span>
+                <span
+                  className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                    activeTab === "ACTIVE"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {tabCounts.ACTIVE}
+                </span>
               </button>
-            )}
+
+              {/* Tab 2: Inactive / Closed */}
+              <button
+                type="button"
+                onClick={() => handleTabChange("INACTIVE")}
+                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                  activeTab === "INACTIVE"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <LockIcon className={`size-3.5 ${activeTab === "INACTIVE" ? "text-slate-700" : "text-slate-400"}`} />
+                <span>Inactive / Closed</span>
+                <span
+                  className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                    activeTab === "INACTIVE"
+                      ? "bg-slate-800 text-white"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {tabCounts.INACTIVE}
+                </span>
+              </button>
+
+              {/* Tab 3: Draft Tenders */}
+              <button
+                type="button"
+                onClick={() => handleTabChange("DRAFT")}
+                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                  activeTab === "DRAFT"
+                    ? "bg-white text-amber-800 shadow-xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <EditIcon className={`size-3.5 ${activeTab === "DRAFT" ? "text-amber-600" : "text-slate-400"}`} />
+                <span>Drafts</span>
+                <span
+                  className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                    activeTab === "DRAFT"
+                      ? "bg-amber-100 text-amber-900"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {tabCounts.DRAFT}
+                </span>
+              </button>
+
+              {/* Tab 4: All Tenders */}
+              <button
+                type="button"
+                onClick={() => handleTabChange("ALL")}
+                className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-bold transition-all ${
+                  activeTab === "ALL"
+                    ? "bg-white text-slate-900 shadow-xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                }`}
+              >
+                <FileTextIcon className={`size-3.5 ${activeTab === "ALL" ? "text-blue-600" : "text-slate-400"}`} />
+                <span>All Notices</span>
+                <span
+                  className={`rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                    activeTab === "ALL"
+                      ? "bg-slate-900 text-white"
+                      : "bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  {tabCounts.ALL}
+                </span>
+              </button>
+            </div>
+
+            {/* Results counter indicator */}
+            <div className="text-xs text-slate-500 font-medium">
+              Showing <strong className="text-slate-900 font-bold">{filteredTenders.length}</strong> of {tenders.length} tenders
+            </div>
           </div>
 
-          {/* Tenders Grid / Cards */}
-          {loading ? (
-            <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-slate-200 text-slate-500">
-              <RefreshCwIcon className="size-6 animate-spin text-blue-600 mb-2" />
-              <p className="text-xs font-medium">Filtering tender database...</p>
+          {/* SEARCH & CATEGORY FILTER CONTROLS */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            {/* Search Input */}
+            <div className="relative md:col-span-8">
+              <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by tender ID, title, organization, category, or scope..."
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-xs transition-all"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm("");
+                    updateUrlParams("", activeTab);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                  title="Clear search"
+                >
+                  <XIcon className="size-3.5" />
+                </button>
+              )}
             </div>
-          ) : tenders.length === 0 ? (
-            /* Clean Empty State */
-            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
-              <div className="flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
-                <SearchIcon className="size-6" />
+
+            {/* Category Filter Dropdown */}
+            <div className="relative md:col-span-4 flex items-center gap-2">
+              <div className="relative w-full">
+                <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400 pointer-events-none" />
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-xs font-medium text-slate-700 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-xs transition-all cursor-pointer appearance-none"
+                >
+                  <option value="ALL">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">
+                  ▼
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-slate-900">No tenders found</h3>
-              <p className="mt-1 max-w-sm text-xs text-slate-500">
-                No tender notices match &ldquo;{searchTerm}&rdquo;. Check your search keywords or clear search to view all tenders.
+
+              {(searchTerm || selectedCategory !== "ALL") && (
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors shadow-xs"
+                  title="Reset all filters"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* TENDERS CARDS / GRID */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center p-14 bg-white rounded-2xl border border-slate-200 text-slate-500 shadow-xs">
+              <RefreshCwIcon className="size-7 animate-spin text-blue-600 mb-3" />
+              <p className="text-xs font-bold text-slate-700">Loading procurement database...</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Fetching active tenders, bid counts, and amendment logs</p>
+            </div>
+          ) : filteredTenders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-14 text-center">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 mb-3">
+                <SearchIcon className="size-7" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">No tenders found in this view</h3>
+              <p className="mt-1 max-w-md text-xs text-slate-500 leading-relaxed">
+                {searchTerm || selectedCategory !== "ALL"
+                  ? `No tender notices match the selected criteria (Tab: ${activeTab}, Search: "${searchTerm}", Category: ${selectedCategory}).`
+                  : activeTab === "INACTIVE"
+                  ? "There are currently no closed or archived tenders in the database."
+                  : activeTab === "DRAFT"
+                  ? "There are no draft tenders currently being prepared. Click 'Create Tender' to draft a new RFP."
+                  : "No active procurement notices available."}
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearSearch}
-                className="mt-4 text-xs font-semibold"
-              >
-                Clear Search & Show All Tenders
-              </Button>
+              <div className="mt-4 flex items-center gap-2">
+                {(searchTerm || selectedCategory !== "ALL") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="text-xs font-semibold"
+                  >
+                    Clear Search & Filters
+                  </Button>
+                )}
+                {activeTab !== "ACTIVE" && (
+                  <Button
+                    size="sm"
+                    onClick={() => handleTabChange("ACTIVE")}
+                    className="bg-blue-700 hover:bg-blue-800 text-xs font-bold"
+                  >
+                    View Active Tenders
+                  </Button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {tenders.map((tender) => (
-                <Card
-                  key={tender.id}
-                  className="flex flex-col justify-between p-5 border-slate-200 hover:border-blue-300 hover:shadow-md transition-all"
-                >
-                  <div className="space-y-3">
-                    {/* Header: Tender Number & Status */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                          {tender.tender_number || tender.ref || tender.tender_id || tender.id}
+              {filteredTenders.map((tender) => {
+                const tenderStatusUpper = (tender.status || "DRAFT").toUpperCase();
+                const isTenderActive = tenderStatusUpper === "PUBLISHED" || tenderStatusUpper === "OPEN" || tenderStatusUpper === "ACTIVE";
+                const isTenderClosed = tenderStatusUpper === "CLOSED" || tenderStatusUpper === "CANCELLED" || tenderStatusUpper === "ARCHIVED";
+                const isTenderDraft = tenderStatusUpper === "DRAFT" || tenderStatusUpper === "ANALYZING" || tenderStatusUpper === "REQUIREMENTS_REVIEW";
+                const amendmentsCount = (tender.deadline_history?.length || tender.amendments?.length || 0);
+
+                return (
+                  <Card
+                    key={tender.id}
+                    className={`flex flex-col justify-between p-5 border transition-all ${
+                      isTenderClosed
+                        ? "border-slate-200 bg-slate-50/40 opacity-95 hover:border-slate-300"
+                        : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-md"
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      {/* Header: Tender Number & Status Badge */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs font-extrabold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
+                              {tender.tender_number || tender.ref || tender.tender_id || tender.id}
+                            </span>
+
+                            {tender.category && (
+                              <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                                {tender.category}
+                              </span>
+                            )}
+
+                            {amendmentsCount > 0 && (
+                              <span
+                                onClick={() => setAmendmentHistoryModalTender(tender)}
+                                className="cursor-pointer rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200 flex items-center gap-1 hover:bg-amber-100 transition-colors"
+                                title="Click to view amendment history"
+                              >
+                                <ClockIcon className="size-2.5 text-amber-600" />
+                                {amendmentsCount} {amendmentsCount === 1 ? "Amendment" : "Amendments"}
+                              </span>
+                            )}
+                          </div>
+
+                          <h2 className="text-base font-extrabold text-slate-900 leading-snug pt-1">
+                            {tender.title}
+                          </h2>
+                        </div>
+
+                        <TenderStatusBadge status={tender.status} />
+                      </div>
+
+                      {/* Organization & Department */}
+                      <div className="space-y-1 text-xs text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <BuildingIcon className="size-3.5 text-slate-400 shrink-0" />
+                          <span className="font-semibold text-slate-800 truncate">
+                            {tender.organization}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Department: <span className="text-slate-700 font-semibold">{tender.department || "Materials & Procurement Division"}</span>
+                        </p>
+                      </div>
+
+                      {/* Description Scope */}
+                      {tender.description && (
+                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                          {tender.description}
+                        </p>
+                      )}
+
+                      {/* Commercials & Bids Received Summary */}
+                      <div className="grid grid-cols-3 gap-2 rounded-xl bg-slate-50/90 border border-slate-100 p-2.5 text-center text-xs">
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Estimated Value
+                          </span>
+                          <strong className="text-slate-900 font-extrabold text-xs block mt-0.5">
+                            {formatMoney(tender.estimated_value, "₹ 4.50 Cr")}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            EMD Requirement
+                          </span>
+                          <strong className="text-slate-900 font-extrabold text-xs block mt-0.5">
+                            {formatMoney(tender.emd_amount, "₹ 9.00 L")}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Bids Received
+                          </span>
+                          <strong className="text-blue-700 font-extrabold text-xs block mt-0.5">
+                            {tender.bids_count ?? 0} {tender.bids_count === 1 ? "Bid" : "Bids"}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions Bar (State-Aware Deterministic Controls) */}
+                    <div className="mt-4 flex flex-wrap items-center justify-between border-t border-slate-100 pt-3 gap-2">
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                        <ClockIcon className="size-3.5 text-slate-400 shrink-0" />
+                        <span>
+                          {isTenderClosed ? "Closed on: " : "Closing: "}
+                          <strong className="text-slate-800 font-bold">
+                            {formatDeadlineDisplay(tender.deadline || tender.closing_date)}
+                          </strong>
                         </span>
-                        <h2 className="mt-1.5 text-base font-bold text-slate-900 leading-snug">
-                          {tender.title}
-                        </h2>
                       </div>
-                      <TenderStatusBadge status={tender.status} />
-                    </div>
 
-                    {/* Organization & Category */}
-                    <div className="space-y-1 text-xs text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <BuildingIcon className="size-3.5 text-slate-400 shrink-0" />
-                        <span className="font-medium text-slate-700 truncate">
-                          {tender.organization}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        Category: <strong className="text-slate-700">{tender.category}</strong> · Department: {tender.department || "Procurement Cell"}
-                      </p>
-                    </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {/* 1. ACTIVE TENDER ACTIONS */}
+                        {isTenderActive && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTender(tender);
+                                setActiveView("CLAUSE_SCRUTINY");
+                              }}
+                              className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1 shadow-2xs"
+                              title="Inspect extracted RFP criteria and deterministic rules"
+                            >
+                              <SparklesIcon className="size-3 text-blue-600" />
+                              Scrutinize Clauses
+                            </button>
 
-                    {/* Description */}
-                    {tender.description && (
-                      <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed bg-slate-50/60 p-2.5 rounded-lg border border-slate-100">
-                        {tender.description}
-                      </p>
-                    )}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenManageModal(tender)}
+                              className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800 transition-colors flex items-center gap-1 shadow-xs"
+                              title="Extend deadline, view amendments, or close tender"
+                            >
+                              <SlidersIcon className="size-3 text-amber-300" />
+                              Manage Tender
+                            </button>
 
-                    {/* Commercials & Bids Summary */}
-                    <div className="grid grid-cols-3 gap-2 rounded-lg bg-slate-50 p-2.5 text-center text-xs">
-                      <div>
-                        <span className="block text-[10px] font-semibold text-slate-400">ESTIMATED VALUE</span>
-                        <strong className="text-slate-900 font-bold">
-                          {typeof tender.estimated_value === "number"
-                            ? `₹ ${(tender.estimated_value / 10000000).toFixed(2)} Cr`
-                            : tender.estimated_value || "₹ 4.50 Cr"}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-semibold text-slate-400">EMD AMOUNT</span>
-                        <strong className="text-slate-900 font-bold">
-                          {typeof tender.emd_amount === "number"
-                            ? `₹ ${(tender.emd_amount / 100000).toFixed(2)} L`
-                            : tender.emd_amount || "₹ 9.00 L"}
-                        </strong>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-semibold text-slate-400">BIDS RECEIVED</span>
-                        <strong className="text-blue-700 font-bold">
-                          {tender.bids_count ?? 0} Submissions
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
+                            <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
+                              <Button size="sm" variant="outline" className="text-xs font-semibold text-slate-700">
+                                View Bids ({tender.bids_count ?? 0}) →
+                              </Button>
+                            </Link>
+                          </>
+                        )}
 
-                  {/* Actions Bar (State-Aware Deterministic Controls) */}
-                  <div className="mt-4 flex flex-wrap items-center justify-between border-t border-slate-100 pt-3 gap-2">
-                    <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                      <ClockIcon className="size-3 text-slate-400" />
-                      Closing: {tender.deadline || "18 Sep 2026"}
-                    </span>
+                        {/* 2. INACTIVE / CLOSED TENDER ACTIONS */}
+                        {isTenderClosed && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTender(tender);
+                                setActiveView("CLAUSE_SCRUTINY");
+                              }}
+                              className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
+                              title="View preserved RFP clauses in read-only mode"
+                            >
+                              View RFP Clauses
+                            </button>
 
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {/* DRAFT STATE: Analyze Document or Scrutinize */}
-                      {tender.status === "DRAFT" && (
-                        <>
-                          <Link
-                            href={`/tenders/create?draft=${encodeURIComponent(tender.id)}`}
-                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-1"
-                          >
-                            <EditIcon className="size-3 text-slate-500" />
-                            Edit Draft
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteConfirm(tender);
-                              setDeleteError(null);
-                            }}
-                            className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1"
-                            title="Delete draft tender"
-                          >
-                            <TrashIcon className="size-3 text-red-500" />
-                            Delete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleAnalyzeTender(tender)}
-                            className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800 transition-colors flex items-center gap-1 shadow-xs"
-                          >
-                            <SparklesIcon className="size-3.5 text-amber-300" />
-                            Analyze Document
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedTender(tender);
-                              setActiveView("CLAUSE_SCRUTINY");
-                            }}
-                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
-                          >
-                            Scrutinize Clauses
-                          </button>
-                        </>
-                      )}
+                            <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
+                              <Button size="sm" variant="outline" className="text-xs font-semibold text-slate-600">
+                                View Bids ({tender.bids_count ?? 0})
+                              </Button>
+                            </Link>
 
-                      {/* ANALYZING STATE: AI processing in flight */}
-                      {tender.status === "ANALYZING" && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedTender(tender);
-                            setActiveView("CLAUSE_SCRUTINY");
-                          }}
-                          className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1.5"
-                        >
-                          <svg className="size-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                          </svg>
-                          AI Analyzing...
-                        </button>
-                      )}
+                            <Link href={`/audit?query=${encodeURIComponent(tender.tender_number || tender.id)}`}>
+                              <button
+                                type="button"
+                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-1"
+                                title="View tamper-evident audit history for this tender"
+                              >
+                                <ShieldCheckIcon className="size-3 text-blue-600" />
+                                Audit History
+                              </button>
+                            </Link>
 
-                      {/* REQUIREMENTS REVIEW STATE: Edit / Approve Requirements / Publish */}
-                      {tender.status === "REQUIREMENTS_REVIEW" && (
-                        <>
+                            {amendmentsCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setAmendmentHistoryModalTender(tender)}
+                                className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors flex items-center gap-1"
+                                title="View Corrigenda / Amendment log"
+                              >
+                                <ClockIcon className="size-3 text-amber-600" />
+                                Amendments ({amendmentsCount})
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        {/* 3. DRAFT TENDER ACTIONS */}
+                        {isTenderDraft && tender.status === "DRAFT" && (
+                          <>
+                            <Link
+                              href={`/tenders/create?draft=${encodeURIComponent(tender.id)}`}
+                              className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors flex items-center gap-1"
+                            >
+                              <EditIcon className="size-3 text-slate-500" />
+                              Edit Draft
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteConfirm(tender);
+                                setDeleteError(null);
+                              }}
+                              className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-1"
+                              title="Delete draft tender"
+                            >
+                              <TrashIcon className="size-3 text-red-500" />
+                              Delete
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleAnalyzeTender(tender)}
+                              className="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800 transition-colors flex items-center gap-1 shadow-xs"
+                            >
+                              <SparklesIcon className="size-3.5 text-amber-300" />
+                              Analyze Document
+                            </button>
+                          </>
+                        )}
+
+                        {/* 4. ANALYZING IN FLIGHT */}
+                        {tender.status === "ANALYZING" && (
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedTender(tender);
                               setActiveView("CLAUSE_SCRUTINY");
                             }}
-                            className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors flex items-center gap-1"
+                            className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1.5"
                           >
-                            <SparklesIcon className="size-3.5" />
-                            Scrutinize Clauses
+                            <svg className="size-3.5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                            </svg>
+                            AI Analyzing...
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handlePublishTender(tender)}
-                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-xs"
-                          >
-                            Publish Tender
-                          </button>
-                        </>
-                      )}
+                        )}
 
-                      {/* PUBLISHED STATE: Live tender accepting bids */}
-                      {tender.status === "PUBLISHED" && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedTender(tender);
-                              setActiveView("CLAUSE_SCRUTINY");
-                            }}
-                            className="rounded-lg bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors flex items-center gap-1"
-                          >
-                            <SparklesIcon className="size-3.5" />
-                            Scrutinize Clauses
-                          </button>
+                        {/* 5. REQUIREMENTS REVIEW */}
+                        {tender.status === "REQUIREMENTS_REVIEW" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTender(tender);
+                                setActiveView("CLAUSE_SCRUTINY");
+                              }}
+                              className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors flex items-center gap-1"
+                            >
+                              <SparklesIcon className="size-3.5" />
+                              Scrutinize Clauses
+                            </button>
 
-                          <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
-                            <Button size="sm" variant="outline" className="text-xs font-semibold">
-                              View Bids ({tender.bids_count ?? 0}) →
-                            </Button>
-                          </Link>
-
-                          <button
-                            type="button"
-                            onClick={() => handleCloseTender(tender)}
-                            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                            title="Close tender bidding"
-                          >
-                            Close
-                          </button>
-                        </>
-                      )}
-
-                      {/* CLOSED STATE: Archived sealed tender */}
-                      {tender.status === "CLOSED" && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedTender(tender);
-                              setActiveView("CLAUSE_SCRUTINY");
-                            }}
-                            className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
-                          >
-                            View RFP Clauses
-                          </button>
-
-                          <Link href={`/bidders?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
-                            <Button size="sm" variant="outline" className="text-xs font-semibold text-slate-600">
-                              View Bids ({tender.bids_count ?? 0})
-                            </Button>
-                          </Link>
-                        </>
-                      )}
+                            <button
+                              type="button"
+                              onClick={() => handlePublishTender(tender)}
+                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-xs flex items-center gap-1"
+                            >
+                              <CheckCircleIcon className="size-3.5 text-white" />
+                              Publish Tender
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      {/* VIEW 2: AI CLAUSE SCRUTINY & RULE EXTRACTOR (Activated via "Scrutinize Clauses" on a tender card) */}
+      {/* VIEW 2: AI CLAUSE SCRUTINY & RULE EXTRACTOR */}
       {activeView === "CLAUSE_SCRUTINY" && selectedTender && (
         <div className="space-y-5 animate-in fade-in duration-150">
           {/* Scrutiny Header */}
@@ -831,17 +1265,6 @@ export default function TendersPage() {
                 >
                   <CheckCircleIcon className="size-4 text-white" />
                   Approve & Publish Tender
-                </Button>
-              )}
-
-              {selectedTender.status === "PUBLISHED" && (
-                <Button
-                  onClick={() => handleCloseTender(selectedTender)}
-                  variant="outline"
-                  className="text-xs font-bold text-slate-700 hover:bg-slate-100"
-                  size="sm"
-                >
-                  Close Tender
                 </Button>
               )}
 
@@ -978,14 +1401,533 @@ export default function TendersPage() {
         </div>
       )}
 
-      {activeView === "CLAUSE_SCRUTINY" && !selectedTender && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
-          <FileTextIcon className="size-8 text-slate-400 mb-2" />
-          <h3 className="text-sm font-bold text-slate-900">No Tender Selected</h3>
-          <p className="mt-1 text-xs text-slate-500">Please select a tender from the list to view its clauses.</p>
-          <Button variant="outline" size="sm" onClick={() => setActiveView("LIST")} className="mt-4 text-xs font-semibold">
-            Back to Tenders
-          </Button>
+      {/* COMPREHENSIVE MANAGE TENDER MODAL (FOR ACTIVE TENDERS) */}
+      {manageModalTender && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="border-b border-slate-200 bg-slate-50/80 px-6 py-4 flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-xs font-extrabold text-blue-800 bg-blue-100/70 px-2.5 py-0.5 rounded border border-blue-200">
+                    {manageModalTender.tender_number || manageModalTender.ref || manageModalTender.id}
+                  </span>
+                  <TenderStatusBadge status={manageModalTender.status} />
+                  <span className="text-xs text-slate-500 font-medium">
+                    {manageModalTender.organization}
+                  </span>
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 mt-1">
+                  {manageModalTender.title}
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setManageModalTender(null)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                title="Close modal"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+
+            {/* Modal Inner Tabs */}
+            <div className="flex border-b border-slate-200 bg-slate-100/50 px-6 pt-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setManageModalTab("OVERVIEW")}
+                className={`flex items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-xs font-bold transition-all ${
+                  manageModalTab === "OVERVIEW"
+                    ? "border-blue-600 text-blue-700 bg-white rounded-t-lg"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <FileTextIcon className="size-3.5" />
+                Overview & Metrics
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setManageModalTab("EXTEND_DEADLINE")}
+                className={`flex items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-xs font-bold transition-all ${
+                  manageModalTab === "EXTEND_DEADLINE"
+                    ? "border-blue-600 text-blue-700 bg-white rounded-t-lg"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <ClockIcon className="size-3.5 text-blue-600" />
+                Extend Deadline
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setManageModalTab("AMENDMENTS")}
+                className={`flex items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-xs font-bold transition-all ${
+                  manageModalTab === "AMENDMENTS"
+                    ? "border-blue-600 text-blue-700 bg-white rounded-t-lg"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <ShieldCheckIcon className="size-3.5" />
+                Corrigenda History ({(manageModalTender.deadline_history?.length || manageModalTender.amendments?.length || 0)})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setManageModalTab("CLOSE")}
+                className={`flex items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-xs font-bold transition-all ml-auto ${
+                  manageModalTab === "CLOSE"
+                    ? "border-red-600 text-red-700 bg-white rounded-t-lg"
+                    : "border-transparent text-red-600 hover:text-red-700"
+                }`}
+              >
+                <LockIcon className="size-3.5" />
+                Close Tender
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4 text-xs flex-1">
+              {/* TAB 1: OVERVIEW & METRICS */}
+              {manageModalTab === "OVERVIEW" && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Estimated Value
+                      </span>
+                      <strong className="text-sm font-extrabold text-slate-900 block mt-1">
+                        {formatMoney(manageModalTender.estimated_value)}
+                      </strong>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        EMD Requirement
+                      </span>
+                      <strong className="text-sm font-extrabold text-slate-900 block mt-1">
+                        {formatMoney(manageModalTender.emd_amount)}
+                      </strong>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Bids Received
+                      </span>
+                      <strong className="text-sm font-extrabold text-blue-700 block mt-1">
+                        {manageModalTender.bids_count ?? 0} Submissions
+                      </strong>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Evaluation Method
+                      </span>
+                      <strong className="text-xs font-bold text-slate-800 block mt-1">
+                        {manageModalTender.evaluation_method || "L1 / Lowest Price"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Timelines Card */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2.5">
+                    <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <ClockIcon className="size-3.5 text-blue-600" />
+                      Key Procurement Timelines
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                      <div className="border-l-2 border-slate-300 pl-2.5">
+                        <span className="text-[10px] text-slate-400 font-medium">Issue / Publish Date</span>
+                        <p className="font-bold text-slate-800 text-xs mt-0.5">
+                          {formatDeadlineDisplay(manageModalTender.publish_date || manageModalTender.issue_date || "2026-08-20")}
+                        </p>
+                      </div>
+
+                      <div className="border-l-2 border-blue-500 pl-2.5 bg-blue-50/40 p-1.5 rounded-r">
+                        <span className="text-[10px] text-blue-700 font-bold">Submission Deadline</span>
+                        <p className="font-extrabold text-blue-900 text-xs mt-0.5">
+                          {formatDeadlineDisplay(manageModalTender.deadline || manageModalTender.closing_date)}
+                        </p>
+                      </div>
+
+                      <div className="border-l-2 border-slate-300 pl-2.5">
+                        <span className="text-[10px] text-slate-400 font-medium">Bid Opening Date</span>
+                        <p className="font-bold text-slate-800 text-xs mt-0.5">
+                          {formatDeadlineDisplay(manageModalTender.bid_opening_date || "2026-10-30")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Associated Documents */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                        <FileTextIcon className="size-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 block">
+                          {manageModalTender.file_name || `${(manageModalTender.tender_number || manageModalTender.id).replace(/\//g, "_")}_RFP.pdf`}
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          Authentic RFP Tender Dossier · {manageModalTender.file_size_kb || 3420} KB · SHA-256 Verified
+                        </span>
+                      </div>
+                    </div>
+
+                    <Link href={`/bidders?tender_id=${encodeURIComponent(manageModalTender.tender_number || manageModalTender.id)}`}>
+                      <Button size="sm" className="bg-blue-700 hover:bg-blue-800 text-xs font-bold">
+                        Inspect Bids ({manageModalTender.bids_count ?? 0}) →
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: EXTEND / UPDATE DEADLINE */}
+              {manageModalTab === "EXTEND_DEADLINE" && (
+                <form onSubmit={handleConfirmExtendDeadline} className="space-y-4">
+                  {/* Informational Guidance Banner */}
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 flex items-start gap-2.5">
+                    <InfoIcon className="size-4 text-blue-700 shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-blue-900 leading-relaxed">
+                      <strong className="font-bold block">Corrigendum & Live Synchronization Notice:</strong>
+                      Extending the submission deadline automatically updates the live Bidder Portal in real-time, records a formal Corrigendum entry in the tender history, and logs an immutable audit event (<code className="font-mono font-bold">TENDER_DEADLINE_UPDATED</code>).
+                    </div>
+                  </div>
+
+                  {/* Current vs New Deadline Display */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Current Submission Deadline
+                      </span>
+                      <p className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 mt-1">
+                        <ClockIcon className="size-4 text-slate-500" />
+                        {formatDeadlineDisplay(manageModalTender.deadline || manageModalTender.closing_date)}
+                      </p>
+                      <span className="text-[10px] text-slate-500 block">
+                        Bids currently accepted until this timestamp.
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-slate-800 block text-xs">
+                        New Submission Deadline <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        required
+                        value={newDeadlineInput}
+                        onChange={(e) => setNewDeadlineInput(e.target.value)}
+                        className="w-full rounded-xl border border-blue-300 bg-white p-2.5 text-xs font-bold text-blue-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100 shadow-2xs"
+                      />
+                      <span className="text-[10px] text-slate-500 block">
+                        Must be in the future and later than current deadline.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Extension Rationale */}
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-800 block text-xs">
+                      Official Justification / Corrigendum Reason <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      required
+                      placeholder="e.g. Corrigendum-01: Technical query resolution window extended following pre-bid conference clarifications."
+                      value={deadlineReasonInput}
+                      onChange={(e) => setDeadlineReasonInput(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 p-2.5 text-xs focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100"
+                    />
+                    <span className="text-[10px] text-slate-500 block">
+                      This rationale will be recorded in the public corrigendum table and vigilance audit log.
+                    </span>
+                  </div>
+
+                  {/* Feedback Banners */}
+                  {deadlineActionError && (
+                    <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
+                      <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+                      <span>{deadlineActionError}</span>
+                    </div>
+                  )}
+
+                  {deadlineActionSuccess && (
+                    <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-bold text-emerald-900 flex items-center gap-2">
+                      <CheckCircleIcon className="size-4 text-emerald-600 shrink-0" />
+                      <span>{deadlineActionSuccess}</span>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setManageModalTender(null)}
+                      disabled={isExtendingDeadline}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      size="sm"
+                      loading={isExtendingDeadline}
+                      className="bg-blue-700 hover:bg-blue-800 font-bold"
+                    >
+                      <ClockIcon className="size-3.5" />
+                      Confirm & Issue Corrigendum
+                    </Button>
+                  </div>
+                </form>
+              )}
+
+              {/* TAB 3: AMENDMENT / CORRIGENDA HISTORY */}
+              {manageModalTab === "AMENDMENTS" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+                      Chronological Corrigenda & Timeline Amendments
+                    </h4>
+                    <span className="text-[11px] text-slate-500">
+                      Total Corrigenda: <strong>{(manageModalTender.deadline_history?.length || manageModalTender.amendments?.length || 0)}</strong>
+                    </span>
+                  </div>
+
+                  {(manageModalTender.deadline_history?.length || manageModalTender.amendments?.length || 0) === 0 ? (
+                    <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+                      <ClockIcon className="size-7 text-slate-400 mx-auto mb-2" />
+                      <h5 className="font-bold text-slate-800 text-xs">No Corrigenda Recorded</h5>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        This tender has not undergone any deadline extensions or amendments. The original submission window remains active.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-slate-200">
+                      <table className="w-full text-left text-xs">
+                        <thead className="border-b border-slate-200 bg-slate-100/80 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                          <tr>
+                            <th className="px-3.5 py-2.5">Corrigendum</th>
+                            <th className="px-3.5 py-2.5">Previous Deadline</th>
+                            <th className="px-3.5 py-2.5">Extended Deadline</th>
+                            <th className="px-3.5 py-2.5">Justification</th>
+                            <th className="px-3.5 py-2.5">Changed By</th>
+                            <th className="px-3.5 py-2.5 text-right">Timestamp</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                          {(manageModalTender.deadline_history || manageModalTender.amendments || []).map((amd, idx) => (
+                            <tr key={amd.id || idx} className="hover:bg-slate-50/80">
+                              <td className="px-3.5 py-2.5 font-mono font-bold text-blue-700">
+                                {amd.amendment_number || `Corrigendum-${idx + 1}`}
+                              </td>
+                              <td className="px-3.5 py-2.5 text-slate-500 line-through">
+                                {amd.previous_deadline_display || formatDeadlineDisplay(amd.previous_deadline)}
+                              </td>
+                              <td className="px-3.5 py-2.5 font-bold text-emerald-800">
+                                {amd.new_deadline_display || formatDeadlineDisplay(amd.new_deadline)}
+                              </td>
+                              <td className="px-3.5 py-2.5 text-slate-700 max-w-xs">
+                                {amd.reason}
+                              </td>
+                              <td className="px-3.5 py-2.5 text-slate-600">
+                                <span className="font-semibold block">{amd.changed_by || "Procurement Officer"}</span>
+                                <span className="text-[10px] text-slate-400">{amd.changed_by_email || "officer@cpcl.gov.in"}</span>
+                              </td>
+                              <td className="px-3.5 py-2.5 text-right font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                                {formatDeadlineDisplay(amd.changed_at)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: CLOSE TENDER */}
+              {manageModalTab === "CLOSE" && (
+                <form onSubmit={handleConfirmCloseTender} className="space-y-4">
+                  {/* Warning Box */}
+                  <div className="rounded-xl border border-red-200 bg-red-50/80 p-4 flex items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                      <LockIcon className="size-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-red-900 text-xs">
+                        Warning: Sealing Procurement Notice & Bidding Archive
+                      </h4>
+                      <p className="text-[11px] text-red-800 mt-1 leading-relaxed">
+                        Closing this tender will permanently transition its status to <strong className="font-mono">CLOSED</strong> and seal the vendor bidding window. No new bids will be accepted from vendors. All existing submissions, compliance scores, and comparative statements will be preserved.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-800 block text-xs">
+                      Reason for Closure <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      required
+                      placeholder="e.g. Bidding window concluded and sealed by Procurement Officer."
+                      value={closeReasonInput}
+                      onChange={(e) => setCloseReasonInput(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 p-2.5 text-xs focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-100"
+                    />
+                  </div>
+
+                  {closeActionError && (
+                    <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
+                      <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+                      <span>{closeActionError}</span>
+                    </div>
+                  )}
+
+                  {closeActionSuccess && (
+                    <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-bold text-emerald-900 flex items-center gap-2">
+                      <CheckCircleIcon className="size-4 text-emerald-600 shrink-0" />
+                      <span>{closeActionSuccess}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setManageModalTender(null)}
+                      disabled={isClosingTender}
+                    >
+                      Cancel
+                    </Button>
+
+                    <button
+                      type="submit"
+                      disabled={isClosingTender}
+                      className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-60 transition-colors shadow-xs"
+                    >
+                      {isClosingTender ? (
+                        <>
+                          <svg className="size-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                          </svg>
+                          Closing & Sealing...
+                        </>
+                      ) : (
+                        <>
+                          <LockIcon className="size-3.5" />
+                          Confirm & Close Tender
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK AMENDMENT HISTORY MODAL (FOR INACTIVE OR ACTIVE TENDERS) */}
+      {amendmentHistoryModalTender && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-start justify-between border-b border-slate-200 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-200">
+                    {amendmentHistoryModalTender.tender_number || amendmentHistoryModalTender.id}
+                  </span>
+                  <span className="text-xs font-bold text-slate-800">
+                    Corrigenda & Timeline History
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 mt-1">
+                  {amendmentHistoryModalTender.title}
+                </h4>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAmendmentHistoryModalTender(null)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-3 flex-1 text-xs">
+              {(amendmentHistoryModalTender.deadline_history?.length || amendmentHistoryModalTender.amendments?.length || 0) === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 text-center text-slate-500">
+                  <ClockIcon className="size-6 text-slate-400 mx-auto mb-2" />
+                  <p className="font-bold text-slate-800">No Amendments Recorded</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    This tender notice has had no deadline modifications since publication.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="border-b border-slate-200 bg-slate-100 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="px-3.5 py-2.5">Corrigendum</th>
+                        <th className="px-3.5 py-2.5">Previous Deadline</th>
+                        <th className="px-3.5 py-2.5">New Deadline</th>
+                        <th className="px-3.5 py-2.5">Reason / Rationale</th>
+                        <th className="px-3.5 py-2.5">Changed By</th>
+                        <th className="px-3.5 py-2.5 text-right">Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white">
+                      {(amendmentHistoryModalTender.deadline_history || amendmentHistoryModalTender.amendments || []).map((amd, idx) => (
+                        <tr key={amd.id || idx} className="hover:bg-slate-50/80">
+                          <td className="px-3.5 py-2.5 font-mono font-bold text-blue-700">
+                            {amd.amendment_number || `Corrigendum-${idx + 1}`}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-slate-400 line-through">
+                            {amd.previous_deadline_display || formatDeadlineDisplay(amd.previous_deadline)}
+                          </td>
+                          <td className="px-3.5 py-2.5 font-bold text-emerald-700">
+                            {amd.new_deadline_display || formatDeadlineDisplay(amd.new_deadline)}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-slate-700">
+                            {amd.reason}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-slate-600">
+                            {amd.changed_by || "Procurement Officer"}
+                          </td>
+                          <td className="px-3.5 py-2.5 text-right font-mono text-[11px] text-slate-500">
+                            {formatDeadlineDisplay(amd.changed_at)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+              <Link href={`/audit?query=${encodeURIComponent(amendmentHistoryModalTender.tender_number || amendmentHistoryModalTender.id)}`}>
+                <span className="text-xs font-bold text-blue-700 hover:underline flex items-center gap-1">
+                  <ShieldCheckIcon className="size-3.5" />
+                  View Full Audit Trail →
+                </span>
+              </Link>
+              <Button size="sm" variant="outline" onClick={() => setAmendmentHistoryModalTender(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1065,130 +2007,6 @@ export default function TendersPage() {
                 )}
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* CREATE TENDER MODAL */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2">
-                <FileTextIcon className="size-5 text-blue-600" />
-                <h3 className="text-base font-bold text-slate-900">
-                  Create New Tender Notice
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateTender} className="space-y-3.5 text-xs">
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Tender Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Industrial Fall Protection & Harness Kits"
-                  value={newTender.title}
-                  onChange={(e) => setNewTender({ ...newTender, title: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Tender Reference / Number
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. CPCL/PROC/2026/006"
-                    value={newTender.tender_number}
-                    onChange={(e) => setNewTender({ ...newTender, tender_number: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 p-2 text-xs font-mono focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Category
-                  </label>
-                  <input
-                    type="text"
-                    value={newTender.category}
-                    onChange={(e) => setNewTender({ ...newTender, category: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    Estimated Value (INR)
-                  </label>
-                  <input
-                    type="number"
-                    value={newTender.estimated_value}
-                    onChange={(e) => setNewTender({ ...newTender, estimated_value: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-slate-700 block mb-1">
-                    EMD Amount (INR)
-                  </label>
-                  <input
-                    type="number"
-                    value={newTender.emd_amount}
-                    onChange={(e) => setNewTender({ ...newTender, emd_amount: e.target.value })}
-                    className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Submission Deadline
-                </label>
-                <input
-                  type="date"
-                  value={newTender.deadline}
-                  onChange={(e) => setNewTender({ ...newTender, deadline: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-semibold text-slate-700 block mb-1">
-                  Description / Scope of Work
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Detailed specifications and scope..."
-                  value={newTender.description}
-                  onChange={(e) => setNewTender({ ...newTender, description: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 border-t pt-3">
-                <Button variant="outline" size="sm" type="button" onClick={() => setIsCreateModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button size="sm" type="submit" className="bg-blue-700 hover:bg-blue-800 text-white font-bold">
-                  Publish Tender Notice
-                </Button>
-              </div>
-            </form>
           </div>
         </div>
       )}

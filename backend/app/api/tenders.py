@@ -8,7 +8,7 @@ import time
 import hashlib
 from datetime import datetime
 from app.api.auth import get_current_user, require_roles
-from app.schemas.tender import TenderCreateSchema, TenderPatchSchema
+from app.schemas.tender import TenderCreateSchema, TenderPatchSchema, TenderDeadlineExtensionSchema, TenderCloseSchema
 from app.data.sample_data import (
     get_all_tenders,
     get_tender_by_id,
@@ -18,6 +18,8 @@ from app.data.sample_data import (
     check_tender_id_exists,
     add_audit_log,
     get_next_tender_number,
+    extend_tender_deadline,
+    close_tender,
     SAMPLE_TENDERS
 )
 
@@ -449,4 +451,76 @@ async def delete_tender_endpoint(
         "deleted_tender_title": deleted.get("title", ""),
         "previous_status": deleted.get("status", "DRAFT")
     }
+
+
+@router.post("/{tender_id}/extend-deadline", response_model=Dict[str, Any])
+async def extend_tender_deadline_endpoint(
+    tender_id: str,
+    payload: TenderDeadlineExtensionSchema,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Extends/updates the submission deadline for an active published tender.
+    Validates future timestamp, creates a formal corrigendum / amendment record,
+    and updates the closing date across the officer and bidder portals.
+    RESTRICTED: Officer role only.
+    """
+    try:
+        updated = extend_tender_deadline(
+            tender_id=tender_id,
+            new_deadline=payload.new_deadline,
+            reason=payload.reason,
+            officer_user=current_user
+        )
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err)
+        )
+    except KeyError as key_err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(key_err)
+        )
+
+    return {
+        "message": f"Submission deadline extended successfully to {updated.get('deadline')}.",
+        "tender": updated
+    }
+
+
+@router.post("/{tender_id}/close", response_model=Dict[str, Any])
+async def close_tender_endpoint(
+    tender_id: str,
+    payload: Optional[TenderCloseSchema] = None,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Closes an active tender and seals its bidding archive.
+    Transitions tender status to CLOSED and prevents further vendor submissions.
+    RESTRICTED: Officer role only.
+    """
+    close_reason = payload.reason if payload else "Bidding window concluded and sealed by Procurement Officer."
+    try:
+        updated = close_tender(
+            tender_id=tender_id,
+            reason=close_reason,
+            officer_user=current_user
+        )
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err)
+        )
+    except KeyError as key_err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(key_err)
+        )
+
+    return {
+        "message": f"Tender {updated.get('tender_number') or tender_id} has been closed and sealed.",
+        "tender": updated
+    }
+
 

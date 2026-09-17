@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, Button, StatusBadge } from "@/components/ui";
 import {
   ShieldCheckIcon,
@@ -82,9 +83,17 @@ const FALLBACK_LOGS: AuditLogEntry[] = [
 ];
 
 export default function AuditPage() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("query") || searchParams.get("entity_id") || searchParams.get("search") || "";
+
   const [logs, setLogs] = useState<AuditLogEntry[]>(FALLBACK_LOGS);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+
+  useEffect(() => {
+    const q = searchParams.get("query") || searchParams.get("entity_id") || searchParams.get("search") || "";
+    if (q) setSearch(q);
+  }, [searchParams]);
 
   useEffect(() => {
     fetchLogs();
@@ -106,7 +115,9 @@ export default function AuditPage() {
     (l) =>
       l.user_email.toLowerCase().includes(search.toLowerCase()) ||
       l.action.toLowerCase().includes(search.toLowerCase()) ||
-      l.details.toLowerCase().includes(search.toLowerCase())
+      l.details.toLowerCase().includes(search.toLowerCase()) ||
+      (l.entity_id && l.entity_id.toLowerCase().includes(search.toLowerCase())) ||
+      (l.id && l.id.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (

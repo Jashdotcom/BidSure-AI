@@ -145,6 +145,13 @@ class TenderAnalysisResponseSchema(BaseModel):
     requirements: List[RequirementSchema]
     message: str
 
+class TenderDeadlineExtensionSchema(BaseModel):
+    new_deadline: str = Field(..., description="New submission deadline (ISO timestamp or YYYY-MM-DD format)")
+    reason: str = Field(..., min_length=3, description="Official justification or amendment rationale for deadline extension")
+
+class TenderCloseSchema(BaseModel):
+    reason: Optional[str] = Field("Bidding window concluded and sealed by Procurement Officer.", description="Reason for closing tender")
+
 class TenderUploadResponseSchema(BaseModel):
     status: str
     filename: str
