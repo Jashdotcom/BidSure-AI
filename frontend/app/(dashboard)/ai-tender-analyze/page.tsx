@@ -29,6 +29,7 @@ import {
   RequirementReviewStatus,
   Tender
 } from "@/lib/types";
+import { apiRequest } from "@/lib/api";
 
 export default function AITenderAnalyzePage() {
   const [activeTab, setActiveTab] = useState<"upload" | "processing" | "review" | "finalized">("upload");
@@ -73,8 +74,7 @@ export default function AITenderAnalyzePage() {
 
   // Fetch tenders list on mount
   useEffect(() => {
-    fetch("/api/tenders")
-      .then((res) => res.json())
+    apiRequest<Tender[]>("/tenders")
       .then((data) => {
         if (Array.isArray(data)) {
           setTendersList(data);
@@ -96,21 +96,15 @@ export default function AITenderAnalyzePage() {
       setTimeout(() => setProcessingStep(3), 2600);
       setTimeout(() => setProcessingStep(4), 4000);
 
-      const res = await fetch("/api/tenders/analyze-document", {
+      const dataPromise = apiRequest<TenderAnalysisJob>("/tenders/analyze-document", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           filename: filenameToUse,
           tender_id: targetTenderId
-        })
+        }
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || "Failed to execute AI tender analysis.");
-      }
-
-      const data: TenderAnalysisJob = await res.json();
+      const data = await dataPromise;
       setTimeout(() => {
         setAnalysisJob(data);
         setIsUploading(false);
@@ -126,46 +120,44 @@ export default function AITenderAnalyzePage() {
   const handleVerifyRequirement = async (reqId: string) => {
     if (!analysisJob) return;
     try {
-      const res = await fetch(`/api/tenders/${targetTenderId || 'CPCL/PROC/2026/001'}/requirements/${reqId}/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
+      await apiRequest(
+        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements/${encodeURIComponent(reqId)}/verify`,
+        { method: "POST" }
+      );
+      setAnalysisJob({
+        ...analysisJob,
+        requirements: analysisJob.requirements.map((r) =>
+          r.id === reqId ? { ...r, review_status: "VERIFIED" as RequirementReviewStatus } : r
+        )
       });
-      if (res.ok) {
-        setAnalysisJob({
-          ...analysisJob,
-          requirements: analysisJob.requirements.map((r) =>
-            r.id === reqId ? { ...r, review_status: "VERIFIED" as RequirementReviewStatus } : r
-          )
-        });
-      }
-    } catch (err) {
-      console.error("Failed to verify requirement:", err);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to verify requirement.");
     }
   };
 
   const handleRejectRequirement = async () => {
     if (!analysisJob || !rejectingReq) return;
     try {
-      const res = await fetch(`/api/tenders/${targetTenderId || 'CPCL/PROC/2026/001'}/requirements/${rejectingReq.id}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: rejectReason || "Excluded by procurement officer." })
+      await apiRequest(
+        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements/${encodeURIComponent(rejectingReq.id)}/reject`,
+        {
+          method: "POST",
+          body: { reason: rejectReason || "Excluded by procurement officer." }
+        }
+      );
+      setAnalysisJob({
+        ...analysisJob,
+        requirements: analysisJob.requirements.map((r) =>
+          r.id === rejectingReq.id
+            ? { ...r, review_status: "REJECTED" as RequirementReviewStatus, rejection_reason: rejectReason }
+            : r
+        )
       });
-      if (res.ok) {
-        setAnalysisJob({
-          ...analysisJob,
-          requirements: analysisJob.requirements.map((r) =>
-            r.id === rejectingReq.id
-              ? { ...r, review_status: "REJECTED" as RequirementReviewStatus, rejection_reason: rejectReason }
-              : r
-          )
-        });
-        setIsRejectModalOpen(false);
-        setRejectingReq(null);
-        setRejectReason("");
-      }
-    } catch (err) {
-      console.error("Failed to reject requirement:", err);
+      setIsRejectModalOpen(false);
+      setRejectingReq(null);
+      setRejectReason("");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to reject requirement.");
     }
   };
 
@@ -173,44 +165,43 @@ export default function AITenderAnalyzePage() {
     e.preventDefault();
     if (!analysisJob || !editingReq) return;
     try {
-      const res = await fetch(`/api/tenders/${targetTenderId || 'CPCL/PROC/2026/001'}/requirements/${editingReq.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editingReq.name,
-          clause_reference: editingReq.clause_reference,
-          category: editingReq.category,
-          mandatory: editingReq.mandatory,
-          description: editingReq.description,
-          threshold_value: editingReq.threshold_value,
-          unit: editingReq.unit,
-          edit_reason: "Modified by Procurement Officer during IDP review."
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        // Update local state
-        setAnalysisJob({
-          ...analysisJob,
-          requirements: analysisJob.requirements.map((r) =>
-            r.id === editingReq.id
-              ? {
-                  ...editingReq,
-                  review_status: "EDITED" as RequirementReviewStatus,
-                  original_data: r.original_data || {
-                    name: r.name,
-                    threshold_value: r.threshold_value,
-                    description: r.description
-                  }
+      await apiRequest(
+        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements/${encodeURIComponent(editingReq.id)}`,
+        {
+          method: "PATCH",
+          body: {
+            name: editingReq.name,
+            clause_reference: editingReq.clause_reference,
+            category: editingReq.category,
+            mandatory: editingReq.mandatory,
+            description: editingReq.description,
+            threshold_value: editingReq.threshold_value,
+            unit: editingReq.unit,
+            edit_reason: "Modified by Procurement Officer during IDP review."
+          }
+        }
+      );
+      // Update local state
+      setAnalysisJob({
+        ...analysisJob,
+        requirements: analysisJob.requirements.map((r) =>
+          r.id === editingReq.id
+            ? {
+                ...editingReq,
+                review_status: "EDITED" as RequirementReviewStatus,
+                original_data: r.original_data || {
+                  name: r.name,
+                  threshold_value: r.threshold_value,
+                  description: r.description
                 }
-              : r
-          )
-        });
-        setIsEditModalOpen(false);
-        setEditingReq(null);
-      }
-    } catch (err) {
-      console.error("Failed to update requirement:", err);
+              }
+            : r
+        )
+      });
+      setIsEditModalOpen(false);
+      setEditingReq(null);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to update requirement.");
     }
   };
 
@@ -218,74 +209,72 @@ export default function AITenderAnalyzePage() {
     e.preventDefault();
     if (!analysisJob) return;
     try {
-      const res = await fetch(`/api/tenders/${targetTenderId || 'CPCL/PROC/2026/001'}/requirements`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newReqForm)
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const createdReq: ExtractedRequirement = {
-          id: data.requirement?.id || `REQ-ADD-${Date.now().toString().slice(-4)}`,
-          code: newReqForm.code || "CUSTOM_OFFICER_REQ",
-          clause_reference: newReqForm.clause_reference,
-          name: newReqForm.name,
-          category: newReqForm.category,
-          mandatory: newReqForm.mandatory,
-          description: newReqForm.description,
-          threshold_value: newReqForm.threshold_value,
-          unit: newReqForm.unit,
-          confidence: 1.0,
-          review_status: "ADDED_MANUALLY",
-          source_document: analysisJob.filename,
-          source_page: 1,
-          evidence_text: "Manually added by Procurement Officer during review studio.",
-          validation_source: "Officer Manual Entry",
-          weight: newReqForm.weight
-        };
+      const data = await apiRequest<{ message: string; requirement?: { id?: string } }>(
+        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements`,
+        {
+          method: "POST",
+          body: newReqForm
+        }
+      );
+      const createdReq: ExtractedRequirement = {
+        id: data.requirement?.id || `REQ-ADD-${Date.now().toString().slice(-4)}`,
+        code: newReqForm.code || "CUSTOM_OFFICER_REQ",
+        clause_reference: newReqForm.clause_reference,
+        name: newReqForm.name,
+        category: newReqForm.category,
+        mandatory: newReqForm.mandatory,
+        description: newReqForm.description,
+        threshold_value: newReqForm.threshold_value,
+        unit: newReqForm.unit,
+        confidence: 1.0,
+        review_status: "ADDED_MANUALLY",
+        source_document: analysisJob.filename,
+        source_page: 1,
+        evidence_text: "Manually added by Procurement Officer during review studio.",
+        validation_source: "Officer Manual Entry",
+        weight: newReqForm.weight
+      };
 
-        setAnalysisJob({
-          ...analysisJob,
-          requirements: [createdReq, ...analysisJob.requirements]
-        });
-        setIsAddModalOpen(false);
-        setNewReqForm({
-          name: "",
-          code: "",
-          clause_reference: "Clause 8.1.0",
-          category: "TECHNICAL",
-          mandatory: true,
-          description: "",
-          threshold_value: "",
-          unit: "Units",
-          weight: 15
-        });
-      }
-    } catch (err) {
-      console.error("Failed to add manual requirement:", err);
+      setAnalysisJob({
+        ...analysisJob,
+        requirements: [createdReq, ...analysisJob.requirements]
+      });
+      setIsAddModalOpen(false);
+      setNewReqForm({
+        name: "",
+        code: "",
+        clause_reference: "Clause 8.1.0",
+        category: "TECHNICAL",
+        mandatory: true,
+        description: "",
+        threshold_value: "",
+        unit: "Units",
+        weight: 15
+      });
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to add manual requirement.");
     }
   };
 
   const handleFinalizeRequirements = async () => {
     if (!analysisJob) return;
     try {
-      const res = await fetch(`/api/tenders/${targetTenderId || 'CPCL/PROC/2026/001'}/finalize-requirements`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tender_id: targetTenderId,
-          override_existing: true,
-          notes: finalizeNotes || "Finalized by Procurement Officer via AI Tender Analyze Studio."
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSuccessMsg("Requirements successfully finalized and linked to tender RulesEngine!");
-        setIsFinalizeModalOpen(false);
-        setActiveTab("finalized");
-      }
-    } catch (err) {
-      console.error("Failed to finalize requirements:", err);
+      await apiRequest(
+        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/finalize-requirements`,
+        {
+          method: "POST",
+          body: {
+            tender_id: targetTenderId,
+            override_existing: true,
+            notes: finalizeNotes || "Finalized by Procurement Officer via AI Tender Analyze Studio."
+          }
+        }
+      );
+      setSuccessMsg("Requirements successfully finalized and linked to tender RulesEngine!");
+      setIsFinalizeModalOpen(false);
+      setActiveTab("finalized");
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to finalize requirements.");
     }
   };
 
