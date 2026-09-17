@@ -172,6 +172,9 @@ export default function TendersPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Page-level feedback toast notification
+  const [pageToast, setPageToast] = useState<{ type: "SUCCESS" | "ERROR"; message: string } | null>(null);
+
   // Manage Tender Modal State (for Active Tenders)
   const [manageModalTender, setManageModalTender] = useState<Tender | null>(null);
   const [manageModalTab, setManageModalTab] = useState<"OVERVIEW" | "EXTEND_DEADLINE" | "CLOSE" | "AMENDMENTS">("OVERVIEW");
@@ -180,6 +183,16 @@ export default function TendersPage() {
   const [isExtendingDeadline, setIsExtendingDeadline] = useState(false);
   const [deadlineActionError, setDeadlineActionError] = useState<string | null>(null);
   const [deadlineActionSuccess, setDeadlineActionSuccess] = useState<string | null>(null);
+
+  // Auto-dismiss page-level toast
+  useEffect(() => {
+    if (pageToast) {
+      const timer = setTimeout(() => {
+        setPageToast(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [pageToast]);
 
   // Close Tender in Manage Modal State
   const [closeReasonInput, setCloseReasonInput] = useState<string>("Bidding window concluded and sealed by Procurement Officer.");
@@ -390,20 +403,66 @@ export default function TendersPage() {
   // Handle Extend Deadline Submission
   async function handleConfirmExtendDeadline(e: React.FormEvent) {
     e.preventDefault();
-    if (!manageModalTender) return;
+    if (!manageModalTender || isExtendingDeadline) return;
 
     setDeadlineActionError(null);
     setDeadlineActionSuccess(null);
 
-    if (!newDeadlineInput) {
+    // 1. Frontend validation: Check not empty
+    if (!newDeadlineInput || !newDeadlineInput.trim()) {
       setDeadlineActionError("Please select a new submission deadline date and time.");
       return;
     }
-    if (!deadlineReasonInput || deadlineReasonInput.trim().length < 3) {
-      setDeadlineActionError("Please provide an official justification / rationale for the deadline extension (minimum 3 characters).");
+
+    // 2. Frontend validation: Check valid date
+    const newDate = new Date(newDeadlineInput);
+    if (isNaN(newDate.getTime())) {
+      setDeadlineActionError("Invalid date/time format for new submission deadline.");
       return;
     }
 
+    // 3. Frontend validation: Check future date
+    if (newDate.getTime() <= Date.now()) {
+      setDeadlineActionError("New submission deadline must be in the future.");
+      return;
+    }
+
+    // 4. Frontend validation: Check strictly later than current deadline
+    const currentRaw =
+      manageModalTender.closing_date ||
+      manageModalTender.submission_deadline ||
+      manageModalTender.deadline;
+    if (currentRaw) {
+      let prevDate: Date | null = null;
+      try {
+        const rawStr = currentRaw.includes("T") ? currentRaw : `${currentRaw}T23:59:59Z`;
+        const parsed = new Date(rawStr);
+        if (!isNaN(parsed.getTime())) {
+          prevDate = parsed;
+        }
+      } catch {
+        // fallback
+      }
+
+      if (prevDate && newDate.getTime() <= prevDate.getTime()) {
+        const prevFormatted = formatDeadlineDisplay(currentRaw);
+        const newFormatted = formatDeadlineDisplay(newDeadlineInput);
+        setDeadlineActionError(
+          `New deadline (${newFormatted}) must be strictly later than current deadline (${prevFormatted}).`
+        );
+        return;
+      }
+    }
+
+    // 5. Frontend validation: Check reason min length
+    if (!deadlineReasonInput || deadlineReasonInput.trim().length < 3) {
+      setDeadlineActionError(
+        "Please provide an official justification / rationale for the deadline extension (minimum 3 characters)."
+      );
+      return;
+    }
+
+    // 6. Submit request to backend
     setIsExtendingDeadline(true);
     try {
       const tenderId = manageModalTender.id;
@@ -418,20 +477,33 @@ export default function TendersPage() {
         }
       );
 
+      // ONLY on success:
+      // a. Update local state
       if (res && res.tender) {
-        // Update local tenders state
         setTenders((prev) =>
           prev.map((t) => (t.id === tenderId ? { ...t, ...res.tender } : t))
         );
-        setManageModalTender(res.tender);
-        setDeadlineActionSuccess(res.message || "Submission deadline extended successfully.");
-      } else {
-        setDeadlineActionSuccess("Submission deadline extended successfully.");
-        await fetchTenders();
       }
+
+      // b. Close the entire Manage Tender modal
+      setManageModalTender(null);
+
+      // c. Refresh/revalidate the tender list
+      await fetchTenders();
+
+      // d. Show success toast on the Tenders page
+      setPageToast({
+        type: "SUCCESS",
+        message: "Corrigendum issued successfully. Submission deadline updated.",
+      });
     } catch (err: any) {
-      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to extend deadline.";
-      setDeadlineActionError(typeof msg === "string" ? msg : JSON.stringify(msg));
+      // On failure: DO NOT close modal, keep inputs visible, show error
+      const msg =
+        err?.detail?.message ||
+        err?.detail ||
+        err?.message ||
+        "Failed to issue corrigendum. Please try again.";
+      setDeadlineActionError(typeof msg === "string" ? msg : "Failed to issue corrigendum. Please try again.");
     } finally {
       setIsExtendingDeadline(false);
     }
@@ -440,10 +512,15 @@ export default function TendersPage() {
   // Handle Close Tender Submission
   async function handleConfirmCloseTender(e: React.FormEvent) {
     e.preventDefault();
-    if (!manageModalTender) return;
+    if (!manageModalTender || isClosingTender) return;
 
     setCloseActionError(null);
     setCloseActionSuccess(null);
+
+    if (!closeReasonInput || closeReasonInput.trim().length < 3) {
+      setCloseActionError("Please provide a reason for closing this tender (minimum 3 characters).");
+      return;
+    }
 
     setIsClosingTender(true);
     try {
@@ -462,15 +539,18 @@ export default function TendersPage() {
         setTenders((prev) =>
           prev.map((t) => (t.id === tenderId ? { ...t, ...res.tender } : t))
         );
-        setManageModalTender(res.tender);
-        setCloseActionSuccess(res.message || "Tender has been closed and sealed.");
-      } else {
-        setCloseActionSuccess("Tender closed successfully.");
-        await fetchTenders();
       }
+
+      setManageModalTender(null);
+      await fetchTenders();
+
+      setPageToast({
+        type: "SUCCESS",
+        message: `Tender ${manageModalTender.tender_number || manageModalTender.id} has been closed and sealed successfully.`,
+      });
     } catch (err: any) {
       const msg = err?.detail?.message || err?.detail || err?.message || "Failed to close tender.";
-      setCloseActionError(typeof msg === "string" ? msg : JSON.stringify(msg));
+      setCloseActionError(typeof msg === "string" ? msg : "Failed to close tender. Please try again.");
     } finally {
       setIsClosingTender(false);
     }
@@ -722,6 +802,34 @@ export default function TendersPage() {
           </Link>
         </div>
       </div>
+
+      {/* Global Page Feedback Toast Notification */}
+      {pageToast && (
+        <div
+          className={`rounded-xl border p-4 shadow-sm flex items-center justify-between transition-all animate-in fade-in duration-200 ${
+            pageToast.type === "SUCCESS"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+              : "border-red-300 bg-red-50 text-red-900"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {pageToast.type === "SUCCESS" ? (
+              <CheckCircleIcon className="size-5 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertTriangleIcon className="size-5 text-red-600 shrink-0" />
+            )}
+            <span className="text-xs font-bold">{pageToast.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPageToast(null)}
+            className="rounded-full p-1 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
+            title="Dismiss notification"
+          >
+            <XIcon className="size-4" />
+          </button>
+        </div>
+      )}
 
       {/* VIEW 1: TENDERS LIFECYCLE LIST & TABS */}
       {activeView === "LIST" && (
@@ -1425,7 +1533,8 @@ export default function TendersPage() {
               <button
                 type="button"
                 onClick={() => setManageModalTender(null)}
-                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                disabled={isExtendingDeadline || isClosingTender}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors disabled:opacity-40"
                 title="Close modal"
               >
                 <XIcon className="size-4" />
@@ -1649,17 +1758,11 @@ export default function TendersPage() {
                   </div>
 
                   {/* Feedback Banners */}
+                  {/* Feedback Error Banner */}
                   {deadlineActionError && (
                     <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
                       <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
                       <span>{deadlineActionError}</span>
-                    </div>
-                  )}
-
-                  {deadlineActionSuccess && (
-                    <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-bold text-emerald-900 flex items-center gap-2">
-                      <CheckCircleIcon className="size-4 text-emerald-600 shrink-0" />
-                      <span>{deadlineActionSuccess}</span>
                     </div>
                   )}
 
@@ -1678,11 +1781,12 @@ export default function TendersPage() {
                     <Button
                       type="submit"
                       size="sm"
+                      disabled={isExtendingDeadline}
                       loading={isExtendingDeadline}
-                      className="bg-blue-700 hover:bg-blue-800 font-bold"
+                      className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[200px]"
                     >
                       <ClockIcon className="size-3.5" />
-                      Confirm & Issue Corrigendum
+                      {isExtendingDeadline ? "Issuing Corrigendum..." : "Confirm & Issue Corrigendum"}
                     </Button>
                   </div>
                 </form>
