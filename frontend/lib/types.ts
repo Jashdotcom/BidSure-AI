@@ -232,9 +232,11 @@ export interface TenderAnalysisJob {
   job_id: string;
   tender_id?: string;
   tender_title?: string;
+  title?: string;
   filename: string;
   file_size_kb: number;
   total_pages: number;
+  total_pages_parsed?: number;
   ocr_confidence: number;
   document_type: string;
   status: "COMPLETED" | "PROCESSING" | "FAILED";

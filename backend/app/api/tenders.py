@@ -609,14 +609,18 @@ async def analyze_tender_document(
         "job_id": job_id,
         "tender_id": tender_id,
         "title": doc_profile.get("title", filename),
+        "tender_title": doc_profile.get("title", filename),
         "organization": doc_profile.get("organization", "CPCL"),
         "filename": filename,
         "file_size_kb": doc_profile.get("file_size_kb", 4280),
+        "total_pages": doc_profile.get("page_count", 14),
         "total_pages_parsed": doc_profile.get("page_count", 14),
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
+        "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
         "detected_sections": doc_profile.get("detected_sections", []),
         "extracted_count": len(requirements),
         "requirements": requirements,
+        "created_at": job.get("created_at"),
         "message": f"Successfully extracted {len(requirements)} evaluation criteria from '{filename}'."
     }
 

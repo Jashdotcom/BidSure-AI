@@ -602,13 +602,13 @@ export default function AITenderAnalyzePage() {
                 <FileTextIcon className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900 dark:text-white text-base">{analysisJob.title}</h2>
+                <h2 className="font-bold text-slate-900 dark:text-white text-base">{analysisJob.title || analysisJob.tender_title || analysisJob.filename}</h2>
                 <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
                   <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">{analysisJob.tender_id || targetTenderId}</span>
                   <span>•</span>
                   <span>{analysisJob.filename}</span>
                   <span>•</span>
-                  <span>{analysisJob.total_pages} Pages Parsed</span>
+                  <span>{analysisJob.total_pages || analysisJob.total_pages_parsed || 14} Pages Parsed</span>
                   <span>•</span>
                   <span className="text-emerald-600 font-semibold">OCR Confidence: {(analysisJob.ocr_confidence * 100).toFixed(1)}%</span>
                 </div>
