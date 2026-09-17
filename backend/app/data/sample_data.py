@@ -2232,36 +2232,77 @@ def get_bids_by_bidder_id(bidder_id: str) -> List[Dict[str, Any]]:
     return [b for b in SAMPLE_BIDDER_BIDS if b.get("bidder_id") == bidder_id]
 
 def add_bid_for_bidder(bid_data: Dict[str, Any]) -> Dict[str, Any]:
-    SAMPLE_BIDDER_BIDS.append(bid_data)
-
-    # Synchronize with SAMPLE_BIDDERS so the officer portal updates in real time
     target_tender_id = bid_data.get("tender_id")
     target_tender_num = bid_data.get("tender_number")
     bidder_id = bid_data.get("bidder_id")
+    is_draft = bid_data.get("is_draft") is True or bid_data.get("status") == "DRAFT"
+    status_str = "DRAFT" if is_draft else bid_data.get("status", "SUBMITTED")
 
-    # Check if there is an existing record (e.g. DRAFT) in SAMPLE_BIDDERS to promote
+    # Resolve tender title if missing
+    tender_title = bid_data.get("tender_title")
+    if not tender_title and target_tender_id:
+        t_obj = get_tender_by_id(target_tender_id)
+        if t_obj:
+            tender_title = t_obj.get("title", "")
+            if not target_tender_num:
+                target_tender_num = t_obj.get("tender_number")
+    bid_data["tender_title"] = tender_title or ""
+    if target_tender_num:
+        bid_data["tender_number"] = target_tender_num
+
+    # Resolve bidder profile details if available
+    bidder_name = bid_data.get("name")
+    if not bidder_name and bidder_id:
+        b_profile = get_bidder_by_id(bidder_id)
+        if b_profile:
+            bidder_name = b_profile.get("name")
+    bid_data["name"] = bidder_name or "Authorized Bidder"
+
+    # Avoid duplicate entries in SAMPLE_BIDDER_BIDS
+    existing_bid_idx = -1
+    for idx, b in enumerate(SAMPLE_BIDDER_BIDS):
+        if b.get("id") == bid_data.get("id") or (
+            b.get("bidder_id") == bidder_id and (
+                (target_tender_id and b.get("tender_id") == target_tender_id) or
+                (target_tender_num and b.get("tender_number") == target_tender_num)
+            )
+        ):
+            existing_bid_idx = idx
+            break
+
+    if existing_bid_idx >= 0:
+        SAMPLE_BIDDER_BIDS[existing_bid_idx].update(bid_data)
+    else:
+        SAMPLE_BIDDER_BIDS.append(bid_data)
+
+    # Synchronize with SAMPLE_BIDDERS so the officer portal updates in real time
     promoted = False
     for b in SAMPLE_BIDDERS:
         if (b.get("id") == bidder_id or b.get("bidder_id") == bidder_id) and (
             (target_tender_id and b.get("tender_id") == target_tender_id) or
             (target_tender_num and b.get("tender_number") == target_tender_num)
         ):
-            b["status"] = bid_data.get("status", "SUBMITTED")
-            b["verification_status"] = bid_data.get("verification_status", "PROCESSING")
-            b["compliance_status"] = bid_data.get("compliance_status", "REVIEW_REQUIRED")
+            b["status"] = status_str
+            b["verification_status"] = "PENDING" if is_draft else bid_data.get("verification_status", "PROCESSING")
+            b["compliance_status"] = "PENDING" if is_draft else bid_data.get("compliance_status", "REVIEW_REQUIRED")
             b["bid_amount"] = bid_data.get("bid_amount", b.get("bid_amount", "₹ 0"))
-            b["submitted_at"] = bid_data.get("submission_date") or datetime.utcnow().isoformat() + "Z"
-            b["is_draft"] = False
+            b["tender_title"] = tender_title or b.get("tender_title", "")
+            if not is_draft:
+                b["submitted_at"] = bid_data.get("submission_date") or datetime.utcnow().isoformat() + "Z"
+                b["is_draft"] = False
+            else:
+                b["is_draft"] = True
             promoted = True
             break
 
     if not promoted:
+        submitted_ts = None if is_draft else (bid_data.get("submission_date") or datetime.utcnow().isoformat() + "Z")
         new_bidder_entry = {
             "id": bid_data.get("id") or f"BID-{len(SAMPLE_BIDDERS) + 1:03d}",
             "bid_submission_id": bid_data.get("bid_submission_id") or f"SUB-{target_tender_id}-{len(SAMPLE_BIDDERS) + 1}",
             "tender_id": target_tender_id,
             "tender_number": target_tender_num or target_tender_id,
-            "tender_title": bid_data.get("tender_title", ""),
+            "tender_title": tender_title or "",
             "name": bid_data.get("name", "Authorized Bidder"),
             "contact_person": bid_data.get("contact_person", "Authorized Signatory"),
             "email": bid_data.get("email", "bidder@vendor.com"),
@@ -2279,21 +2320,79 @@ def add_bid_for_bidder(bid_data: Dict[str, Any]) -> Dict[str, Any]:
             "local_content": float(bid_data.get("local_content", 65.0)),
             "local_content_pct": float(bid_data.get("local_content", 65.0)),
             "is_debarred": False,
-            "emd_paid": True,
-            "submitted_at": bid_data.get("submission_date") or datetime.utcnow().isoformat() + "Z",
-            "status": bid_data.get("status", "SUBMITTED"),
-            "verification_status": bid_data.get("verification_status", "PROCESSING"),
-            "compliance_status": bid_data.get("compliance_status", "REVIEW_REQUIRED"),
-            "compliance_score": float(bid_data.get("compliance_score", 85.0)),
+            "emd_paid": not is_draft,
+            "submitted_at": submitted_ts,
+            "status": status_str,
+            "verification_status": "PENDING" if is_draft else bid_data.get("verification_status", "PROCESSING"),
+            "compliance_status": "PENDING" if is_draft else bid_data.get("compliance_status", "REVIEW_REQUIRED"),
+            "compliance_score": 0.0 if is_draft else float(bid_data.get("compliance_score", 85.0)),
             "risk_level": "LOW",
-            "summary": {"pass_count": 5, "fail_count": 0, "review_count": 1, "total": 6, "total_requirements": 6},
-            "highlight_issue": "Submitted via Bidder Self-Service Portal.",
+            "summary": {"pass_count": 0 if is_draft else 5, "fail_count": 0, "review_count": 0 if is_draft else 1, "total": 6, "total_requirements": 6},
+            "highlight_issue": "Draft submission in preparation by vendor." if is_draft else "Submitted via Bidder Self-Service Portal.",
             "documents": {},
-            "is_draft": False
+            "is_draft": is_draft
         }
         SAMPLE_BIDDERS.append(new_bidder_entry)
 
+    # If this was a formal submission, log an audit trail event
+    if not is_draft:
+        add_audit_log({
+            "user_email": bid_data.get("email", "bidder@vendor.com"),
+            "user_role": "BIDDER",
+            "action": "BID_SUBMISSION",
+            "entity_type": "TENDER",
+            "entity_id": target_tender_num or target_tender_id or "CPCL-TENDER",
+            "details": f"Formal bid submitted by {bid_data.get('name', 'Vendor')} for {tender_title or target_tender_num or target_tender_id} (Amount: {bid_data.get('bid_amount', 'N/A')}).",
+            "status": "SUCCESS"
+        })
+
     return bid_data
+
+def get_recent_bid_activities(limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    Returns the most recent formally submitted bids as structured activity items,
+    ordered by submission timestamp (newest first).
+    Excludes DRAFT, CANCELLED, and WITHDRAWN bids.
+    """
+    submitted_bids = [b for b in SAMPLE_BIDDERS if is_submitted_bid(b)]
+
+    # Sort descending by submitted_at timestamp (newest first)
+    sorted_bids = sorted(
+        submitted_bids,
+        key=lambda b: str(b.get("submitted_at") or ""),
+        reverse=True
+    )
+
+    activities: List[Dict[str, Any]] = []
+    for bid in sorted_bids[:limit]:
+        tender_title = bid.get("tender_title")
+        if not tender_title and bid.get("tender_id"):
+            t_obj = get_tender_by_id(bid.get("tender_id"))
+            if t_obj:
+                tender_title = t_obj.get("title")
+
+        bid_id = bid.get("id") or "BID"
+        submitted_ts = bid.get("submitted_at") or datetime.utcnow().isoformat() + "Z"
+
+        activities.append({
+            "id": f"ACT-{bid_id}",
+            "type": "BID_SUBMITTED",
+            "bid_id": bid_id,
+            "bid_submission_id": bid.get("bid_submission_id") or bid_id,
+            "tender_id": bid.get("tender_id") or "",
+            "tender_number": bid.get("tender_number") or bid.get("tender_id") or "",
+            "tender_title": tender_title or "Industrial Procurement Package",
+            "bidder_id": bid.get("bidder_id") or bid_id,
+            "bidder_name": bid.get("name") or "Vendor",
+            "submitted_at": submitted_ts,
+            "bid_amount": bid.get("bid_amount") or "N/A",
+            "status": bid.get("status") or "SUBMITTED",
+            "compliance_status": bid.get("compliance_status") or "REVIEW_REQUIRED",
+            "compliance_score": bid.get("compliance_score", 0.0),
+            "risk_level": bid.get("risk_level", "LOW")
+        })
+
+    return activities
 
 def get_dashboard_stats() -> Dict[str, Any]:
     all_tenders = SAMPLE_TENDERS

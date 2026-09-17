@@ -2,10 +2,10 @@
 Officer Dashboard Management API Router
 Provides aggregated procurement metrics, active tender counts, and verification queue summaries.
 """
-from fastapi import APIRouter, Depends
-from typing import Dict, Any
+from fastapi import APIRouter, Depends, Query
+from typing import Dict, Any, List
 from app.api.auth import get_current_user, require_roles
-from app.data.sample_data import get_dashboard_stats, get_all_tenders, get_all_bidders
+from app.data.sample_data import get_dashboard_stats, get_all_tenders, get_all_bidders, get_recent_bid_activities
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -18,3 +18,17 @@ async def fetch_dashboard_stats(
     Calculates live metrics from the shared central database of tenders and bidders.
     """
     return get_dashboard_stats()
+
+@router.get("/recent-bid-activity", response_model=List[Dict[str, Any]])
+@router.get("/recent-activity", response_model=List[Dict[str, Any]])
+async def fetch_recent_bid_activity(
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of recent activities to return"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Returns recent formally submitted bid activities for the Procurement Officer Dashboard.
+    Ordered by submission timestamp (newest first).
+    RESTRICTED: Officer role only.
+    """
+    return get_recent_bid_activities(limit=limit)
+

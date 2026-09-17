@@ -56,49 +56,59 @@ interface ActiveTenderItem {
   status: "DRAFT" | "ANALYZING" | "REQUIREMENTS_REVIEW" | "PUBLISHED" | "CLOSED" | string;
 }
 
-const RECENT_ACTIVITY_DATA = [
-  {
-    id: "ACT-01",
-    action: "ABC Safety Solutions submitted a bid",
-    time: "2 minutes ago",
-    type: "submission",
-    meta: "Tender CPCL/PROC/2026/001 · 6 Annexures",
-  },
-  {
-    id: "ACT-02",
-    action: "SecureTech Industries uploaded OEM Authorization",
-    time: "18 minutes ago",
-    type: "upload",
-    meta: "Honeywell_Direct_OEM_MAF_2024.pdf",
-  },
-  {
-    id: "ACT-03",
-    action: "Tender CPCL/PROC/2026/001 was published",
-    time: "1 hour ago",
-    type: "publish",
-    meta: "Est. Value: ₹ 4,50,00,000 · NCB Tender",
-  },
-  {
-    id: "ACT-04",
-    action: "Experience Certificate verification flagged review",
-    time: "2 hours ago",
-    type: "flag",
-    meta: "ABC Safety Solutions · Section III, Clause 4.2",
-  },
-  {
-    id: "ACT-05",
-    action: "Central Debarment Registry checked across 3 vendors",
-    time: "3 hours ago",
-    type: "security",
-    meta: "CVC & GeM Debarred Registry: All Cleared",
-  },
-];
+interface RecentBidActivityItem {
+  id: string;
+  type: string;
+  bid_id: string;
+  bid_submission_id?: string;
+  tender_id: string;
+  tender_number: string;
+  tender_title: string;
+  bidder_id: string;
+  bidder_name: string;
+  submitted_at: string;
+  bid_amount?: string;
+  status?: string;
+  compliance_status?: string;
+  compliance_score?: number;
+  risk_level?: string;
+}
+
+function formatRelativeTime(dateString?: string): string {
+  if (!dateString) return "Recently";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Recently";
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 0 || diffInSeconds < 60) {
+    return "Just now";
+  }
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  }
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  }
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays === 1) {
+    return "Yesterday";
+  }
+  if (diffInDays < 30) {
+    return `${diffInDays}d ago`;
+  }
+  return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+}
 
 export default function OfficerDashboardPage() {
   const [stats, setStats] = useState<OfficerDashboardStats>(DEFAULT_DASHBOARD_STATS);
   const [user, setUser] = useState<User | null>(null);
   const [activeTenders, setActiveTenders] = useState<ActiveTenderItem[]>([]);
   const [loadingTenders, setLoadingTenders] = useState(true);
+  const [recentActivities, setRecentActivities] = useState<RecentBidActivityItem[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
 
   useEffect(() => {
     const u = getUser<User>();
@@ -147,8 +157,31 @@ export default function OfficerDashboardPage() {
       }
     }
 
+    async function fetchRecentActivities(isInitial = false) {
+      if (isInitial) setLoadingActivities(true);
+      try {
+        const res = await apiRequest<RecentBidActivityItem[]>("/dashboard/recent-bid-activity?limit=10");
+        if (res && Array.isArray(res)) {
+          setRecentActivities(res);
+        }
+      } catch {
+        if (isInitial) setRecentActivities([]);
+      } finally {
+        if (isInitial) setLoadingActivities(false);
+      }
+    }
+
     fetchStats();
     fetchActiveTenders();
+    fetchRecentActivities(true);
+
+    // Auto-refresh stats and recent activities every 12 seconds
+    const interval = setInterval(() => {
+      fetchStats();
+      fetchRecentActivities(false);
+    }, 12000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const officerName = user?.name || "Procurement Officer";
@@ -582,28 +615,55 @@ export default function OfficerDashboardPage() {
                 Recent Bid Activity
               </h3>
             </div>
+            <Link
+              href="/bidders"
+              className="text-[11px] font-bold text-blue-700 hover:underline"
+            >
+              View All
+            </Link>
           </div>
 
-          <div className="divide-y divide-slate-100 p-2">
-            {RECENT_ACTIVITY_DATA.map((act) => (
-              <div
-                key={act.id}
-                className="p-2.5 rounded-lg hover:bg-slate-50/80 transition-colors space-y-1"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-bold text-slate-900 leading-snug">
-                    {act.action}
-                  </p>
-                  <span className="text-[10px] text-slate-400 whitespace-nowrap font-medium">
-                    {act.time}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 truncate">
-                  {act.meta}
-                </p>
-              </div>
-            ))}
-          </div>
+          {loadingActivities ? (
+            <div className="flex flex-col items-center justify-center p-8 text-slate-400">
+              <ClockIcon className="size-5 animate-spin text-blue-600 mb-1" />
+              <p className="text-[11px] font-medium">Fetching recent bids...</p>
+            </div>
+          ) : recentActivities.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center text-slate-400">
+              <ClockIcon className="size-5 mb-1 text-slate-300" />
+              <p className="text-xs font-bold text-slate-700">No Recent Bid Activity</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Submitted bids will automatically appear here.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 p-2">
+              {recentActivities.map((act) => (
+                <Link
+                  key={act.id}
+                  href={`/compliance?bidder=${encodeURIComponent(act.bidder_id || act.bid_id)}`}
+                  className="block p-2.5 rounded-lg hover:bg-slate-50/80 transition-colors space-y-1"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-bold text-slate-900 leading-snug">
+                      {act.bidder_name} submitted a bid
+                    </p>
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap font-medium">
+                      {formatRelativeTime(act.submitted_at)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span className="truncate max-w-[200px]">
+                      {act.tender_number} · {act.tender_title}
+                    </span>
+                    {act.bid_amount && act.bid_amount !== "N/A" && (
+                      <span className="font-semibold text-slate-700 shrink-0 ml-2">
+                        {act.bid_amount}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
 
