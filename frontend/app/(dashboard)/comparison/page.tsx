@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Card, Button, StatusBadge, RiskBadge, ScoreDisplay, Input } from "@/components/ui";
 import {
   ScaleIcon,
@@ -22,6 +23,9 @@ import { getToken } from "@/lib/session";
 import { Bidder, Tender } from "@/lib/types";
 
 export default function ComparisonPage() {
+  const searchParams = useSearchParams();
+  const initialTenderId = searchParams.get("tender_id") || "";
+
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [bidders, setBidders] = useState<Bidder[]>([]);
   const [loadingTenders, setLoadingTenders] = useState(true);
@@ -31,7 +35,7 @@ export default function ComparisonPage() {
 
   // Workflow State
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedTenderId, setSelectedTenderId] = useState<string>("");
+  const [selectedTenderId, setSelectedTenderId] = useState<string>(initialTenderId);
   const [comparisonCount, setComparisonCount] = useState<number | null>(null);
   const [selectedBidderIds, setSelectedBidderIds] = useState<Set<string>>(new Set());
 

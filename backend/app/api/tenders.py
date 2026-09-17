@@ -16,6 +16,7 @@ from app.schemas.tender import (
 from app.data.sample_data import (
     get_all_tenders,
     get_tender_by_id,
+    get_bidders_for_tender,
     add_tender,
     update_tender,
     delete_tender,
@@ -88,6 +89,26 @@ async def get_tender_details(tender_id: str, current_user: Dict[str, Any] = Depe
             detail=f"Tender {tender_id} not found."
         )
     return tender
+
+
+@router.get("/{tender_id}/bids", response_model=List[Dict[str, Any]])
+async def get_tender_bids(
+    tender_id: str,
+    eligible_only: bool = Query(True, description="Filter to eligible submitted bids only (exclude drafts)"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Returns submitted bidder submissions specifically for the given tender.
+    Excludes drafts by default.
+    RESTRICTED: Officer role only.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender {tender_id} not found."
+        )
+    return get_bidders_for_tender(tender_id, eligible_only=eligible_only)
 
 @router.post("", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def create_tender(

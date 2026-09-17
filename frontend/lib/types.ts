@@ -245,3 +245,45 @@ export interface TenderAnalysisJob {
   created_at: string;
 }
 
+export interface MatrixBidderCell {
+  status: "PASS" | "FAIL" | "REVIEW_REQUIRED" | "REVIEW" | "NOT_SUBMITTED" | "NOT_APPLICABLE";
+  claimed_value: string;
+  required_value: string;
+  evidence_document: string;
+  page_number: number;
+  remarks: string;
+  evidence?: EvidenceItem;
+}
+
+export interface ComparisonMatrixRow {
+  requirement_id: string;
+  code: string;
+  clause: string;
+  clause_reference: string;
+  title: string;
+  category: string;
+  mandatory: boolean;
+  threshold_value: string;
+  unit?: string;
+  description?: string;
+  bidders: Record<string, MatrixBidderCell>;
+}
+
+export interface TenderComparisonMetrics {
+  total_submitted_bids: number;
+  draft_bids_count: number;
+  fully_compliant_count: number;
+  needs_review_count: number;
+  non_compliant_count: number;
+  verified_count: number;
+  under_verification_count: number;
+}
+
+export interface TenderComparisonData {
+  tender: Tender;
+  metrics: TenderComparisonMetrics;
+  bidders: Bidder[];
+  requirements: (Requirement | TenderRequirement)[];
+  comparison_matrix: ComparisonMatrixRow[];
+}
+

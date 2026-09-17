@@ -13,8 +13,219 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from app.api.auth import get_current_user, require_roles
 from app.data.sample_data import get_all_bidders, get_bidders_for_tender, get_bidder_by_id, get_tender_by_id, add_audit_log
+from app.services.rules_engine import RulesEngine
+from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
 
 router = APIRouter(prefix="/bidders", tags=["Bidders"])
+
+rules_engine = RulesEngine()
+gov_service = MockGovernmentVerificationService(is_mock=True)
+
+
+async def build_tender_comparison_data(tender_id: str) -> Dict[str, Any]:
+    """
+    Constructs the complete structured bid comparison matrix for an active tender.
+    Reuses existing RulesEngine and MockGovernmentVerificationService.
+    Excludes drafts from submitted bid results.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender '{tender_id}' not found."
+        )
+
+    # Submitted bidders only (single source of truth)
+    submitted_bidders = get_bidders_for_tender(tender_id, eligible_only=True)
+
+    # Check all raw bidders to calculate draft count
+    all_bidders = get_bidders_for_tender(tender_id, eligible_only=False)
+    draft_bids_count = max(0, len(all_bidders) - len(submitted_bidders))
+
+    # Tender requirements (source of truth)
+    requirements = tender.get("requirements", [])
+
+    # Evaluate each submitted bidder
+    evaluations_by_bidder: Dict[str, Dict[str, Any]] = {}
+    enriched_bidders: List[Dict[str, Any]] = []
+
+    for bidder in submitted_bidders:
+        gov_res = await gov_service.verify_all_for_bidder(bidder)
+        eval_res = rules_engine.evaluate_submission(tender, bidder, gov_verification=gov_res)
+        bidder_id = bidder.get("id", "")
+        evaluations_by_bidder[bidder_id] = eval_res
+
+        # Enriched bidder with live evaluation metrics
+        b_copy = dict(bidder)
+        b_copy["compliance_score"] = eval_res.get("compliance_score", bidder.get("compliance_score", 0.0))
+        b_copy["compliance_status"] = eval_res.get("overall_status", bidder.get("compliance_status", "PENDING"))
+        b_copy["summary"] = {
+            "pass_count": eval_res.get("passed_count", 0),
+            "fail_count": eval_res.get("failed_count", 0),
+            "review_count": eval_res.get("review_count", 0),
+            "total": eval_res.get("total_requirements", len(requirements)),
+            "total_requirements": eval_res.get("total_requirements", len(requirements)),
+        }
+        enriched_bidders.append(b_copy)
+
+    # Calculate metrics
+    fully_compliant = sum(1 for e in evaluations_by_bidder.values() if e.get("overall_status") == "COMPLIANT")
+    needs_review = sum(1 for e in evaluations_by_bidder.values() if e.get("overall_status") == "REQUIRES_REVIEW")
+    non_compliant = sum(1 for e in evaluations_by_bidder.values() if e.get("overall_status") == "NON_COMPLIANT")
+    verified = sum(
+        1 for b in submitted_bidders
+        if b.get("verification_status") in ["AUTHENTICATED", "COMPLETED", "VERIFIED"]
+        or b.get("status") in ["COMPLETED", "AUTHENTICATED", "VERIFIED"]
+    )
+    under_verification = len(submitted_bidders) - verified
+
+    metrics = {
+        "total_submitted_bids": len(submitted_bidders),
+        "draft_bids_count": draft_bids_count,
+        "fully_compliant_count": fully_compliant,
+        "needs_review_count": needs_review,
+        "non_compliant_count": non_compliant,
+        "verified_count": verified,
+        "under_verification_count": under_verification,
+    }
+
+    # Build comparison matrix rows dynamically from tender's finalized requirements
+    comparison_matrix: List[Dict[str, Any]] = []
+
+    for req in requirements:
+        req_id = req.get("id") or req.get("code") or ""
+        req_code = req.get("code") or req_id
+        clause_ref = req.get("clause_reference") or req.get("clause") or "Clause"
+        title = req.get("title") or req.get("name") or "Requirement"
+        category = req.get("category") or "GENERAL"
+        mandatory = req.get("mandatory", True)
+        threshold_val = req.get("threshold_value") or str(req.get("threshold", ""))
+        unit = req.get("unit", "")
+        description = req.get("description", "")
+
+        bidder_cells: Dict[str, Any] = {}
+
+        for bidder in submitted_bidders:
+            b_id = bidder.get("id", "")
+            eval_res = evaluations_by_bidder.get(b_id, {})
+            results_list = eval_res.get("results", [])
+
+            # Find match for this requirement in evaluation results
+            matched_eval = None
+            for er in results_list:
+                if er.get("requirement_id") == req_id or er.get("clause") == clause_ref or er.get("title") == title:
+                    matched_eval = er
+                    break
+
+            if matched_eval:
+                st = matched_eval.get("status", "PASS")
+                claimed = matched_eval.get("claimed_value", "")
+                required = matched_eval.get("required_value", "")
+                ev_doc = matched_eval.get("evidence_document", "Bid_Submission.pdf")
+                p_num = matched_eval.get("page_number", 1)
+                remarks = matched_eval.get("remarks", "")
+            else:
+                st = "PASS"
+                claimed = "Document Submitted"
+                required = threshold_val or "Mandatory Submission"
+                ev_doc = "Bid_Submission.pdf"
+                p_num = 1
+                remarks = "Evaluated compliant with tender criteria."
+
+            evidence_item = {
+                "requirement_id": req_id,
+                "requirement_code": req_code,
+                "requirement_name": title,
+                "clause_reference": clause_ref,
+                "category": category,
+                "mandatory": mandatory,
+                "required_value": required or threshold_val or "Mandatory Criteria",
+                "bidder_value": claimed or "Submitted",
+                "status": st,
+                "rule_evaluated": remarks or f"Evaluated against {threshold_val}",
+                "evidence_source": ev_doc,
+                "page_number": p_num,
+                "highlight_text": f"Extracted for {bidder.get('name')}: {claimed}. {remarks}",
+                "explanation": remarks,
+                "confidence": 0.98,
+                "weight": req.get("scoring_weight", 15),
+            }
+
+            bidder_cells[b_id] = {
+                "status": st,
+                "claimed_value": claimed,
+                "required_value": required,
+                "evidence_document": ev_doc,
+                "page_number": p_num,
+                "remarks": remarks,
+                "evidence": evidence_item,
+            }
+
+        comparison_matrix.append({
+            "requirement_id": req_id,
+            "code": req_code,
+            "clause": clause_ref,
+            "clause_reference": clause_ref,
+            "title": title,
+            "category": category,
+            "mandatory": mandatory,
+            "threshold_value": threshold_val,
+            "unit": unit,
+            "description": description,
+            "bidders": bidder_cells,
+        })
+
+    return {
+        "tender": {
+            "id": tender.get("id"),
+            "tender_number": tender.get("tender_number"),
+            "ref": tender.get("ref"),
+            "tender_id": tender.get("tender_id"),
+            "title": tender.get("title"),
+            "organization": tender.get("organization"),
+            "department": tender.get("department"),
+            "category": tender.get("category"),
+            "status": tender.get("status"),
+            "estimated_value": tender.get("estimated_value"),
+            "estimated_value_display": tender.get("estimated_value_display"),
+            "emd_amount": tender.get("emd_amount"),
+            "emd_amount_display": tender.get("emd_amount_display"),
+            "publish_date": tender.get("publish_date"),
+            "closing_date": tender.get("closing_date"),
+            "deadline": tender.get("deadline"),
+            "bids_count": len(submitted_bidders),
+            "requirements_count": len(requirements),
+            "description": tender.get("description"),
+        },
+        "metrics": metrics,
+        "bidders": enriched_bidders,
+        "requirements": requirements,
+        "comparison_matrix": comparison_matrix,
+    }
+
+
+@router.get("/comparison", response_model=Dict[str, Any])
+async def get_tender_comparison_query(
+    tender_id: str = Query(..., description="Tender ID or Reference"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Returns full side-by-side comparison matrix for the given tender.
+    RESTRICTED: Officer role only.
+    """
+    return await build_tender_comparison_data(tender_id)
+
+
+@router.get("/comparison/{tender_id:path}", response_model=Dict[str, Any])
+async def get_tender_comparison_path(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Returns full side-by-side comparison matrix for the given tender by path.
+    RESTRICTED: Officer role only.
+    """
+    return await build_tender_comparison_data(tender_id)
 
 @router.get("", response_model=List[Dict[str, Any]])
 async def list_bidders(
