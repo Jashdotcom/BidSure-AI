@@ -97,6 +97,75 @@ export interface ComplianceResult {
   evidence_list: EvidenceItem[];
 }
 
+export interface DetailedRequirementEvaluation {
+  requirement_id: string;
+  requirement_code: string;
+  requirement_name: string;
+  clause_reference: string;
+  category: string;
+  mandatory: boolean;
+  required_value: string;
+  submitted_value: string;
+  status: "PASS" | "FAIL" | "REVIEW" | "REVIEW_REQUIRED";
+  document_verification_status: "VERIFIED" | "REQUIRES_REVIEW" | "FAILED" | "NOT_SUBMITTED" | "PENDING";
+  rule_evaluated: string;
+  explanation: string;
+  evidence_source: string;
+  page_number: number;
+  highlight_text: string;
+  confidence: number;
+  weight: number;
+  source_type?: string;
+  original_data?: Record<string, any> | null;
+}
+
+export interface DocumentVerificationDetail {
+  document_name: string;
+  document_type: string;
+  file_name: string;
+  submission_status: "SUBMITTED" | "NOT_SUBMITTED";
+  verification_status: "VERIFIED" | "REQUIRES_REVIEW" | "FAILED" | "PENDING";
+  verified_value?: string | null;
+  registry_match?: string | null;
+  verified_at?: string | null;
+  remarks: string;
+}
+
+export interface DocumentRequirementTraceability {
+  requirement_id: string;
+  requirement_name: string;
+  clause_reference: string;
+  document_name: string;
+  extracted_value: string;
+  verification_status: string;
+  rule_math: string;
+  result: string;
+}
+
+export interface ComplianceSummaryDetail {
+  total_requirements: number;
+  passed_count: number;
+  failed_count: number;
+  review_count: number;
+  mandatory_failed_count: number;
+  verified_documents_count: number;
+  total_documents_count: number;
+  compliance_score: number;
+  eligibility_status: "ELIGIBLE" | "REQUIRES_REVIEW" | "DISQUALIFIED";
+  risk_level: "LOW" | "MEDIUM" | "HIGH";
+  formula_explanation: string;
+}
+
+export interface BidderComplianceDetailResponse {
+  tender: Tender;
+  bidder: Bidder;
+  summary: ComplianceSummaryDetail;
+  evaluations: DetailedRequirementEvaluation[];
+  document_verifications: DocumentVerificationDetail[];
+  traceability_chain: DocumentRequirementTraceability[];
+  generated_at: string;
+}
+
 export interface TenderRequirement {
   id: string;
   clause_reference: string;
