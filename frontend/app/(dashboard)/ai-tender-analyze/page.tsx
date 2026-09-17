@@ -34,7 +34,7 @@ import { apiRequest } from "@/lib/api";
 export default function AITenderAnalyzePage() {
   const [activeTab, setActiveTab] = useState<"upload" | "processing" | "review" | "finalized">("upload");
   const [selectedPreset, setSelectedPreset] = useState<string>("CPCL_Tender_Safety_Helmets_2026.pdf");
-  const [targetTenderId, setTargetTenderId] = useState<string>("CPCL/PROC/2026/001");
+  const [targetTenderId, setTargetTenderId] = useState<string>("TND-2026-001");
   const [tendersList, setTendersList] = useState<Tender[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<number>(1);
@@ -120,8 +120,9 @@ export default function AITenderAnalyzePage() {
   const handleVerifyRequirement = async (reqId: string) => {
     if (!analysisJob) return;
     try {
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
       await apiRequest(
-        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements/${encodeURIComponent(reqId)}/verify`,
+        `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements/${encodeURIComponent(reqId)}/verify`,
         { method: "POST" }
       );
       setAnalysisJob({
@@ -130,6 +131,8 @@ export default function AITenderAnalyzePage() {
           r.id === reqId ? { ...r, review_status: "VERIFIED" as RequirementReviewStatus } : r
         )
       });
+      setSuccessMsg("Requirement verified.");
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to verify requirement.");
     }
@@ -138,8 +141,9 @@ export default function AITenderAnalyzePage() {
   const handleRejectRequirement = async () => {
     if (!analysisJob || !rejectingReq) return;
     try {
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
       await apiRequest(
-        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements/${encodeURIComponent(rejectingReq.id)}/reject`,
+        `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements/${encodeURIComponent(rejectingReq.id)}/reject`,
         {
           method: "POST",
           body: { reason: rejectReason || "Excluded by procurement officer." }
@@ -156,6 +160,8 @@ export default function AITenderAnalyzePage() {
       setIsRejectModalOpen(false);
       setRejectingReq(null);
       setRejectReason("");
+      setSuccessMsg(`Requirement '${rejectingReq.name}' rejected.`);
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to reject requirement.");
     }
@@ -165,8 +171,9 @@ export default function AITenderAnalyzePage() {
     e.preventDefault();
     if (!analysisJob || !editingReq) return;
     try {
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
       await apiRequest(
-        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements/${encodeURIComponent(editingReq.id)}`,
+        `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements/${encodeURIComponent(editingReq.id)}`,
         {
           method: "PATCH",
           body: {
@@ -200,6 +207,8 @@ export default function AITenderAnalyzePage() {
       });
       setIsEditModalOpen(false);
       setEditingReq(null);
+      setSuccessMsg(`Requirement '${editingReq.name}' updated and marked EDITED.`);
+      setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
       setErrorMsg(err?.message || "Failed to update requirement.");
     }
@@ -209,8 +218,9 @@ export default function AITenderAnalyzePage() {
     e.preventDefault();
     if (!analysisJob) return;
     try {
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
       const data = await apiRequest<{ message: string; requirement?: { id?: string } }>(
-        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/requirements`,
+        `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements`,
         {
           method: "POST",
           body: newReqForm
@@ -240,6 +250,8 @@ export default function AITenderAnalyzePage() {
         requirements: [createdReq, ...analysisJob.requirements]
       });
       setIsAddModalOpen(false);
+      setSuccessMsg(`Manual requirement '${newReqForm.name}' added successfully.`);
+      setTimeout(() => setSuccessMsg(null), 4000);
       setNewReqForm({
         name: "",
         code: "",
@@ -259,8 +271,9 @@ export default function AITenderAnalyzePage() {
   const handleFinalizeRequirements = async () => {
     if (!analysisJob) return;
     try {
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
       await apiRequest(
-        `/tenders/${encodeURIComponent(targetTenderId || "CPCL/PROC/2026/001")}/finalize-requirements`,
+        `/tenders/${encodeURIComponent(activeJobOrTenderId)}/finalize-requirements`,
         {
           method: "POST",
           body: {
@@ -390,7 +403,8 @@ export default function AITenderAnalyzePage() {
                   {
                     filename: "CPCL_Tender_Safety_Helmets_2026.pdf",
                     title: "Supply of Industrial Safety Helmets & PPE",
-                    tender_id: "CPCL/PROC/2026/001",
+                    tender_id: "TND-2026-001",
+                    tender_num: "CPCL/PROC/2026/001",
                     value: "₹4.50 Cr",
                     pages: 14,
                     size: "4.2 MB",
@@ -399,7 +413,8 @@ export default function AITenderAnalyzePage() {
                   {
                     filename: "CPCL_Fire_Safety_Tender_2026.pdf",
                     title: "Fire Safety Equipment & Hydrant Valves",
-                    tender_id: "CPCL/PROC/2026/003",
+                    tender_id: "TND-2026-003",
+                    tender_num: "CPCL/PROC/2026/003",
                     value: "₹8.20 Cr",
                     pages: 18,
                     size: "5.4 MB",
@@ -408,7 +423,8 @@ export default function AITenderAnalyzePage() {
                   {
                     filename: "CPCL_Refinery_Valves_Tender_2026.pdf",
                     title: "High-Pressure Refinery Valve Assemblies",
-                    tender_id: "CPCL/PROC/2026/004",
+                    tender_id: "TND-2026-004",
+                    tender_num: "CPCL/PROC/2026/004",
                     value: "₹12.50 Cr",
                     pages: 22,
                     size: "6.8 MB",
@@ -417,7 +433,8 @@ export default function AITenderAnalyzePage() {
                   {
                     filename: "CPCL_Pipeline_Pigging_2026.pdf",
                     title: "Intelligent Pigging Pipeline Inspection Services",
-                    tender_id: "CPCL/PROC/2026/005",
+                    tender_id: "TND-2026-005",
+                    tender_num: "CPCL/PROC/2026/005",
                     value: "₹6.10 Cr",
                     pages: 16,
                     size: "4.9 MB",
@@ -502,13 +519,14 @@ export default function AITenderAnalyzePage() {
                     className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
                     {tendersList.map((t) => (
-                      <option key={t.id || t.tender_id} value={t.tender_id || t.id}>
-                        {t.tender_number || t.tender_id} — {t.title}
+                      <option key={t.id || t.tender_id} value={t.id || t.tender_id}>
+                        {t.tender_number || t.tender_id || t.id} — {t.title}
                       </option>
                     ))}
-                    <option value="CPCL/PROC/2026/001">CPCL/PROC/2026/001 — Industrial Safety Helmets</option>
-                    <option value="CPCL/PROC/2026/003">CPCL/PROC/2026/003 — Fire Safety Equipment</option>
-                    <option value="CPCL/PROC/2026/004">CPCL/PROC/2026/004 — High-Pressure Valves</option>
+                    <option value="TND-2026-001">CPCL/PROC/2026/001 — Industrial Safety Helmets</option>
+                    <option value="TND-2026-003">CPCL/PROC/2026/003 — Fire Safety Equipment</option>
+                    <option value="TND-2026-004">CPCL/PROC/2026/004 — High-Pressure Valves</option>
+                    <option value="TND-2026-005">CPCL/PROC/2026/005 — Pipeline Pigging Services</option>
                   </select>
                 </div>
 
@@ -1012,6 +1030,12 @@ export default function AITenderAnalyzePage() {
             </div>
 
             <form onSubmit={handleSaveEditedRequirement} className="space-y-4 text-sm">
+              {errorMsg && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+                  <AlertTriangleIcon className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Requirement Name</label>
                 <input
@@ -1183,6 +1207,12 @@ export default function AITenderAnalyzePage() {
             </div>
 
             <form onSubmit={handleAddManualRequirement} className="space-y-4 text-sm">
+              {errorMsg && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+                  <AlertTriangleIcon className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Requirement Title *</label>
                 <input
