@@ -3,23 +3,26 @@ Compliance Evaluation API Router
 Orchestrates AI extraction, deterministic rules engine, and government registry verification.
 Provides complete, detailed bidder compliance evaluation scoped strictly to selected tenders.
 """
+from fastapi import APIRouter, HTTPException, Depends, status, Query
 from fastapi.responses import Response, StreamingResponse
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from io import BytesIO
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timezone
 import io
+import re
 
 from app.api.auth import get_current_user, require_roles
 from app.data.sample_data import (
     get_tender_by_id,
     get_bidder_by_id,
     get_bidders_for_tender,
+    get_all_audit_logs,
     is_submitted_bid,
     add_audit_log,
     SAMPLE_TENDERS
 )
 from app.services.rules_engine import RulesEngine, _safe_float, _safe_int
 from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
+from app.services.pdf_generator import generate_bidder_compliance_pdf, generate_bidder_audit_pdf
 
 router = APIRouter(prefix="/compliance", tags=["Compliance"])
 
@@ -492,6 +495,95 @@ async def get_compliance_evaluation_query(
     """
     return await build_bidder_compliance_detail(tender_id, bidder_id, current_user=current_user)
 
+@router.get("/tender/{tender_id}/bidder/{bidder_id}/report/pdf")
+async def download_bidder_compliance_report_pdf(
+    tender_id: str,
+    bidder_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Generates and streams authentic bidder compliance evaluation PDF dossier.
+    """
+    detail = await build_bidder_compliance_detail(tender_id, bidder_id, current_user=current_user)
+    officer_name = current_user.get("name") or "Procurement Officer"
+    pdf_buffer = generate_bidder_compliance_pdf(detail, generated_by=officer_name)
+
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "COMPLIANCE_REPORT_GENERATED",
+        "entity_type": "REPORT",
+        "entity_id": f"{tender_id}:{bidder_id}",
+        "details": f"Officer '{officer_name}' generated compliance evaluation PDF dossier for bidder '{detail['bidder']['name']}' ({bidder_id}) on tender '{detail['tender']['tender_number']}'.",
+        "status": "SUCCESS"
+    })
+
+    t_num = str(detail["tender"].get("tender_number") or tender_id).replace("/", "_").replace(" ", "_")
+    b_name = str(detail["bidder"].get("name") or bidder_id).replace(" ", "_").replace("/", "_")
+    filename = f"BidSure_Compliance_{t_num}_{b_name}.pdf"
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+@router.get("/tender/{tender_id}/bidder/{bidder_id}/audit/pdf")
+async def download_bidder_audit_pdf(
+    tender_id: str,
+    bidder_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Generates and streams authentic bidder audit trail PDF.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(status_code=404, detail=f"Tender '{tender_id}' not found.")
+    bidder = get_bidder_by_id(bidder_id)
+    if not bidder:
+        raise HTTPException(status_code=404, detail=f"Bidder '{bidder_id}' not found.")
+
+    all_logs = get_all_audit_logs()
+    b_keys = {bidder_id.lower(), (bidder.get("name") or "").lower(), (bidder.get("bid_submission_id") or "").lower()}
+    b_keys.discard("")
+    t_keys = {tender_id.lower(), (tender.get("tender_number") or "").lower()}
+    t_keys.discard("")
+
+    matched = []
+    for l in all_logs:
+        ent = (l.get("entity_id") or "").lower()
+        det = (l.get("details") or "").lower()
+        if any(k in ent or k in det for k in b_keys) or any(k in ent or k in det for k in t_keys):
+            matched.append(l)
+
+    officer_name = current_user.get("name") or "Procurement Officer"
+    buf = generate_bidder_audit_pdf(tender, bidder, matched, generated_by=officer_name)
+    t_num = str(tender.get("tender_number") or tender_id).replace("/", "_").replace(" ", "_")
+    b_name = str(bidder.get("name") or bidder_id).replace(" ", "_").replace("/", "_")
+    filename = f"BidSure_Audit_{t_num}_{b_name}.pdf"
+
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "AUDIT_REPORT_GENERATED",
+        "entity_type": "REPORT",
+        "entity_id": f"{tender_id}:{bidder_id}",
+        "details": f"Officer '{officer_name}' generated audit trail PDF for bidder '{bidder.get('name')}' ({bidder_id}) on tender '{tender.get('tender_number')}'.",
+        "status": "SUCCESS"
+    })
+
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
 
 @router.post("/evaluate/{tender_id}/{bidder_id}", response_model=Dict[str, Any])
 async def evaluate_bidder_compliance_legacy(
@@ -539,3 +631,134 @@ async def get_tender_compliance_summary(
         "review_required_count": sum(1 for e in evaluations if e.get("overall_status") == "REQUIRES_REVIEW"),
         "evaluations": evaluations
     }
+
+
+@router.get("/tender/{tender_id}/bidder/{bidder_id}/report/pdf")
+async def download_bidder_compliance_report_pdf(
+    tender_id: str,
+    bidder_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Generates and streams an authentic, bidder-specific Compliance Evaluation PDF report using ReportLab.
+    RESTRICTED: Officer role only.
+    """
+    detail = await build_bidder_compliance_detail(tender_id, bidder_id, current_user=current_user)
+    officer_name = current_user.get("name") or "Procurement Officer"
+
+    pdf_buffer = generate_bidder_compliance_pdf(detail, generated_by=officer_name)
+
+    # Log audit event for compliance report generation
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "COMPLIANCE_REPORT_GENERATED",
+        "entity_type": "REPORT",
+        "entity_id": f"{tender_id}:{bidder_id}",
+        "details": f"Officer '{officer_name}' generated compliance evaluation PDF dossier for bidder '{detail['bidder']['name']}' ({bidder_id}) on tender '{detail['tender']['tender_number']}'.",
+        "status": "SUCCESS"
+    })
+
+    t_num = str(detail["tender"].get("tender_number") or tender_id).replace("/", "_").replace(" ", "_")
+    b_name = str(detail["bidder"].get("name") or bidder_id).replace(" ", "_").replace("/", "_")
+    filename = f"BidSure_Compliance_{t_num}_{b_name}.pdf"
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+
+@router.get("/tender/{tender_id}/bidder/{bidder_id}/audit/pdf")
+async def download_bidder_audit_report_pdf(
+    tender_id: str,
+    bidder_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Generates and streams an authentic, bidder-specific Audit Trail PDF report using ReportLab.
+    RESTRICTED: Officer role only.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender '{tender_id}' not found."
+        )
+
+    bidder = get_bidder_by_id(bidder_id)
+    if not bidder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Bidder '{bidder_id}' not found."
+        )
+
+    if not _check_bidder_matches_tender(bidder, tender):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Bidder '{bidder_id}' is not associated with tender '{tender.get('tender_number') or tender_id}'."
+        )
+
+    # Collect and filter audit logs strictly for this tender & bidder
+    all_logs = get_all_audit_logs()
+    tender_keys = {
+        str(tender.get("id", "")).strip().lower(),
+        str(tender.get("tender_number", "")).strip().lower(),
+        str(tender.get("ref", "")).strip().lower(),
+        str(tender.get("tender_id", "")).strip().lower()
+    }
+    tender_keys.discard("")
+
+    bidder_keys = {
+        str(bidder.get("id", "")).strip().lower(),
+        str(bidder.get("bid_submission_id", "")).strip().lower(),
+        str(bidder.get("name", "")).strip().lower(),
+        str(bidder.get("email", "")).strip().lower()
+    }
+    bidder_keys.discard("")
+
+    matched_logs = []
+    for log in all_logs:
+        ent = str(log.get("entity_id") or "").lower()
+        target = str(log.get("target") or "").lower()
+        details = str(log.get("details") or "").lower()
+        actor = str(log.get("user_email") or log.get("actor") or "").lower()
+
+        is_bidder_match = any(bk in ent or bk in target or bk in details or bk in actor for bk in bidder_keys)
+        is_tender_match = any(tk in ent or tk in target or tk in details for tk in tender_keys)
+
+        # Include if it matches bidder specifically, or tender-level analysis/evaluation
+        if is_bidder_match or (is_tender_match and ("compliance" in details or "bid" in details or "requirement" in details)):
+            matched_logs.append(log)
+
+    officer_name = current_user.get("name") or "Procurement Officer"
+    pdf_buffer = generate_bidder_audit_pdf(tender, bidder, matched_logs, generated_by=officer_name)
+
+    # Log audit event for audit report generation
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "AUDIT_REPORT_GENERATED",
+        "entity_type": "REPORT",
+        "entity_id": f"{tender_id}:{bidder_id}",
+        "details": f"Officer '{officer_name}' generated evaluation audit trail PDF report for bidder '{bidder.get('name')}' ({bidder_id}) on tender '{tender.get('tender_number')}'.",
+        "status": "SUCCESS"
+    })
+
+    t_num = str(tender.get("tender_number") or tender_id).replace("/", "_").replace(" ", "_")
+    b_name = str(bidder.get("name") or bidder_id).replace(" ", "_").replace("/", "_")
+    filename = f"BidSure_Audit_{t_num}_{b_name}.pdf"
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+

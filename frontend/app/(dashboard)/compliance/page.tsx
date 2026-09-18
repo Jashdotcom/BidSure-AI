@@ -33,6 +33,7 @@ import {
 } from "@/components/icons";
 import { EvidenceModal } from "@/components/evidence-modal";
 import { apiRequest } from "@/lib/api";
+import { getToken } from "@/lib/session";
 import {
   Tender,
   Bidder,
@@ -61,6 +62,8 @@ export default function CompliancePage() {
   const [loadingTenders, setLoadingTenders] = useState(false);
   const [loadingBidders, setLoadingBidders] = useState(false);
   const [loadingEvaluation, setLoadingEvaluation] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState<"compliance" | "audit" | null>(null);
+  const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Search & Filter controls
@@ -191,6 +194,87 @@ export default function CompliancePage() {
     };
     setSelectedEvidence(evidenceItem);
     setIsModalOpen(true);
+  };
+
+  // Handle PDF report downloads (Compliance & Audit)
+  const handleDownloadReport = async (reportType: "compliance" | "audit") => {
+    if (!selectedTenderId || !selectedBidderId) return;
+
+    setDownloadingReport(reportType);
+    setError(null);
+    setDownloadSuccess(null);
+
+    try {
+      const token = getToken();
+      const endpoint =
+        reportType === "compliance"
+          ? `/compliance/tender/${selectedTenderId}/bidder/${selectedBidderId}/report/pdf`
+          : `/compliance/tender/${selectedTenderId}/bidder/${selectedBidderId}/audit/pdf`;
+
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (typeof window !== "undefined" ? "http://localhost:8000" : "http://localhost:8000");
+
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE}${endpoint}`, {
+          method: "GET",
+          headers,
+        });
+      } catch {
+        res = await fetch(endpoint, {
+          method: "GET",
+          headers,
+        });
+      }
+
+      if (!res.ok) {
+        let msg = `Failed to download ${reportType === "compliance" ? "Compliance" : "Audit"} Report (HTTP ${res.status}).`;
+        try {
+          const errJson = await res.json();
+          if (errJson?.detail) {
+            msg = errJson.detail;
+          }
+        } catch {
+          // Non-JSON response
+        }
+        throw new Error(msg);
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Resolve filename from Content-Disposition header if available
+      const disposition = res.headers.get("Content-Disposition");
+      let filename = `BidSure_${reportType === "compliance" ? "Compliance" : "Audit"}_${selectedTenderId}_${selectedBidderId}.pdf`;
+      if (disposition && disposition.includes("filename=")) {
+        const match = disposition.match(/filename=["']?([^"';]+)["']?/);
+        if (match && match[1]) {
+          filename = match[1].trim();
+        }
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setDownloadSuccess(`Successfully generated and downloaded ${filename}`);
+      setTimeout(() => setDownloadSuccess(null), 6000);
+    } catch (err: any) {
+      console.error(`Error downloading ${reportType} report:`, err);
+      setError(err?.message || `Unable to download ${reportType} report. Please try again.`);
+    } finally {
+      setDownloadingReport(null);
+    }
   };
 
   // Selected Tender object helper
@@ -330,15 +414,64 @@ export default function CompliancePage() {
           )}
 
           {selectedTenderId && selectedBidderId && (
-            <Link href={`/reports?tender_id=${selectedTenderId}&bidder_id=${selectedBidderId}`}>
-              <Button size="sm" className="bg-blue-700 hover:bg-blue-800 text-xs shadow-sm">
+            <>
+              <Button
+                size="sm"
+                onClick={() => handleDownloadReport("compliance")}
+                loading={downloadingReport === "compliance"}
+                disabled={downloadingReport !== null}
+                className="bg-blue-700 hover:bg-blue-800 text-xs shadow-sm"
+              >
                 <DownloadIcon className="size-3.5" />
-                Generate Audit Report
+                Download Compliance Report
               </Button>
-            </Link>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDownloadReport("audit")}
+                loading={downloadingReport === "audit"}
+                disabled={downloadingReport !== null}
+                className="border-slate-300 text-slate-800 hover:bg-slate-100 text-xs shadow-sm"
+              >
+                <FileTextIcon className="size-3.5 text-indigo-600" />
+                Download Audit Report
+              </Button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Notifications & Alerts */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-500 hover:text-red-700 text-base font-bold leading-none px-1"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {downloadSuccess && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircleIcon className="size-4 text-emerald-600 shrink-0" />
+            <span className="font-semibold">{downloadSuccess}</span>
+          </div>
+          <button
+            onClick={() => setDownloadSuccess(null)}
+            className="text-emerald-500 hover:text-emerald-700 text-base font-bold leading-none px-1"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* STEP 1: Tender Selection Section */}
       <Card className="p-5 border-slate-200 bg-slate-50/50 shadow-sm">
