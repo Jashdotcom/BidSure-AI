@@ -25,7 +25,7 @@ const OFFICER_PRIMARY_NAV = [
   { name: "Tenders", href: "/tenders", icon: FileTextIcon },
   { name: "AI Tender Analyze", href: "/ai-tender-analyze", icon: SparklesIcon },
   { name: "Bids & Submissions", href: "/bidders", icon: UsersIcon },
-  { name: "Compliance", href: "/compliance", icon: ShieldCheckIcon },
+  { name: "Compliance & Reports", href: "/compliance", icon: ShieldCheckIcon },
   { name: "Compare Bids", href: "/comparison", icon: ScaleIcon },
   { name: "Audit Trail", href: "/audit", icon: RefreshCwIcon },
 ];
