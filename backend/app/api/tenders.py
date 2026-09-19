@@ -376,6 +376,32 @@ async def patch_tender(
                 detail=f"Published tender can only transition to CLOSED, not '{new_status_in_payload}'."
             )
 
+    # Validations when publishing a draft via PATCH
+    target_status = (payload.get("status") or "").strip().upper()
+    if target_status == "PUBLISHED":
+        merged = {**existing, **payload}
+        errors = []
+        if not merged.get("title") or len(str(merged["title"]).strip()) < 3:
+            errors.append("Tender Title is required (minimum 3 characters).")
+        if not merged.get("organization"):
+            errors.append("Organization / Procuring Entity is required.")
+        if not merged.get("category"):
+            errors.append("Tender Category is required.")
+        if not merged.get("description") or len(str(merged["description"]).strip()) < 5:
+            errors.append("Tender Description is required.")
+        if not merged.get("deadline") and not merged.get("closing_date") and not merged.get("submission_deadline"):
+            errors.append("Submission Deadline is required.")
+        if not merged.get("evaluation_method"):
+            errors.append("Evaluation Method is required.")
+        if not merged.get("file_name"):
+            errors.append("Tender Document (RFP PDF) is mandatory for publishing a tender.")
+
+        if errors:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"message": "Validation failed for publishing tender.", "errors": errors}
+            )
+
     try:
         updated = update_tender(tender_id, payload)
     except ValueError as val_err:

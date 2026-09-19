@@ -149,7 +149,7 @@ class TenderCreateSchema(BaseModel):
     tender_id: Optional[str] = None
     tender_number: Optional[str] = None
     ref: Optional[str] = None
-    title: str = Field(..., min_length=2, description="Tender Title")
+    title: Optional[str] = Field("Untitled Procurement Tender Draft", description="Tender Title")
     organization: Optional[str] = "Chennai Petroleum Corporation Limited (CPCL)"
     department: Optional[str] = "Materials & Procurement Division"
     category: Optional[str] = "Goods"

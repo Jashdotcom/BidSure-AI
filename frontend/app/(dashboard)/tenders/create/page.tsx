@@ -43,6 +43,7 @@ export default function CreateTenderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit") || searchParams.get("draft");
+  const [savedTenderId, setSavedTenderId] = useState<string | null>(editId || null);
 
   // Auto-generated Tender ID (read-only)
   const [generatedTenderNumber, setGeneratedTenderNumber] = useState<string>("");
@@ -117,10 +118,12 @@ export default function CreateTenderPage() {
 
   // Prepopulate if editing an existing draft, or load preview number for new tender
   useEffect(() => {
-    if (editId) {
+    const activeTarget = editId || savedTenderId;
+    if (activeTarget) {
+      setSavedTenderId(activeTarget);
       (async () => {
         try {
-          const res = await apiRequest<Tender>(`/tenders/${encodeURIComponent(editId)}`);
+          const res = await apiRequest<Tender>(`/tenders/${encodeURIComponent(activeTarget)}`);
           if (res) {
             // Use the already-assigned tender number of the draft
             const assignedNum = res.tender_number || res.ref || res.tender_id || res.id;
@@ -132,13 +135,21 @@ export default function CreateTenderPage() {
             setCategory(res.category || "Goods");
             setDescription(res.description || "");
             if (res.publish_date) setIssueDate(res.publish_date.split("T")[0]);
+            else if (res.issue_date) setIssueDate(res.issue_date.split("T")[0]);
             if (res.closing_date) {
               setSubmissionDeadline(res.closing_date.split("T")[0]);
+            } else if (res.submission_deadline) {
+              setSubmissionDeadline(res.submission_deadline.split("T")[0]);
             } else if (res.deadline) {
               setSubmissionDeadline(res.deadline);
             }
+            if (res.bid_opening_date) {
+              setBidOpeningDate(res.bid_opening_date.split("T")[0]);
+            }
             if (res.estimated_value) setEstimatedValue(String(res.estimated_value));
             if (res.emd_amount) setEmdAmount(String(res.emd_amount));
+            if (res.evaluation_method) setEvaluationMethod(res.evaluation_method);
+            if (res.performance_security) setPerformanceSecurity(res.performance_security);
             if (res.file_name) {
               setUploadedFile({
                 name: res.file_name,
@@ -272,12 +283,12 @@ export default function CreateTenderPage() {
   // assigns it atomically in add_tender().
 
   function buildPayload(targetStatus: "DRAFT" | "PUBLISHED") {
-    return {
-      title: title.trim() || "Untitled Procurement Tender Draft",
+    const payload: Record<string, any> = {
+      title: title.trim() || (targetStatus === "DRAFT" ? "Untitled Procurement Tender Draft" : ""),
       organization: organization.trim() || "Chennai Petroleum Corporation Limited (CPCL)",
       department: department.trim() || "Materials & Procurement Division",
       category: category || "Goods",
-      description: description.trim() || "Draft procurement notice.",
+      description: description.trim() || (targetStatus === "DRAFT" ? "Draft procurement notice." : ""),
       status: targetStatus,
       issue_date: issueDate || today,
       publish_date: `${issueDate || today}T09:00:00Z`,
@@ -289,9 +300,12 @@ export default function CreateTenderPage() {
       emd_amount: parseFloat(emdAmount) || 0,
       evaluation_method: evaluationMethod,
       performance_security: performanceSecurity,
-      file_name: uploadedFile ? uploadedFile.name : undefined,
-      file_size_kb: uploadedFile ? Math.round(uploadedFile.size / 1024) : undefined,
     };
+    if (uploadedFile) {
+      payload.file_name = uploadedFile.name;
+      payload.file_size_kb = Math.round(uploadedFile.size / 1024);
+    }
+    return payload;
   }
 
   // ─── Save Draft ─────────────────────────────────────────────────────────────
@@ -302,28 +316,45 @@ export default function CreateTenderPage() {
     setSuccessMessage(null);
     setIsDrafting(true);
     try {
+      const activeId = savedTenderId || editId;
       let res: { message: string; tender: Tender } | null = null;
 
-      if (editId) {
+      if (activeId) {
         // Editing an existing draft: PATCH the existing record
         res = await apiRequest<{ message: string; tender: Tender }>(
-          `/tenders/${encodeURIComponent(editId)}`,
+          `/tenders/${encodeURIComponent(activeId)}`,
           { method: "PATCH", body: buildPayload("DRAFT") }
         );
       } else {
-        // Creating a new tender
+        // Creating a new tender draft
         res = await apiRequest<{ message: string; tender: Tender }>("/tenders", {
           method: "POST",
           body: buildPayload("DRAFT"),
         });
       }
 
-      // Update displayed tender number with what was actually assigned
-      if (res?.tender?.tender_number) {
-        setGeneratedTenderNumber(res.tender.tender_number);
+      const assignedId = res?.tender?.id || res?.tender?.tender_number || activeId;
+      const assignedNum =
+        res?.tender?.tender_number ||
+        res?.tender?.ref ||
+        res?.tender?.tender_id ||
+        generatedTenderNumber;
+
+      if (assignedId) {
+        setSavedTenderId(assignedId);
+        // Update URL to edit mode seamlessly so refreshing keeps the draft
+        if (typeof window !== "undefined" && window.history?.replaceState) {
+          window.history.replaceState(null, "", `/tenders/create?edit=${encodeURIComponent(assignedId)}`);
+        }
       }
-      setSuccessMessage(`✓ Tender saved as draft. Assigned ID: ${res?.tender?.tender_number || generatedTenderNumber}`);
-      setTimeout(() => router.push("/tenders"), 1000);
+
+      if (assignedNum) {
+        setGeneratedTenderNumber(assignedNum);
+      }
+
+      setIsDirty(false);
+      setSuccessMessage(`✓ Tender saved as draft. Assigned ID: ${assignedNum}`);
+      setTimeout(() => router.push("/tenders"), 1500);
     } catch (err: any) {
       setServerError(err?.message || "Failed to save draft tender. Please try again.");
     } finally {
@@ -333,43 +364,60 @@ export default function CreateTenderPage() {
 
   // ─── Publish Tender ─────────────────────────────────────────────────────────
 
-  async function handlePublishTender(e: React.FormEvent) {
-    e.preventDefault();
+  async function handlePublishTender(e?: React.FormEvent | React.MouseEvent) {
+    if (e && typeof e.preventDefault === "function") {
+      e.preventDefault();
+    }
+    if (isSubmitting || isDrafting) return;
     setServerError(null);
     setSuccessMessage(null);
 
     if (!validateForPublish()) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const activeId = savedTenderId || editId;
       let res: { message: string; tender: Tender } | null = null;
 
-      if (editId) {
+      if (activeId) {
         // Publishing from an existing draft: PATCH with PUBLISHED status
         res = await apiRequest<{ message: string; tender: Tender }>(
-          `/tenders/${encodeURIComponent(editId)}`,
+          `/tenders/${encodeURIComponent(activeId)}`,
           { method: "PATCH", body: buildPayload("PUBLISHED") }
         );
       } else {
+        // Direct publish for a new tender
         res = await apiRequest<{ message: string; tender: Tender }>("/tenders", {
           method: "POST",
           body: buildPayload("PUBLISHED"),
         });
       }
 
-      if (res?.tender?.tender_number) {
-        setGeneratedTenderNumber(res.tender.tender_number);
+      const assignedNum =
+        res?.tender?.tender_number ||
+        res?.tender?.ref ||
+        res?.tender?.tender_id ||
+        generatedTenderNumber;
+
+      if (assignedNum) {
+        setGeneratedTenderNumber(assignedNum);
       }
+
+      setIsDirty(false);
       setSuccessMessage(
-        `✓ Tender ${res?.tender?.tender_number || generatedTenderNumber} published successfully to the public procurement registry.`
+        `✓ Tender ${assignedNum} published successfully to the public procurement registry.`
       );
-      setTimeout(() => router.push("/tenders"), 1200);
+      setTimeout(() => router.push("/tenders"), 1500);
     } catch (err: any) {
       setServerError(err?.message || "Failed to publish tender. Please try again.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -392,11 +440,11 @@ export default function CreateTenderPage() {
             <span>/</span>
             <Link href="/tenders" className="hover:text-slate-800 transition-colors">Tenders</Link>
             <span>/</span>
-            <span className="text-blue-700 font-bold">{editId ? "Edit Draft" : "Create Tender"}</span>
+            <span className="text-blue-700 font-bold">{editId || savedTenderId ? "Edit Draft" : "Create Tender"}</span>
           </nav>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
             <FileTextIcon className="size-6 text-blue-700" />
-            {editId ? "Edit Draft Tender" : "Create Procurement Tender"}
+            {editId || savedTenderId ? "Edit Draft Tender" : "Create Procurement Tender"}
           </h1>
           <p className="mt-1 text-xs text-slate-500 font-medium">
             Draft a new procurement tender notice or publish directly with verified RFP clauses and statutory documents.
@@ -410,12 +458,12 @@ export default function CreateTenderPage() {
             Cancel
           </Button>
           <Button type="button" variant="outline" size="sm"
-            onClick={handleSaveDraft} loading={isDrafting} disabled={isSubmitting || isDrafting || numberLoadError}
+            onClick={handleSaveDraft} loading={isDrafting} disabled={isSubmitting || isDrafting || (numberLoadError && !savedTenderId)}
             className="text-xs font-semibold text-slate-800 border-slate-300 bg-white hover:bg-slate-50 shadow-xs">
             Save Draft
           </Button>
           <Button type="button" onClick={handlePublishTender} loading={isSubmitting}
-            disabled={isSubmitting || isDrafting || numberLoadError}
+            disabled={isSubmitting || isDrafting || (numberLoadError && !savedTenderId)}
             className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5" size="sm">
             <SparklesIcon className="size-3.5 text-amber-300" />
             Publish Tender
@@ -783,11 +831,11 @@ export default function CreateTenderPage() {
               Cancel
             </Button>
             <Button type="button" variant="outline" size="md" onClick={handleSaveDraft}
-              loading={isDrafting} disabled={isSubmitting || isDrafting || numberLoadError}
+              loading={isDrafting} disabled={isSubmitting || isDrafting || (numberLoadError && !savedTenderId)}
               className="text-xs font-semibold text-slate-800 border-slate-300 bg-white hover:bg-slate-50 shadow-xs">
               Save Draft
             </Button>
-            <Button type="submit" loading={isSubmitting} disabled={isSubmitting || isDrafting || numberLoadError}
+            <Button type="submit" loading={isSubmitting} disabled={isSubmitting || isDrafting || (numberLoadError && !savedTenderId)}
               className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold shadow-xs flex items-center gap-1.5" size="md">
               <SparklesIcon className="size-3.5 text-amber-300" />
               Publish Tender
