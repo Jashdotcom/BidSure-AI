@@ -4,6 +4,7 @@ Provides endpoints for listing, viewing, creating, updating, and publishing proc
 """
 from fastapi import APIRouter, HTTPException, Depends, status, Query, UploadFile, File, Form
 from typing import List, Dict, Any, Optional
+import os
 import time
 import hashlib
 from datetime import datetime
@@ -679,66 +680,105 @@ async def upload_tender_document(
     current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
 ):
     """
-    Uploads a tender PDF document and runs OCR + AI extraction pipeline.
-    Returns extracted requirements for human-in-the-loop review.
+    Uploads a custom tender PDF document and runs OCR + AI extraction pipeline.
+    Validates file format (PDF only), size (max 50 MB), and returns extracted requirements
+    for human-in-the-loop review.
+    RESTRICTED: Officer role only.
     """
+    raw_filename = file.filename or "uploaded_tender.pdf"
+    clean_filename = os.path.basename(raw_filename).strip() or "uploaded_tender.pdf"
+    filename_lower = clean_filename.lower()
+
+    # 1. File Type Validation (PDF only)
+    is_pdf = filename_lower.endswith(".pdf") or (file.content_type and "pdf" in file.content_type.lower())
+    if not is_pdf:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF documents (.pdf) are supported for tender analysis. Please upload a valid PDF."
+        )
+
+    # 2. Read file bytes and validate size
     file_bytes = await file.read()
-    filename = file.filename or "uploaded_tender.pdf"
+    if len(file_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The uploaded PDF file is empty (0 bytes)."
+        )
+
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+    if len(file_bytes) > MAX_FILE_SIZE:
+        size_mb = len(file_bytes) / (1024 * 1024)
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds maximum allowed size of 50 MB (uploaded {size_mb:.1f} MB)."
+        )
+
     file_size_kb = len(file_bytes) // 1024
 
-    # Smart OCR
+    # 3. Smart OCR / Intelligent Document Processing
     ocr_service = OCRService()
-    doc_profile = await ocr_service.process_document(file_bytes=file_bytes, filename=filename)
+    doc_profile = await ocr_service.process_document(file_bytes=file_bytes, filename=clean_filename)
 
-    # AI Extraction
+    # 4. AI Requirement Extraction
     ai_service = AIService()
     requirements = await ai_service.extract_tender_requirements(
-        doc_profile=doc_profile, filename=filename
+        doc_profile=doc_profile, filename=clean_filename
     )
     for r in requirements:
         if not r.get("review_status"):
             r["review_status"] = "NEEDS_REVIEW"
 
+    # 5. Persist Analysis Job
     job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
+    effective_tender_id = tender_id or doc_profile.get("tender_number") or "TND-2026-001"
     job = create_analysis_job({
         "job_id": job_id,
-        "tender_id": tender_id,
-        "tender_title": doc_profile.get("title", filename),
-        "filename": filename,
+        "tender_id": effective_tender_id,
+        "tender_title": doc_profile.get("title", clean_filename),
+        "filename": clean_filename,
         "file_size_kb": file_size_kb,
         "total_pages": doc_profile.get("page_count", 14),
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
         "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
-        "organization": doc_profile.get("organization", "CPCL"),
+        "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),
         "detected_sections": doc_profile.get("detected_sections", []),
         "status": "COMPLETED",
         "requirements": requirements,
     })
 
+    # 6. Audit Trail Logging
     add_audit_log({
         "user_email": current_user.get("email", "officer@cpcl.gov.in"),
         "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
         "action": "TENDER_AI_ANALYSIS_STARTED",
         "entity_type": "TENDER_DOCUMENT",
-        "entity_id": tender_id or filename,
-        "details": f"Uploaded '{filename}' ({file_size_kb} KB). Extracted {len(requirements)} criteria.",
+        "entity_id": effective_tender_id or clean_filename,
+        "details": (
+            f"Custom tender document '{clean_filename}' ({file_size_kb} KB) uploaded and analyzed. "
+            f"Extracted {len(requirements)} evaluation criteria with {doc_profile.get('ocr_confidence', 0.99)*100:.1f}% OCR confidence."
+        ),
         "status": "SUCCESS"
     })
 
     return {
         "status": "COMPLETED",
         "job_id": job_id,
-        "tender_id": tender_id,
-        "filename": filename,
+        "tender_id": effective_tender_id,
+        "tender_title": doc_profile.get("title", clean_filename),
+        "title": doc_profile.get("title", clean_filename),
+        "filename": clean_filename,
         "file_size_kb": file_size_kb,
+        "total_pages": doc_profile.get("page_count", 14),
+        "total_pages_parsed": doc_profile.get("page_count", 14),
         "pages_detected": doc_profile.get("page_count", 14),
-        "message": f"Document uploaded and analyzed. {len(requirements)} criteria extracted.",
-        "title": doc_profile.get("title", filename),
-        "organization": doc_profile.get("organization", "CPCL"),
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
+        "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
+        "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),
         "detected_sections": doc_profile.get("detected_sections", []),
         "extracted_count": len(requirements),
         "requirements": requirements,
+        "created_at": job.get("created_at") or datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "message": f"Document '{clean_filename}' uploaded and analyzed successfully. {len(requirements)} criteria extracted.",
     }
 
 

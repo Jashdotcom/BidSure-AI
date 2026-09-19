@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   SparklesIcon,
   UploadIcon,
@@ -36,6 +36,9 @@ export default function AITenderAnalyzePage() {
   const [selectedPreset, setSelectedPreset] = useState<string>("CPCL_Tender_Safety_Helmets_2026.pdf");
   const [targetTenderId, setTargetTenderId] = useState<string>("TND-2026-001");
   const [tendersList, setTendersList] = useState<Tender[]>([]);
+  const [customFile, setCustomFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<number>(1);
   const [analysisJob, setAnalysisJob] = useState<TenderAnalysisJob | null>(null);
@@ -83,8 +86,80 @@ export default function AITenderAnalyzePage() {
       .catch((err) => console.error("Failed to load tenders list:", err));
   }, []);
 
+  const validateAndSelectFile = (file: File): boolean => {
+    setErrorMsg(null);
+
+    // 1. Validate file extension and MIME type
+    const isPdf =
+      file.name.toLowerCase().endsWith(".pdf") ||
+      file.type === "application/pdf" ||
+      file.type.includes("pdf");
+
+    if (!isPdf) {
+      setErrorMsg("Only PDF documents (.pdf) are supported for tender analysis. Please select a valid PDF file.");
+      return false;
+    }
+
+    // 2. Validate empty file (0 bytes)
+    if (file.size === 0) {
+      setErrorMsg("The selected PDF file is empty (0 bytes). Please upload a valid document.");
+      return false;
+    }
+
+    // 3. Validate maximum size (50 MB)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setErrorMsg(`File exceeds maximum allowed size of 50 MB (selected file is ${sizeMB} MB).`);
+      return false;
+    }
+
+    setCustomFile(file);
+    setSelectedPreset(file.name);
+    setSuccessMsg(`Selected custom PDF: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB). Click "Run AI Tender Analysis" to begin.`);
+    return true;
+  };
+
+  const handleClearCustomFile = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCustomFile(null);
+    setSelectedPreset("CPCL_Tender_Safety_Helmets_2026.pdf");
+    setTargetTenderId("TND-2026-001");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFile = e.dataTransfer.files[0];
+      validateAndSelectFile(droppedFile);
+    }
+  };
+
   const handleStartAnalysis = async (filenameOverride?: string) => {
-    const filenameToUse = filenameOverride || selectedPreset;
     setIsUploading(true);
     setErrorMsg(null);
     setActiveTab("processing");
@@ -96,19 +171,37 @@ export default function AITenderAnalyzePage() {
       setTimeout(() => setProcessingStep(3), 2600);
       setTimeout(() => setProcessingStep(4), 4000);
 
-      const dataPromise = apiRequest<TenderAnalysisJob>("/tenders/analyze-document", {
-        method: "POST",
-        body: {
-          filename: filenameToUse,
-          tender_id: targetTenderId
+      let dataPromise: Promise<TenderAnalysisJob>;
+
+      if (customFile) {
+        // Upload custom PDF via multipart FormData
+        const formData = new FormData();
+        formData.append("file", customFile);
+        if (targetTenderId) {
+          formData.append("tender_id", targetTenderId);
         }
-      });
+        dataPromise = apiRequest<TenderAnalysisJob>("/tenders/upload-document", {
+          method: "POST",
+          body: formData
+        });
+      } else {
+        // Analyze preloaded preset document
+        const filenameToUse = filenameOverride || selectedPreset;
+        dataPromise = apiRequest<TenderAnalysisJob>("/tenders/analyze-document", {
+          method: "POST",
+          body: {
+            filename: filenameToUse,
+            tender_id: targetTenderId
+          }
+        });
+      }
 
       const data = await dataPromise;
       setTimeout(() => {
         setAnalysisJob(data);
         setIsUploading(false);
         setActiveTab("review");
+        setSuccessMsg(`Document '${data.filename || selectedPreset}' analyzed successfully. ${data.requirements?.length || 0} criteria extracted.`);
       }, 5000);
     } catch (err: any) {
       setErrorMsg(err.message || "An error occurred during AI analysis.");
@@ -446,9 +539,10 @@ export default function AITenderAnalyzePage() {
                     onClick={() => {
                       setSelectedPreset(preset.filename);
                       setTargetTenderId(preset.tender_id);
+                      setCustomFile(null);
                     }}
                     className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
-                      selectedPreset === preset.filename
+                      selectedPreset === preset.filename && !customFile
                         ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-md"
                         : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
                     }`}
@@ -471,15 +565,95 @@ export default function AITenderAnalyzePage() {
               </div>
 
               {/* Drag and Drop Zone */}
-              <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-amber-500 rounded-2xl p-8 text-center bg-slate-50 dark:bg-slate-950 transition cursor-pointer">
-                <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <UploadIcon className="w-7 h-7" />
-                </div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-base">Drag & Drop custom tender PDF here</h4>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Supports scanned or native text PDFs up to 50 MB with 99%+ OCR accuracy</p>
-                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-medium shadow-sm">
-                  Browse Files...
-                </div>
+              <div
+                onDragEnter={handleDragEnter}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center transition cursor-pointer relative ${
+                  isDragging
+                    ? "border-amber-500 bg-amber-500/10 scale-[1.01]"
+                    : customFile
+                    ? "border-emerald-500/60 bg-emerald-50/30 dark:bg-emerald-950/20"
+                    : "border-slate-300 dark:border-slate-700 hover:border-amber-500 bg-slate-50 dark:bg-slate-950"
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      validateAndSelectFile(e.target.files[0]);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+
+                {customFile ? (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl border border-emerald-300 dark:border-emerald-800 shadow-sm text-left">
+                    <div className="flex items-center gap-3.5 overflow-hidden">
+                      <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
+                        <FileTextIcon className="w-6 h-6" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-xs md:max-w-md">
+                            {customFile.name}
+                          </h4>
+                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 shrink-0">
+                            Custom PDF
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          {(customFile.size / (1024 * 1024)).toFixed(2)} MB • Ready for Intelligent Document Processing
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition"
+                      >
+                        Change File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearCustomFile}
+                        className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition"
+                        title="Remove Custom File"
+                      >
+                        <Trash2Icon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <UploadIcon className="w-7 h-7" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-base">Drag & Drop custom tender PDF here</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      Supports scanned or native text PDFs up to 50 MB with 99%+ OCR accuracy
+                    </p>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-400 rounded-xl text-sm font-medium shadow-sm transition"
+                    >
+                      <UploadIcon className="w-4 h-4 text-amber-500" /> Browse Files...
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -498,13 +672,20 @@ export default function AITenderAnalyzePage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Selected Document
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Selected Document
+                    </label>
+                    {customFile && (
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                        Custom PDF
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     readOnly
-                    value={selectedPreset}
+                    value={customFile ? customFile.name : selectedPreset}
                     className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 font-mono"
                   />
                 </div>
