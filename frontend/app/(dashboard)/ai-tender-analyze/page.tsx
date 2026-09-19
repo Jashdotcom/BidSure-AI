@@ -807,7 +807,7 @@ export default function AITenderAnalyzePage() {
                   <span>•</span>
                   <span>{analysisJob.filename}</span>
                   <span>•</span>
-                  <span>{analysisJob.total_pages || analysisJob.total_pages_parsed || 14} Pages Parsed</span>
+                  <span>{analysisJob.total_pages || analysisJob.total_pages_parsed || 1} Pages Parsed</span>
                   <span>•</span>
                   <span className="text-emerald-600 font-semibold">OCR Confidence: {(analysisJob.ocr_confidence * 100).toFixed(1)}%</span>
                 </div>

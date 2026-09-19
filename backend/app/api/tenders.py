@@ -622,13 +622,14 @@ async def analyze_tender_document(
 
     # 3. Build analysis job record
     job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
+    page_count = doc_profile.get("page_count") or 1
     job = create_analysis_job({
         "job_id": job_id,
         "tender_id": tender_id,
         "tender_title": doc_profile.get("title", filename),
         "filename": filename,
         "file_size_kb": doc_profile.get("file_size_kb", 4280),
-        "total_pages": doc_profile.get("page_count", 14),
+        "total_pages": page_count,
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
         "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
         "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),
@@ -646,7 +647,7 @@ async def analyze_tender_document(
         "entity_id": tender_id or filename,
         "details": (
             f"AI Document Analysis initiated for '{filename}' "
-            f"({doc_profile.get('page_count', 14)} pages, {doc_profile.get('ocr_confidence', 0.99)*100:.1f}% OCR). "
+            f"({page_count} pages, {doc_profile.get('ocr_confidence', 0.99)*100:.1f}% OCR). "
             f"Extracted {len(requirements)} evaluation criteria."
         ),
         "status": "SUCCESS"
@@ -661,8 +662,8 @@ async def analyze_tender_document(
         "organization": doc_profile.get("organization", "CPCL"),
         "filename": filename,
         "file_size_kb": doc_profile.get("file_size_kb", 4280),
-        "total_pages": doc_profile.get("page_count", 14),
-        "total_pages_parsed": doc_profile.get("page_count", 14),
+        "total_pages": page_count,
+        "total_pages_parsed": page_count,
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
         "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
         "detected_sections": doc_profile.get("detected_sections", []),
@@ -731,13 +732,14 @@ async def upload_tender_document(
     # 5. Persist Analysis Job
     job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
     effective_tender_id = tender_id or doc_profile.get("tender_number") or "TND-2026-001"
+    page_count = doc_profile.get("page_count") or 1
     job = create_analysis_job({
         "job_id": job_id,
         "tender_id": effective_tender_id,
         "tender_title": doc_profile.get("title", clean_filename),
         "filename": clean_filename,
         "file_size_kb": file_size_kb,
-        "total_pages": doc_profile.get("page_count", 14),
+        "total_pages": page_count,
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
         "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
         "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),
@@ -754,7 +756,7 @@ async def upload_tender_document(
         "entity_type": "TENDER_DOCUMENT",
         "entity_id": effective_tender_id or clean_filename,
         "details": (
-            f"Custom tender document '{clean_filename}' ({file_size_kb} KB) uploaded and analyzed. "
+            f"Custom tender document '{clean_filename}' ({file_size_kb} KB, {page_count} pages) uploaded and analyzed. "
             f"Extracted {len(requirements)} evaluation criteria with {doc_profile.get('ocr_confidence', 0.99)*100:.1f}% OCR confidence."
         ),
         "status": "SUCCESS"
@@ -768,9 +770,9 @@ async def upload_tender_document(
         "title": doc_profile.get("title", clean_filename),
         "filename": clean_filename,
         "file_size_kb": file_size_kb,
-        "total_pages": doc_profile.get("page_count", 14),
-        "total_pages_parsed": doc_profile.get("page_count", 14),
-        "pages_detected": doc_profile.get("page_count", 14),
+        "total_pages": page_count,
+        "total_pages_parsed": page_count,
+        "pages_detected": page_count,
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
         "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
         "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),
