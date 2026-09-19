@@ -681,6 +681,30 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
         "closed_at": "2024-08-30T17:30:00Z",
         "closed_by": "Rajesh Kumar",
         "close_reason": "Bidding window concluded and sealed for evaluation."
+    },
+    {
+        "id": "TND-2026-013",
+        "tender_number": "CPCL/PROC/2026/013",
+        "ref": "CPCL/PROC/2026/013",
+        "tender_id": "CPCL/PROC/2026/013",
+        "title": "Annual Rate Contract for Refinery Thermal Insulation & Cladding Materials",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Mechanical & Civil Maintenance Division",
+        "status": "DRAFT",
+        "estimated_value": 38000000.0,
+        "estimated_value_display": "₹ 3,80,00,000",
+        "emd_amount": 760000.0,
+        "emd_amount_display": "₹ 7,60,000",
+        "publish_date": "2026-09-18T10:00:00Z",
+        "closing_date": "2026-11-30T17:00:00Z",
+        "deadline": "30 Nov 2026",
+        "category": "Civil & Mechanical Works",
+        "bids_count": 0,
+        "verified_count": 0,
+        "description": "Supply, installation, and inspection of pre-formed calcium silicate and rockwool thermal insulation slabs with aluminum cladding for refinery piping systems.",
+        "requirements": [],
+        "deadline_history": [],
+        "amendments": []
     }
 ]
 
@@ -2162,6 +2186,10 @@ def compute_tender_bid_counts(tender: Dict[str, Any]) -> Dict[str, Any]:
         if b.get("verification_status") in ["AUTHENTICATED", "COMPLETED", "VERIFIED"]
         or b.get("status") in ["COMPLETED", "AUTHENTICATED", "VERIFIED"]
     )
+    if "deadline_history" not in tender_copy or tender_copy["deadline_history"] is None:
+        tender_copy["deadline_history"] = []
+    if "amendments" not in tender_copy or tender_copy["amendments"] is None:
+        tender_copy["amendments"] = list(tender_copy.get("deadline_history") or [])
     if not tender_copy.get("requirements"):
         tender_copy["requirements"] = [
             {

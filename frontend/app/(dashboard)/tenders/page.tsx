@@ -178,6 +178,7 @@ export default function TendersPage() {
   const [selectedStatus, setSelectedStatus] = useState<StatusFilterOption>("ALL");
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Active view: "LIST" or "CLAUSE_SCRUTINY"
   const [activeView, setActiveView] = useState<"LIST" | "CLAUSE_SCRUTINY">("LIST");
@@ -242,12 +243,22 @@ export default function TendersPage() {
     constraint_type: "text",
   });
 
-  // Push URL update helper
+  // Push URL update helper with equality check to prevent infinite loop
   const updateUrlParams = useCallback(
     (query: string, tab: LifecycleTab) => {
+      const currentQuery = searchParams.get("query") || "";
+      const currentTab = (searchParams.get("status") || "ACTIVE").toUpperCase();
+
+      const normalizedTab = tab === "ACTIVE" ? "" : tab;
+      const normalizedCurrentTab = currentTab === "ACTIVE" ? "" : currentTab;
+
+      if (query.trim() === currentQuery.trim() && normalizedTab === normalizedCurrentTab) {
+        return;
+      }
+
       const params = new URLSearchParams(searchParams.toString());
-      if (query) {
-        params.set("query", query);
+      if (query.trim()) {
+        params.set("query", query.trim());
       } else {
         params.delete("query");
       }
@@ -256,8 +267,11 @@ export default function TendersPage() {
       } else {
         params.delete("status");
       }
+
+      const qs = params.toString();
+      const targetUrl = qs ? `${pathname}?${qs}` : pathname;
       startTransition(() => {
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        router.replace(targetUrl, { scroll: false });
       });
     },
     [searchParams, pathname, router]
@@ -274,6 +288,7 @@ export default function TendersPage() {
   // Fetch all tenders from backend source of truth
   const fetchTenders = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const res = await apiRequest<Tender[]>("/tenders");
       if (res && Array.isArray(res)) {
@@ -281,25 +296,32 @@ export default function TendersPage() {
       } else {
         setTenders([]);
       }
-    } catch {
+    } catch (err: any) {
+      const msg =
+        err?.message ||
+        "Unable to connect to the procurement database. Please verify the backend service is running and try again.";
+      setFetchError(msg);
       setTenders([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
     fetchTenders();
   }, [fetchTenders]);
 
-  // Sync search params on load
+  // Sync search params on external URL change
   useEffect(() => {
     const q = searchParams.get("query") || "";
     const tabParam = (searchParams.get("status") || "ACTIVE").toUpperCase() as LifecycleTab;
-    if (validTabs.includes(tabParam)) {
+    if (validTabs.includes(tabParam) && tabParam !== activeTab) {
       setActiveTab(tabParam);
     }
-    setSearchTerm(q);
+    if (q !== searchTerm) {
+      setSearchTerm(q);
+    }
   }, [searchParams]);
 
   // Imminent deadline check for Closing Soon option
@@ -375,10 +397,12 @@ export default function TendersPage() {
       const st = (t.status || "DRAFT").toUpperCase();
       if (st === "PUBLISHED" || st === "OPEN" || st === "ACTIVE") {
         active++;
-      } else if (st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED") {
+      } else if (st === "CLOSED" || st === "CANCELLED" || st === "ARCHIVED" || st === "INACTIVE") {
         inactive++;
       } else if (st === "DRAFT" || st === "ANALYZING" || st === "REQUIREMENTS_REVIEW") {
         draft++;
+      } else {
+        active++;
       }
     });
 
@@ -1024,7 +1048,13 @@ export default function TendersPage() {
 
             {/* Results counter indicator */}
             <div className="text-xs text-slate-500 font-medium">
-              Showing <strong className="text-slate-900 font-bold">{filteredTenders.length}</strong> of {tenders.length} tenders
+              {loading && tenders.length === 0 ? (
+                <span>Loading tenders...</span>
+              ) : (
+                <span>
+                  Showing <strong className="text-slate-900 font-bold">{filteredTenders.length}</strong> of {tenders.length} tenders
+                </span>
+              )}
             </div>
           </div>
 
@@ -1122,12 +1152,32 @@ export default function TendersPage() {
             </div>
           </div>
 
-          {/* TENDERS CARDS / GRID */}
+          {/* TENDERS CARDS / GRID / LOADING / ERROR / EMPTY STATES */}
           {loading ? (
             <div className="flex flex-col items-center justify-center p-14 bg-white rounded-2xl border border-slate-200 text-slate-500 shadow-xs">
               <RefreshCwIcon className="size-7 animate-spin text-blue-600 mb-3" />
               <p className="text-xs font-bold text-slate-700">Loading procurement database...</p>
               <p className="text-[11px] text-slate-400 mt-0.5">Fetching active tenders, bid counts, and amendment logs</p>
+            </div>
+          ) : fetchError ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-red-200 bg-red-50/60 p-12 text-center shadow-xs">
+              <div className="flex size-12 items-center justify-center rounded-xl bg-red-100 text-red-600 mb-3">
+                <AlertTriangleIcon className="size-6" />
+              </div>
+              <h3 className="text-base font-bold text-red-900">Failed to Load Procurement Database</h3>
+              <p className="mt-1 max-w-md text-xs text-red-700 leading-relaxed">
+                {fetchError}
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <Button
+                  onClick={fetchTenders}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-1.5"
+                  size="sm"
+                >
+                  <RefreshCwIcon className="size-3.5" />
+                  Retry Connection
+                </Button>
+              </div>
             </div>
           ) : filteredTenders.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-14 text-center">
@@ -1164,6 +1214,17 @@ export default function TendersPage() {
                     View Active Tenders
                   </Button>
                 )}
+                {activeTab === "DRAFT" && (
+                  <Link href="/tenders/create">
+                    <Button
+                      size="sm"
+                      className="bg-blue-700 hover:bg-blue-800 text-xs font-bold flex items-center gap-1"
+                    >
+                      <PlusIcon className="size-3.5" />
+                      Create New Tender Draft
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           ) : (
@@ -1171,7 +1232,7 @@ export default function TendersPage() {
               {filteredTenders.map((tender) => {
                 const tenderStatusUpper = (tender.status || "DRAFT").toUpperCase();
                 const isTenderActive = tenderStatusUpper === "PUBLISHED" || tenderStatusUpper === "OPEN" || tenderStatusUpper === "ACTIVE";
-                const isTenderClosed = tenderStatusUpper === "CLOSED" || tenderStatusUpper === "CANCELLED" || tenderStatusUpper === "ARCHIVED";
+                const isTenderClosed = tenderStatusUpper === "CLOSED" || tenderStatusUpper === "CANCELLED" || tenderStatusUpper === "ARCHIVED" || tenderStatusUpper === "INACTIVE";
                 const isTenderDraft = tenderStatusUpper === "DRAFT" || tenderStatusUpper === "ANALYZING" || tenderStatusUpper === "REQUIREMENTS_REVIEW";
                 const amendmentsCount = (tender.deadline_history?.length || tender.amendments?.length || 0);
 

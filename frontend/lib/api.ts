@@ -60,9 +60,12 @@ export async function apiRequest<T>(
       if (fetchErr.name === "AbortError") {
         throw new ApiError(504, "Request timed out. Please verify your connection and try again.");
       }
-      // If direct call fails, try relative proxy as fallback
+      // If direct call fails, try relative Next.js rewrite proxy as fallback
       try {
-        response = await fetch(normalizedPath, {
+        const proxyPath = normalizedPath.startsWith("/api")
+          ? normalizedPath
+          : `/api${normalizedPath}`;
+        response = await fetch(proxyPath, {
           method: options.method ?? "GET",
           headers,
           body:
@@ -92,40 +95,43 @@ export async function apiRequest<T>(
     let message = "";
 
     try {
-      const payload = (await response.json()) as Record<string, any>;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const payload = (await response.json()) as Record<string, any>;
 
-      if (typeof payload.detail === "string") {
-        message = payload.detail;
-      } else if (Array.isArray(payload.detail)) {
-        // Pydantic / FastAPI validation errors
-        const fieldErrors = payload.detail.map((d: any) => {
-          if (typeof d === "string") return d;
-          const field = Array.isArray(d.loc)
-            ? d.loc.filter((part: any) => part !== "body").join(".")
-            : "";
-          const msg = d.msg || "Invalid value";
-          return field ? `${field}: ${msg}` : msg;
-        });
-        message = fieldErrors.filter(Boolean).join("; ");
-      } else if (payload.detail && typeof payload.detail === "object") {
-        const detailObj = payload.detail as Record<string, any>;
-        if (Array.isArray(detailObj.errors) && detailObj.errors.length > 0) {
-          message = detailObj.errors.join("; ");
-          if (detailObj.message && typeof detailObj.message === "string") {
-            message = `${detailObj.message}: ${message}`;
+        if (typeof payload.detail === "string") {
+          message = payload.detail;
+        } else if (Array.isArray(payload.detail)) {
+          // Pydantic / FastAPI validation errors
+          const fieldErrors = payload.detail.map((d: any) => {
+            if (typeof d === "string") return d;
+            const field = Array.isArray(d.loc)
+              ? d.loc.filter((part: any) => part !== "body").join(".")
+              : "";
+            const msg = d.msg || "Invalid value";
+            return field ? `${field}: ${msg}` : msg;
+          });
+          message = fieldErrors.filter(Boolean).join("; ");
+        } else if (payload.detail && typeof payload.detail === "object") {
+          const detailObj = payload.detail as Record<string, any>;
+          if (Array.isArray(detailObj.errors) && detailObj.errors.length > 0) {
+            message = detailObj.errors.join("; ");
+            if (detailObj.message && typeof detailObj.message === "string") {
+              message = `${detailObj.message}: ${message}`;
+            }
+          } else if (typeof detailObj.message === "string") {
+            message = detailObj.message;
           }
-        } else if (typeof detailObj.message === "string") {
-          message = detailObj.message;
         }
-      }
 
-      if (!message) {
-        if (typeof payload.message === "string") {
-          message = payload.message;
-        } else if (typeof payload.error === "string") {
-          message = payload.error;
-        } else if (Array.isArray(payload.errors) && payload.errors.length > 0) {
-          message = payload.errors.join("; ");
+        if (!message) {
+          if (typeof payload.message === "string") {
+            message = payload.message;
+          } else if (typeof payload.error === "string") {
+            message = payload.error;
+          } else if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+            message = payload.errors.join("; ");
+          }
         }
       }
     } catch {
@@ -153,5 +159,17 @@ export async function apiRequest<T>(
   }
 
   if (response.status === 204) return undefined as T;
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    try {
+      const parsed = await response.json();
+      return parsed as T;
+    } catch {
+      throw new ApiError(
+        502,
+        "Received non-JSON response from server. Please verify backend service status."
+      );
+    }
+  }
   return (await response.json()) as T;
 }
