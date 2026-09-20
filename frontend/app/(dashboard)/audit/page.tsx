@@ -137,51 +137,52 @@ export default function AuditPage() {
                 </tr>
               ) : (
                 filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/70">
-                  <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">
-                    {new Date(log.timestamp).toLocaleString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <p className="font-bold text-slate-900">{log.user_email}</p>
-                    <span className="text-[10px] text-slate-500 font-medium">{log.user_role}</span>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 font-mono">
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 font-mono text-slate-600">
-                    <span className="text-slate-400">{log.entity_type}:</span> {log.entity_id}
-                  </td>
-                  <td className="px-4 py-3.5 text-slate-600 max-w-xs truncate" title={log.details}>
-                    {log.details}
-                  </td>
-                  <td className="px-4 py-3.5 text-right">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                        log.status === "SUCCESS"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : log.status === "WARNING"
-                          ? "bg-amber-50 text-amber-700"
-                          : "bg-red-50 text-red-700"
-                      }`}
-                    >
-                      {log.status === "SUCCESS" ? (
-                        <CheckCircleIcon className="size-3" />
-                      ) : (
-                        <AlertTriangleIcon className="size-3" />
-                      )}
-                      {log.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                  <tr key={log.id} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <p className="font-bold text-slate-900">{log.user_email}</p>
+                      <span className="text-[10px] text-slate-500 font-medium">{log.user_role}</span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 font-mono">
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 font-mono text-slate-600">
+                      <span className="text-slate-400">{log.entity_type}:</span> {log.entity_id}
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-600 max-w-xs truncate" title={log.details}>
+                      {log.details}
+                    </td>
+                    <td className="px-4 py-3.5 text-right">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          log.status === "SUCCESS"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : log.status === "WARNING"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-red-50 text-red-700"
+                        }`}
+                      >
+                        {log.status === "SUCCESS" ? (
+                          <CheckCircleIcon className="size-3" />
+                        ) : (
+                          <AlertTriangleIcon className="size-3" />
+                        )}
+                        {log.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
