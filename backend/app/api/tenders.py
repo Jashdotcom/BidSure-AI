@@ -37,8 +37,137 @@ from app.data.sample_data import (
 )
 from app.services.ocr_service import OCRService
 from app.services.ai_service import AIService
+from app.services.tender_sources import CPPPTenderAdapter, ManualTenderAdapter
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/tenders", tags=["Tenders"])
+
+class TenderImportUrlSchema(BaseModel):
+    url: str = Field(..., description="Official CPPP or eProcurement tender public URL")
+    title: Optional[str] = None
+    estimated_value: Optional[float] = None
+    category: Optional[str] = None
+
+@router.post("/import-cppp", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def import_cppp_tender(
+    payload: TenderImportUrlSchema,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Ingests a public tender from CPPP / eProcurement portal via URL.
+    Enforces SSRF prevention, domain allowlisting (eprocure.gov.in, cppp.gov.in, cpcl.co.in),
+    SHA-256 cryptographic document hashing, and duplicate detection.
+    RESTRICTED: Officer role only.
+    """
+    adapter = CPPPTenderAdapter()
+    try:
+        tender_record = await adapter.fetch_tender(payload.url, metadata=payload.model_dump())
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    # Check for duplicate by SHA-256 hash across existing tenders
+    existing_tenders = get_all_tenders()
+    doc_hash = tender_record.get("document_hash_sha256")
+    for t in existing_tenders:
+        if t.get("document_hash_sha256") and t.get("document_hash_sha256") == doc_hash:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Duplicate Tender Detected: A tender document with SHA-256 hash '{doc_hash[:16]}...' "
+                       f"already exists in the procurement registry ({t.get('tender_number') or t.get('id')})."
+            )
+
+    created = add_tender(tender_record)
+
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "TENDER_IMPORTED",
+        "entity_type": "TENDER",
+        "entity_id": created.get("tender_number") or created.get("id"),
+        "details": (
+            f"Tender '{created['title']}' ({created.get('tender_number')}) successfully imported "
+            f"from CPPP URL '{payload.url}' with SHA-256 hash {doc_hash[:16]}... (Zero automatic AI execution)."
+        ),
+        "status": "SUCCESS"
+    })
+
+    return {
+        "message": f"Tender {created.get('tender_number')} imported successfully from CPPP.",
+        "tender": created
+    }
+
+
+@router.post("/import-manual", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def import_manual_tender(
+    file: UploadFile = File(...),
+    title: Optional[str] = Form(None),
+    estimated_value: Optional[float] = Form(None),
+    category: Optional[str] = Form(None),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Ingests a tender via manual PDF document upload with cryptographic SHA-256 hashing
+    and duplicate detection.
+    RESTRICTED: Officer role only.
+    """
+    raw_filename = file.filename or "uploaded_tender.pdf"
+    if not raw_filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF (.pdf) documents are supported for manual tender import."
+        )
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded PDF file is empty (0 bytes)."
+        )
+
+    adapter = ManualTenderAdapter()
+    metadata = {
+        "filename": raw_filename,
+        "file_bytes": file_bytes,
+        "title": title,
+        "estimated_value": estimated_value,
+        "category": category
+    }
+
+    tender_record = await adapter.fetch_tender(raw_filename, metadata=metadata)
+    doc_hash = tender_record.get("document_hash_sha256")
+
+    # Duplicate check
+    existing_tenders = get_all_tenders()
+    for t in existing_tenders:
+        if t.get("document_hash_sha256") and t.get("document_hash_sha256") == doc_hash:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Duplicate Tender Detected: Document SHA-256 hash '{doc_hash[:16]}...' "
+                       f"already exists in tender registry ({t.get('tender_number') or t.get('id')})."
+            )
+
+    created = add_tender(tender_record)
+
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "TENDER_IMPORTED",
+        "entity_type": "TENDER",
+        "entity_id": created.get("tender_number") or created.get("id"),
+        "details": (
+            f"Manual tender '{created['title']}' ({created.get('tender_number')}) imported via PDF upload "
+            f"('{raw_filename}', SHA-256: {doc_hash[:16]}...). Zero automatic AI execution."
+        ),
+        "status": "SUCCESS"
+    })
+
+    return {
+        "message": f"Tender {created.get('tender_number')} imported successfully via document upload.",
+        "tender": created
+    }
 
 @router.get("/next-number", response_model=Dict[str, Any])
 async def get_next_tender_number_preview(

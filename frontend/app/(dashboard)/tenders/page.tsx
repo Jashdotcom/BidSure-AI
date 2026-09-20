@@ -123,6 +123,14 @@ export default function TendersPage() {
   const [isEditReqModalOpen, setIsEditReqModalOpen] = useState(false);
   const [editingReq, setEditingReq] = useState<Requirement | null>(null);
 
+  // Tender Import Modal
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importType, setImportType] = useState<"CPPP" | "MANUAL">("CPPP");
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [cpppUrl, setCpppUrl] = useState("");
+  const [manualFile, setManualFile] = useState<File | null>(null);
+
   // New Requirement Form State
   const [newReq, setNewReq] = useState({
     name: "",
@@ -564,6 +572,73 @@ export default function TendersPage() {
     }
   }
 
+  // Handle Import Tender (CPPP URL or Manual PDF Upload)
+  async function handleImportTender(e: React.FormEvent) {
+    e.preventDefault();
+    setImportError(null);
+    setImportLoading(true);
+
+    try {
+      if (importType === "CPPP") {
+        if (!cpppUrl || !cpppUrl.trim()) {
+          setImportError("Please enter a valid CPPP / eProcurement public URL.");
+          setImportLoading(false);
+          return;
+        }
+
+        const res = await apiRequest<{ message: string; tender: Tender }>(
+          "/tenders/import-cppp",
+          {
+            method: "POST",
+            body: {
+              url: cpppUrl.trim(),
+            },
+          }
+        );
+
+        setIsImportModalOpen(false);
+        setCpppUrl("");
+        await fetchTenders();
+        setPageToast({
+          type: "SUCCESS",
+          message: res.message || "Tender successfully imported from CPPP.",
+        });
+      } else {
+        // Manual Upload
+        if (!manualFile) {
+          setImportError("Please select a PDF tender document to upload.");
+          setImportLoading(false);
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", manualFile);
+        formData.append("title", manualFile.name.replace(".pdf", "").replace(/_/g, " "));
+
+        const res = await apiRequest<{ message: string; tender: Tender }>(
+          "/tenders/import-manual",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        setIsImportModalOpen(false);
+        setManualFile(null);
+        await fetchTenders();
+        setPageToast({
+          type: "SUCCESS",
+          message: res.message || "Manual tender document imported successfully.",
+        });
+      }
+    } catch (err: any) {
+      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to import tender. Please check the URL or file and try again.";
+      setImportError(typeof msg === "string" ? msg : "Failed to import tender.");
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
   // Lifecycle Transition 1: DRAFT -> ANALYZING -> REQUIREMENTS_REVIEW
   async function handleAnalyzeTender(tender: Tender) {
     setSelectedTender(tender);
@@ -798,6 +873,16 @@ export default function TendersPage() {
           >
             <RefreshCwIcon className="size-3.5" />
             Refresh
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsImportModalOpen(true)}
+            className="text-xs font-semibold flex items-center gap-1.5"
+          >
+            <FileCheckIcon className="size-3.5" />
+            Import Tender
           </Button>
 
           <Link href="/tenders/create">
@@ -2341,6 +2426,182 @@ export default function TendersPage() {
                 Add Rule
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* IMPORT TENDER MODAL */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 block">
+                  Procurement Ingestion Gateway
+                </span>
+                <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
+                  Import Tender Notice
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsImportModalOpen(false);
+                  setImportError(null);
+                }}
+                disabled={importLoading}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors disabled:opacity-40"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </div>
+
+            {/* Ingestion Source Tabs */}
+            <div className="flex border-b border-slate-200 bg-slate-100/60 px-6 pt-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportType("CPPP");
+                  setImportError(null);
+                }}
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
+                  importType === "CPPP"
+                    ? "border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-2xs"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <FileCheckIcon className="size-3.5 text-blue-600" />
+                CPPP / eProcurement URL
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setImportType("MANUAL");
+                  setImportError(null);
+                }}
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
+                  importType === "MANUAL"
+                    ? "border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-2xs"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <PlusIcon className="size-3.5 text-slate-500" />
+                Manual PDF Upload
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleImportTender} className="p-6 space-y-4 text-xs">
+              {importType === "CPPP" ? (
+                <div className="space-y-3.5">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 flex items-start gap-2.5">
+                    <InfoIcon className="size-4 text-blue-700 shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-blue-900 leading-relaxed">
+                      <strong className="font-bold block">Secure CPPP / eProcurement Ingestion:</strong>
+                      Enter an official tender URL from allowlisted portals (<code className="font-mono font-bold">eprocure.gov.in</code>, <code className="font-mono font-bold">cppp.gov.in</code>, <code className="font-mono font-bold">cpcl.co.in</code>). Enforces SSRF prevention, IP domain allowlist validation, and SHA-256 cryptographic duplicate detection. Zero automatic AI execution on import.
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-800 block text-xs">
+                      CPPP Tender Public URL <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      placeholder="https://eprocure.gov.in/eprocure/app?component=... or https://www.cpcl.co.in/tenders/..."
+                      value={cpppUrl}
+                      onChange={(e) => setCpppUrl(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-medium text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100"
+                    />
+                    <span className="text-[10px] text-slate-500 block">
+                      Example: <code className="font-mono text-blue-700">https://eprocure.gov.in/eprocure/app?tenderId=CPCL_2026_9021</code>
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 flex items-start gap-2.5">
+                    <InfoIcon className="size-4 text-amber-700 shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-amber-900 leading-relaxed">
+                      <strong className="font-bold block">Manual PDF Tender Document Upload:</strong>
+                      Upload official PDF tender documents. The system calculates cryptographic SHA-256 file hashes, checks for duplicate submissions, and structures normalized procurement criteria.
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-800 block text-xs">
+                      Tender PDF Document <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/60 p-6 text-center hover:border-blue-400 transition-colors">
+                      <div className="space-y-2">
+                        <FileTextIcon className="size-8 text-blue-600 mx-auto" />
+                        <div>
+                          <label htmlFor="tender-file-upload" className="cursor-pointer font-bold text-blue-700 hover:underline">
+                            <span>Choose PDF file</span>
+                            <input
+                              id="tender-file-upload"
+                              type="file"
+                              accept=".pdf,application/pdf"
+                              className="sr-only"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  setManualFile(e.target.files[0]);
+                                  setImportError(null);
+                                }
+                              }}
+                            />
+                          </label>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {manualFile ? manualFile.name : "or drag and drop PDF document here (Max 50MB)"}
+                          </p>
+                        </div>
+                        {manualFile && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800">
+                            ✓ {manualFile.name} ({(manualFile.size / 1024).toFixed(1)} KB)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Error Banner */}
+              {importError && (
+                <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
+                  <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsImportModalOpen(false);
+                    setImportError(null);
+                  }}
+                  disabled={importLoading}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={importLoading}
+                  loading={importLoading}
+                  className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[160px]"
+                >
+                  {importLoading ? "Processing Ingestion..." : "Import Tender"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
