@@ -75,8 +75,18 @@ export default function AITenderAnalyzePage() {
     weight: 15
   });
 
-  // Fetch tenders list on mount
+  const [demoMode, setDemoMode] = useState<boolean>(true);
+
+  // Fetch system config and tenders list on mount
   useEffect(() => {
+    apiRequest<{ demo_mode: boolean }>("/system/config")
+      .then((res) => {
+        if (res && typeof res.demo_mode === "boolean") {
+          setDemoMode(res.demo_mode);
+        }
+      })
+      .catch(() => {});
+
     apiRequest<Tender[]>("/tenders")
       .then((data) => {
         if (Array.isArray(data)) {
@@ -487,85 +497,137 @@ export default function AITenderAnalyzePage() {
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileTextIcon className="w-5 h-5 text-amber-500" /> Select CPCL Tender Document Preset
+                  <FileTextIcon className="w-5 h-5 text-amber-500" /> {demoMode ? "Select CPCL Tender Document Preset" : "Operational Tender Documents"}
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Choose from preloaded Chennai Petroleum Corporation Limited (CPCL) tender RFP / NIT notices for instant Smart OCR parsing.
+                  {demoMode
+                    ? "Choose from preloaded Chennai Petroleum Corporation Limited (CPCL) tender RFP / NIT notices for instant Smart OCR parsing."
+                    : tendersList.length > 0
+                    ? "Select from available operational tenders in the database for AI requirement extraction."
+                    : "No tender documents available for analysis. Upload an operational tender PDF document below."}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  {
-                    filename: "CPCL_Tender_Safety_Helmets_2026.pdf",
-                    title: "Supply of Industrial Safety Helmets & PPE",
-                    tender_id: "TND-2026-001",
-                    tender_num: "CPCL/PROC/2026/001",
-                    value: "₹4.50 Cr",
-                    pages: 14,
-                    size: "4.2 MB",
-                    category: "Safety Goods"
-                  },
-                  {
-                    filename: "CPCL_Fire_Safety_Tender_2026.pdf",
-                    title: "Fire Safety Equipment & Hydrant Valves",
-                    tender_id: "TND-2026-003",
-                    tender_num: "CPCL/PROC/2026/003",
-                    value: "₹8.20 Cr",
-                    pages: 18,
-                    size: "5.4 MB",
-                    category: "Firefighting"
-                  },
-                  {
-                    filename: "CPCL_Refinery_Valves_Tender_2026.pdf",
-                    title: "High-Pressure Refinery Valve Assemblies",
-                    tender_id: "TND-2026-004",
-                    tender_num: "CPCL/PROC/2026/004",
-                    value: "₹12.50 Cr",
-                    pages: 22,
-                    size: "6.8 MB",
-                    category: "Mechanical"
-                  },
-                  {
-                    filename: "CPCL_Pipeline_Pigging_2026.pdf",
-                    title: "Intelligent Pigging Pipeline Inspection Services",
-                    tender_id: "TND-2026-005",
-                    tender_num: "CPCL/PROC/2026/005",
-                    value: "₹6.10 Cr",
-                    pages: 16,
-                    size: "4.9 MB",
-                    category: "Pipeline Services"
-                  }
-                ].map((preset) => (
-                  <div
-                    key={preset.filename}
-                    onClick={() => {
-                      setSelectedPreset(preset.filename);
-                      setTargetTenderId(preset.tender_id);
-                      setCustomFile(null);
-                    }}
-                    className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
-                      selectedPreset === preset.filename && !customFile
-                        ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-md"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          {preset.tender_id}
-                        </span>
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{preset.value}</span>
+              {demoMode ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      filename: "CPCL_Tender_Safety_Helmets_2026.pdf",
+                      title: "Supply of Industrial Safety Helmets & PPE",
+                      tender_id: "TND-2026-001",
+                      tender_num: "CPCL/PROC/2026/001",
+                      value: "₹4.50 Cr",
+                      pages: 14,
+                      size: "4.2 MB",
+                      category: "Safety Goods"
+                    },
+                    {
+                      filename: "CPCL_Fire_Safety_Tender_2026.pdf",
+                      title: "Fire Safety Equipment & Hydrant Valves",
+                      tender_id: "TND-2026-003",
+                      tender_num: "CPCL/PROC/2026/003",
+                      value: "₹8.20 Cr",
+                      pages: 18,
+                      size: "5.4 MB",
+                      category: "Firefighting"
+                    },
+                    {
+                      filename: "CPCL_Refinery_Valves_Tender_2026.pdf",
+                      title: "High-Pressure Refinery Valve Assemblies",
+                      tender_id: "TND-2026-004",
+                      tender_num: "CPCL/PROC/2026/004",
+                      value: "₹12.50 Cr",
+                      pages: 22,
+                      size: "6.8 MB",
+                      category: "Mechanical"
+                    },
+                    {
+                      filename: "CPCL_Pipeline_Pigging_2026.pdf",
+                      title: "Intelligent Pigging Pipeline Inspection Services",
+                      tender_id: "TND-2026-005",
+                      tender_num: "CPCL/PROC/2026/005",
+                      value: "₹6.10 Cr",
+                      pages: 16,
+                      size: "4.9 MB",
+                      category: "Pipeline Services"
+                    }
+                  ].map((preset) => (
+                    <div
+                      key={preset.filename}
+                      onClick={() => {
+                        setSelectedPreset(preset.filename);
+                        setTargetTenderId(preset.tender_id);
+                        setCustomFile(null);
+                      }}
+                      className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                        selectedPreset === preset.filename && !customFile
+                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-md"
+                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {preset.tender_id}
+                          </span>
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{preset.value}</span>
+                        </div>
+                        <h3 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2">{preset.title}</h3>
                       </div>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2">{preset.title}</h3>
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <span>{preset.pages} Pages ({preset.size})</span>
+                        <span className="font-medium text-amber-600 dark:text-amber-400">{preset.category}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <span>{preset.pages} Pages ({preset.size})</span>
-                      <span className="font-medium text-amber-600 dark:text-amber-400">{preset.category}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : tendersList.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tendersList.map((tender) => {
+                    const tenderRef = tender.tender_number || tender.id;
+                    const filename = tender.file_name || `${tenderRef.replace(/\//g, "_")}_Tender.pdf`;
+                    return (
+                      <div
+                        key={tender.id || tender.tender_id}
+                        onClick={() => {
+                          setSelectedPreset(filename);
+                          setTargetTenderId(tender.id || tender.tender_id || "");
+                          setCustomFile(null);
+                        }}
+                        className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                          selectedPreset === filename && !customFile
+                            ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-md"
+                            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {tenderRef}
+                            </span>
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                              {tender.estimated_value_display || (tender.estimated_value ? `₹${tender.estimated_value}` : "Active")}
+                            </span>
+                          </div>
+                          <h3 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2">{tender.title}</h3>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                          <span>{tender.file_size_kb ? `${(tender.file_size_kb / 1024).toFixed(1)} MB` : "PDF RFP"}</span>
+                          <span className="font-medium text-amber-600 dark:text-amber-400">{tender.category || "Procurement"}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                  <FileTextIcon className="w-10 h-10 text-slate-400 mx-auto" />
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No tender documents available for analysis</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    DEMO_MODE is disabled and no operational tenders are currently loaded in the database. Drag & drop a custom tender PDF document below to run Smart OCR parsing and AI requirement extraction.
+                  </p>
+                </div>
+              )}
 
               {/* Drag and Drop Zone */}
               <div
