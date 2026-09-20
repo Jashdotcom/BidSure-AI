@@ -34,6 +34,7 @@ export function Navbar() {
 
   // Dynamic breadcrumb/title based on route
   const getPageTitle = () => {
+    if (pathname.includes("/ai-tender-analyze")) return "AI Tender Analyze & IDP Studio";
     if (pathname.includes("/tenders")) return "Tenders & RFP Clauses";
     if (pathname.includes("/bidders")) return "Bids & Submissions";
     if (pathname.includes("/verification") || pathname.includes("/documents"))
@@ -43,16 +44,19 @@ export function Navbar() {
     if (pathname.includes("/audit")) return "System Audit Trail";
     if (pathname.includes("/settings")) return "Officer Settings";
     if (pathname.includes("/comparison")) return "Bidder Comparison Matrix";
+    if (pathname.includes("/help-support")) return "Help & Support Center";
     return "Dashboard";
   };
 
   const getPageSubtitle = () => {
+    if (pathname.includes("/ai-tender-analyze")) return "Intelligent OCR/IDP clause extraction and human-in-the-loop requirement studio";
     if (pathname.includes("/tenders")) return "Manage tender notices, eligibility criteria, and extract clause rules";
     if (pathname.includes("/bidders")) return "Evaluate participating bidder proposals, statutory records, and compliance";
     if (pathname.includes("/verification") || pathname.includes("/documents"))
       return "Verify submitted technical documents, certificates, and financial balance sheets";
     if (pathname.includes("/compliance")) return "Evaluate compliance matrix, rule matching, and verification evidence";
     if (pathname.includes("/audit")) return "Immutable log of automated checks and officer evaluation actions";
+    if (pathname.includes("/help-support")) return "Comprehensive procurement officer documentation and operational guidelines";
     return "Automated Statutory Pre-Qualification & Verification System";
   };
 

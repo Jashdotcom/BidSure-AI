@@ -32,13 +32,13 @@ const OFFICER_PRIMARY_NAV = [
 
 const OFFICER_SECONDARY_NAV = [
   { name: "Settings", href: "/settings", icon: SettingsIcon },
+  { name: "Help & Support", href: "/help-support", icon: HelpCircleIcon },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
     const u = getUser<User>();
@@ -140,15 +140,6 @@ export function Sidebar() {
                   </Link>
                 );
               })}
-
-              <button
-                type="button"
-                onClick={() => setIsHelpOpen(true)}
-                className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 transition-all"
-              >
-                <HelpCircleIcon className="size-4 text-slate-400 group-hover:text-slate-700" />
-                <span>Help & Support</span>
-              </button>
             </nav>
           </div>
         </div>
@@ -181,61 +172,6 @@ export function Sidebar() {
           </div>
         </div>
       </aside>
-
-      {/* Help & Support Modal */}
-      {isHelpOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg bg-blue-50 p-1.5 text-blue-700">
-                  <HelpCircleIcon className="size-4" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">
-                  BidSure Help & Support
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsHelpOpen(false)}
-                className="text-slate-400 hover:text-slate-700 rounded-lg p-1"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-600 leading-relaxed">
-              <p>
-                <strong>Procurement Helpdesk:</strong> For technical evaluation issues, rule customization, or audit inquiries, contact the central IT & procurement cell.
-              </p>
-              <div className="rounded-xl bg-slate-50 p-3 border border-slate-200/80 space-y-1.5 text-[11px]">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Support Desk:</span>
-                  <span className="font-semibold text-slate-800">1800-BIDSURE-GOV</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Official Email:</span>
-                  <span className="font-semibold text-blue-700">support@bidsure.ai</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Evaluation Engine:</span>
-                  <span className="font-semibold text-emerald-700">Deterministic Engine Active</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end border-t border-slate-100 pt-3">
-              <button
-                type="button"
-                onClick={() => setIsHelpOpen(false)}
-                className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
