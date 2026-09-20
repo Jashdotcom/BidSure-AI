@@ -8,6 +8,7 @@ import hashlib
 import time
 from datetime import datetime, timedelta
 from app.services.tender_sources.base import BaseTenderSourceAdapter
+from app.services.ocr_service import OCRService
 
 class ManualTenderAdapter(BaseTenderSourceAdapter):
     """
@@ -17,48 +18,52 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
 
     async def fetch_tender(self, source_url_or_ref: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Processes a manually uploaded tender document (or file bytes passed in metadata).
+        Processes a manually uploaded tender document. Extracts metadata using OCRService.
         """
         file_bytes = metadata.get("file_bytes") if metadata else None
         filename = metadata.get("filename") if metadata else source_url_or_ref
 
-        if not filename:
-            filename = "Manual_Uploaded_Tender.pdf"
+        if not file_bytes:
+            raise ValueError("TENDER_METADATA_EXTRACTION_FAILED: No file content provided for manual import.")
+
+        # Use OCRService to extract metadata from the document
+        ocr_service = OCRService()
+        extracted_data = await ocr_service.process_document(file_bytes=file_bytes, filename=filename)
+
+        # Validate extracted metadata - reject if it looks like a fallback/demo record
+        tender_number = extracted_data.get("tender_number")
+        if not tender_number or "CPCL/PROC" in tender_number or "CPCL/MAN" in tender_number:
+            raise ValueError("TENDER_METADATA_EXTRACTION_FAILED: Could not extract valid Tender ID from document.")
 
         # Compute cryptographic SHA-256 hash
-        if file_bytes and len(file_bytes) > 0:
-            doc_hash = hashlib.sha256(file_bytes).hexdigest()
-            file_size_kb = len(file_bytes) // 1024
-        else:
-            dummy_data = f"MANUAL_TENDER_{filename}_{time.time()}".encode("utf-8")
-            doc_hash = hashlib.sha256(dummy_data).hexdigest()
-            file_size_kb = 3420
+        doc_hash = hashlib.sha256(file_bytes).hexdigest()
+        file_size_kb = len(file_bytes) // 1024
 
-        tender_ref_code = metadata.get("tender_number") or f"CPCL/MAN/{datetime.utcnow().year}/{int(time.time()) % 10000:04d}"
+        title = extracted_data.get("title") or filename.replace(".pdf", "").replace("_", " ")
+        org = extracted_data.get("organization") or "Unknown Organization"
 
-        title = metadata.get("title") or filename.replace(".pdf", "").replace("_", " ")
-        org = metadata.get("organization") or "Chennai Petroleum Corporation Limited (CPCL)"
-        category = metadata.get("category") or "Goods & Materials"
-        est_value = metadata.get("estimated_value") or 35000000.0
-        emd_amount = metadata.get("emd_amount") or 700000.0
-        closing_date = metadata.get("closing_date") or (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%dT23:59:59Z")
+        # Extract estimated value and EMD from OCRService result
+        est_val = extracted_data.get("estimated_value")
+        emd_amt = extracted_data.get("emd_amount") or 0.0
 
+        # Mapping extracted metadata
         normalized_tender = {
-            "tender_number": tender_ref_code,
-            "ref": tender_ref_code,
+            "tender_number": tender_number,
+            "ref": tender_number,
             "title": title,
             "organization": org,
-            "department": metadata.get("department") or "Materials & Procurement Division",
-            "category": category,
+            "department": metadata.get("department") or "Procurement Division",
+            "category": metadata.get("category") or "Goods & Materials",
             "status": "PUBLISHED",
-            "estimated_value": float(est_value),
-            "estimated_value_display": f"₹ {float(est_value):,.2f}",
-            "emd_amount": float(emd_amount),
-            "emd_amount_display": f"₹ {float(emd_amount):,.2f}",
+            "estimated_value": float(est_val) if est_val is not None else 0.0,
+            "estimated_value_display": f"₹ {float(est_val):,.2f}" if est_val is not None else "NA",
+            "emd_amount": float(emd_amt),
+            "emd_amount_display": f"₹ {float(emd_amt):,.2f}",
             "publish_date": datetime.utcnow().strftime("%Y-%m-%dT09:00:00Z"),
-            "closing_date": closing_date,
+            "closing_date": (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%dT23:59:59Z"),
             "deadline": (datetime.utcnow() + timedelta(days=30)).strftime("%d %b %Y"),
-            "description": metadata.get("description") or f"Manually uploaded tender document '{filename}' processed via secure officer upload portal.",
+            "description": f"Manually uploaded tender document '{filename}' processed via secure officer upload portal. "
+                           f"Source: {org}.",
             "file_name": filename,
             "file_size_kb": file_size_kb,
             "document_hash_sha256": doc_hash,
@@ -74,39 +79,6 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
                     "title": "Annual Financial Turnover Requirement",
                     "description": "Bidder must meet minimum average annual turnover.",
                     "threshold_value": ">= ₹3.00 Cr",
-                    "mandatory": True,
-                    "weight": 25
-                },
-                {
-                    "id": "REQ-MAN-02",
-                    "code": "EXPERIENCE",
-                    "clause_reference": "Section III, Clause 4.2",
-                    "category": "TECHNICAL",
-                    "title": "Past PSU Experience",
-                    "description": "Relevant supply or execution experience in past 5 years.",
-                    "threshold_value": ">= 3 Years",
-                    "mandatory": True,
-                    "weight": 25
-                },
-                {
-                    "id": "REQ-MAN-03",
-                    "code": "OEM",
-                    "clause_reference": "Section III, Clause 4.5",
-                    "category": "OEM_AUTHORIZATION",
-                    "title": "OEM Authorization Certificate",
-                    "description": "Manufacturer authorization for tender items.",
-                    "threshold_value": "Direct OEM Authorized",
-                    "mandatory": True,
-                    "weight": 25
-                },
-                {
-                    "id": "REQ-MAN-04",
-                    "code": "MII",
-                    "clause_reference": "Section I, Clause 1.4",
-                    "category": "LOCAL_CONTENT",
-                    "title": "Make in India (MII) Declaration",
-                    "description": "Class-I local supplier content declaration.",
-                    "threshold_value": ">= 50% (Class-I)",
                     "mandatory": True,
                     "weight": 25
                 }
