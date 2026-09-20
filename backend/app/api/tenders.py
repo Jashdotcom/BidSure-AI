@@ -136,7 +136,13 @@ async def import_manual_tender(
         "category": category
     }
 
-    tender_record = await adapter.fetch_tender(raw_filename, metadata=metadata)
+    try:
+        tender_record = await adapter.fetch_tender(raw_filename, metadata=metadata)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     doc_hash = tender_record.get("document_hash_sha256")
 
     # Duplicate check
