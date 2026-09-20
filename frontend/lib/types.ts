@@ -34,6 +34,7 @@ export interface BidderSummary {
 export interface Bidder {
   id: string;
   name: string;
+  company_name?: string;
   tender_id: string;
   tender_number?: string;
   tender_title?: string;
@@ -46,10 +47,16 @@ export interface Bidder {
   gstin?: string;
   pan?: string;
   udyam?: string;
+  annual_turnover_cr?: number;
+  turnover?: string | number;
   experience_years?: number;
+  years_experience?: number;
   oem_status?: string;
+  oem_authorization?: string;
   local_content_pct?: number;
+  local_content?: number;
   is_debarred?: boolean;
+  emd_paid?: boolean;
   epfo_code?: string;
   submitted_at?: string;
   status?: string;

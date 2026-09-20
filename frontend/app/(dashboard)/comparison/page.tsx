@@ -200,11 +200,13 @@ export default function ComparisonPage() {
   function formatBidderValue(b: Bidder, key: string) {
     switch (key) {
       case "turnover":
-        return `₹${b.annual_turnover_cr || 0} Cr`;
+        const toVal = b.annual_turnover_cr ?? b.turnover;
+        return toVal !== undefined && toVal !== null && toVal !== "" ? `₹${toVal} Cr` : "Not Available";
       case "experience":
-        return `${b.experience_years || b.years_experience || 0} Years`;
+        const expVal = b.experience_years ?? b.years_experience;
+        return expVal !== undefined && expVal !== null && expVal !== "" ? `${expVal} Years` : "Not Available";
       case "oem_auth":
-        return b.oem_status || "Not Provided";
+        return b.oem_status || b.oem_authorization || "Not Provided";
       case "mii_content":
         return b.local_content_pct ? `${b.local_content_pct}% Class-I` : b.local_content ? `${b.local_content}%` : "Not Provided";
       case "gstin":
@@ -220,13 +222,17 @@ export default function ComparisonPage() {
     // Determine visual status dynamically based on rules (mock dynamic inference)
     switch (key) {
       case "turnover":
-        return (b.annual_turnover_cr || 0) >= 3 ? "PASS" : "FAIL";
+        const numTurnover = Number(b.annual_turnover_cr ?? b.turnover ?? 0);
+        return numTurnover >= 3 ? "PASS" : "FAIL";
       case "experience":
-        return (b.experience_years || 0) >= 3 ? "PASS" : "FAIL";
+        const numExp = Number(b.experience_years ?? b.years_experience ?? 0);
+        return numExp >= 3 ? "PASS" : "FAIL";
       case "oem_auth":
-        return b.oem_status?.toLowerCase().includes("direct") ? "PASS" : b.oem_status?.toLowerCase().includes("distributor") ? "REVIEW" : "FAIL";
+        const oemStr = (b.oem_status || b.oem_authorization || "").toLowerCase();
+        return oemStr.includes("direct") ? "PASS" : oemStr.includes("distributor") ? "REVIEW" : "FAIL";
       case "mii_content":
-        return (b.local_content_pct || 0) >= 50 ? "PASS" : (b.local_content_pct || 0) >= 20 ? "REVIEW" : "FAIL";
+        const numMii = Number(b.local_content_pct ?? b.local_content ?? 0);
+        return numMii >= 50 ? "PASS" : numMii >= 20 ? "REVIEW" : "FAIL";
       case "gstin":
         return b.gstin ? "PASS" : "FAIL";
       case "debarment":
