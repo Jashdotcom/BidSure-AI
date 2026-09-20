@@ -29,114 +29,6 @@ import {
 import { apiRequest } from "@/lib/api";
 import { Tender, Requirement, TenderAmendment } from "@/lib/types";
 
-const DEFAULT_REQUIREMENTS: Requirement[] = [
-  {
-    id: "REQ-001",
-    code: "TURNOVER",
-    name: "Average Annual Turnover",
-    clause_reference: "Section II, Clause 3.1",
-    category: "Financial",
-    type: "NUMERIC_GTE",
-    mandatory: true,
-    description: "Minimum average annual financial turnover of ₹3.00 Crore during last 3 financial years.",
-    threshold_value: ">= ₹3.00 Cr",
-    unit: "Crore INR",
-    validation_source: "Audited Balance Sheet & MCA/ITR",
-    weight: 20,
-    constraint_type: "numeric",
-    source_document: "CPCL_Tender_Safety_Equipment_2026.pdf",
-    source_page: 3,
-    confidence: 0.98,
-  },
-  {
-    id: "REQ-002",
-    code: "EXP",
-    name: "Past Experience in PSUs / Refineries",
-    clause_reference: "Section III, Clause 4.2",
-    category: "Eligibility",
-    type: "NUMERIC_GTE",
-    mandatory: true,
-    description: "Minimum 3 years of proven experience in supplying industrial safety PPE to PSUs/Refineries.",
-    threshold_value: ">= 3 years",
-    unit: "Years",
-    validation_source: "Experience Certificate & Past POs",
-    weight: 20,
-    constraint_type: "numeric",
-    source_document: "CPCL_Tender_Safety_Equipment_2026.pdf",
-    source_page: 5,
-    confidence: 0.96,
-  },
-  {
-    id: "REQ-003",
-    code: "OEM",
-    name: "OEM Authorization Certificate",
-    clause_reference: "Section III, Clause 4.5",
-    category: "Technical",
-    type: "DOCUMENT_VALID",
-    mandatory: true,
-    description: "Direct Manufacturer Authorization Form (MAF) from original safety equipment manufacturer.",
-    threshold_value: "Direct OEM Authorized",
-    validation_source: "OEM Verification Registry",
-    weight: 15,
-    constraint_type: "enum",
-    source_document: "CPCL_Tender_Safety_Equipment_2026.pdf",
-    source_page: 6,
-    confidence: 0.97,
-  },
-  {
-    id: "REQ-004",
-    code: "LOCAL_CONTENT",
-    name: "Minimum Local Content (Make in India)",
-    clause_reference: "Section IV, Clause 5.1",
-    category: "Statutory",
-    type: "NUMERIC_GTE",
-    mandatory: true,
-    description: "Minimum 50% local content requirement under Public Procurement Order (Class-I Local Supplier).",
-    threshold_value: ">= 50%",
-    unit: "%",
-    validation_source: "DPIIT / Statutory Auditor Certificate",
-    weight: 15,
-    constraint_type: "numeric",
-    source_document: "CPCL_Tender_Safety_Equipment_2026.pdf",
-    source_page: 7,
-    confidence: 0.94,
-  },
-  {
-    id: "REQ-005",
-    code: "GST",
-    name: "GST Registration & Returns",
-    clause_reference: "Section II, Clause 2.1",
-    category: "Statutory",
-    type: "REGISTRATION_VALID",
-    mandatory: true,
-    description: "Bidder must possess valid active GSTIN registration in India with up-to-date return filings.",
-    threshold_value: "Active",
-    validation_source: "GSTN Portal",
-    weight: 15,
-    constraint_type: "boolean",
-    source_document: "CPCL_Tender_Safety_Equipment_2026.pdf",
-    source_page: 3,
-    confidence: 0.99,
-  },
-  {
-    id: "REQ-006",
-    code: "DEBARMENT",
-    name: "Vigilance & Non-Debarment Integrity",
-    clause_reference: "Section I, Clause 1.4",
-    category: "Vigilance",
-    type: "BOOLEAN_CHECK",
-    mandatory: true,
-    description: "Bidder must not be debarred, blacklisted or banned by CPCL, CVC, GeM, or any PSU.",
-    threshold_value: "Clear / No Debarment",
-    validation_source: "Central Vigilance Debarment Registry",
-    weight: 15,
-    constraint_type: "boolean",
-    source_document: "CPCL_Tender_Safety_Equipment_2026.pdf",
-    source_page: 2,
-    confidence: 0.99,
-  },
-];
-
 type LifecycleTab = "ACTIVE" | "INACTIVE" | "DRAFT" | "ALL";
 
 export type StatusFilterOption =
@@ -185,7 +77,7 @@ export default function TendersPage() {
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
 
   // Clause Extraction & Scrutiny State
-  const [requirements, setRequirements] = useState<Requirement[]>(DEFAULT_REQUIREMENTS);
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [isApproved, setIsApproved] = useState(true);
   const [approvalMessage, setApprovalMessage] = useState<string | null>(null);
@@ -675,6 +567,7 @@ export default function TendersPage() {
   // Lifecycle Transition 1: DRAFT -> ANALYZING -> REQUIREMENTS_REVIEW
   async function handleAnalyzeTender(tender: Tender) {
     setSelectedTender(tender);
+    setRequirements(tender.requirements || []);
     setActiveView("CLAUSE_SCRUTINY");
     setAnalyzing(true);
     setIsApproved(false);
@@ -1385,6 +1278,7 @@ export default function TendersPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedTender(tender);
+                                setRequirements(tender.requirements || []);
                                 setActiveView("CLAUSE_SCRUTINY");
                               }}
                               className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
@@ -1484,6 +1378,7 @@ export default function TendersPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedTender(tender);
+                                setRequirements(tender.requirements || []);
                                 setActiveView("CLAUSE_SCRUTINY");
                               }}
                               className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors flex items-center gap-1"
@@ -1628,7 +1523,15 @@ export default function TendersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {requirements.map((req, idx) => (
+                  {requirements.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                        <p className="font-semibold text-xs text-slate-700">No evaluation criteria defined</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Click &quot;Add Custom Rule&quot; or re-analyze the tender document to extract statutory clauses.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    requirements.map((req, idx) => (
                     <tr key={req.id || idx} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-4 py-3.5 font-bold text-slate-400">{idx + 1}</td>
                       <td className="px-4 py-3.5 max-w-xs">

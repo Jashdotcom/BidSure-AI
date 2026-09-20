@@ -24,69 +24,11 @@ interface AuditLogEntry {
   status: "SUCCESS" | "WARNING" | "FAILURE";
 }
 
-const FALLBACK_LOGS: AuditLogEntry[] = [
-  {
-    id: "LOG-001",
-    timestamp: "2024-08-28T16:15:22Z",
-    user_email: "officer@cpcl.gov.in",
-    user_role: "PROCUREMENT_OFFICER",
-    action: "EVALUATE_COMPLIANCE",
-    entity_type: "BIDDER",
-    entity_id: "BID-001",
-    details: "Deterministic rules evaluation executed for ABC Safety Solutions Pvt Ltd (Score: 100%).",
-    status: "SUCCESS",
-  },
-  {
-    id: "LOG-002",
-    timestamp: "2024-08-28T16:10:05Z",
-    user_email: "cpo@cpcl.gov.in",
-    user_role: "SENIOR_PROCUREMENT_OFFICER",
-    action: "OVERRIDE_VERDICT",
-    entity_type: "BIDDER",
-    entity_id: "BID-003",
-    details: "Senior Officer recorded commentary for SafeGuard Equipments regarding secondary OEM authorization.",
-    status: "WARNING",
-  },
-  {
-    id: "LOG-003",
-    timestamp: "2024-08-28T15:55:40Z",
-    user_email: "officer@cpcl.gov.in",
-    user_role: "PROCUREMENT_OFFICER",
-    action: "EXTERNAL_API_VERIFY",
-    entity_type: "GOV_PORTAL",
-    entity_id: "GSTN-33AABCA1234F1Z5",
-    details: "Automated GSTN active registration and return filing verification status returned SUCCESS.",
-    status: "SUCCESS",
-  },
-  {
-    id: "LOG-004",
-    timestamp: "2024-08-28T15:30:12Z",
-    user_email: "abc@abcsafety.com",
-    user_role: "BIDDER",
-    action: "BID_SUBMISSION",
-    entity_type: "TENDER",
-    entity_id: "CPCL/PROC/SAFETY/2024/09",
-    details: "Bid package and 6 supporting PDF documents uploaded with SHA-256 integrity hash.",
-    status: "SUCCESS",
-  },
-  {
-    id: "LOG-005",
-    timestamp: "2024-08-28T14:45:00Z",
-    user_email: "system@bidsure.ai",
-    user_role: "SYSTEM",
-    action: "SECURITY_SCAN",
-    entity_type: "SYSTEM",
-    entity_id: "AUTH_GUARD",
-    details: "Zero role escalation anomalies detected across active sessions.",
-    status: "SUCCESS",
-  },
-];
-
 export default function AuditPage() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("query") || searchParams.get("entity_id") || searchParams.get("search") || "";
 
-  const [logs, setLogs] = useState<AuditLogEntry[]>(FALLBACK_LOGS);
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState(initialSearch);
 
@@ -103,9 +45,10 @@ export default function AuditPage() {
     setLoading(true);
     try {
       const res = await apiRequest<AuditLogEntry[]>("/audit/logs");
-      if (res?.length) setLogs(res);
+      if (Array.isArray(res)) setLogs(res);
+      else setLogs([]);
     } catch {
-      // Fallback
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -176,7 +119,24 @@ export default function AuditPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {filteredLogs.map((log) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCwIcon className="size-4 animate-spin text-blue-600" />
+                      <span className="font-medium text-xs">Loading audit logs...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    <p className="font-semibold text-xs text-slate-700">No audit trail events recorded yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Automated checks and officer evaluation actions will appear here in chronological order.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50/70">
                   <td className="px-4 py-3.5 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                     {new Date(log.timestamp).toLocaleString("en-IN", {

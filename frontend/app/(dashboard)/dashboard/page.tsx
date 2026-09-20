@@ -37,12 +37,12 @@ interface OfficerDashboardStats {
 }
 
 const DEFAULT_DASHBOARD_STATS: OfficerDashboardStats = {
-  active_tenders: 12,
-  total_bids: 48,
-  under_verification: 8,
-  pending_review: 5,
-  compliant_bids: 29,
-  high_risk: 4,
+  active_tenders: 0,
+  total_bids: 0,
+  under_verification: 0,
+  pending_review: 0,
+  compliant_bids: 0,
+  high_risk: 0,
 };
 
 interface ActiveTenderItem {
@@ -186,6 +186,18 @@ export default function OfficerDashboardPage() {
 
   const officerName = user?.name || "Procurement Officer";
 
+  // Dynamic calculations for compliance overview
+  const passCount = stats.compliant_bids;
+  const failCount = stats.high_risk;
+  const reviewCount = stats.pending_review;
+  const totalEvaluated = passCount + failCount + reviewCount;
+  const passPct = totalEvaluated > 0 ? ((passCount / totalEvaluated) * 100).toFixed(0) : "0";
+  const failPct = totalEvaluated > 0 ? ((failCount / totalEvaluated) * 100).toFixed(0) : "0";
+  const reviewPct = totalEvaluated > 0 ? ((reviewCount / totalEvaluated) * 100).toFixed(0) : "0";
+  const passWidth = totalEvaluated > 0 ? `${((passCount / totalEvaluated) * 100).toFixed(1)}%` : "0%";
+  const failWidth = totalEvaluated > 0 ? `${((failCount / totalEvaluated) * 100).toFixed(1)}%` : "0%";
+  const reviewWidth = totalEvaluated > 0 ? `${((reviewCount / totalEvaluated) * 100).toFixed(1)}%` : "0%";
+
   // Helper for status badge rendering in table
   const renderTenderStatus = (status: ActiveTenderItem["status"]) => {
     switch (status) {
@@ -318,7 +330,7 @@ export default function OfficerDashboardPage() {
             {stats.total_bids}
           </p>
           <p className="mt-1.5 text-[10px] font-medium text-slate-500">
-            Across 12 RFPs
+            Across {stats.active_tenders} active RFP{stats.active_tenders === 1 ? "" : "s"}
           </p>
         </Card>
 
@@ -552,7 +564,7 @@ export default function OfficerDashboardPage() {
                 PASS
               </span>
               <span className="text-xl font-extrabold text-emerald-800 leading-tight">
-                29
+                {passCount}
               </span>
             </div>
 
@@ -561,7 +573,7 @@ export default function OfficerDashboardPage() {
                 FAIL
               </span>
               <span className="text-xl font-extrabold text-red-800 leading-tight">
-                8
+                {failCount}
               </span>
             </div>
 
@@ -570,7 +582,7 @@ export default function OfficerDashboardPage() {
                 REVIEW
               </span>
               <span className="text-xl font-extrabold text-amber-800 leading-tight">
-                11
+                {reviewCount}
               </span>
             </div>
           </div>
@@ -579,29 +591,29 @@ export default function OfficerDashboardPage() {
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
               <span>Overall Evaluation Health</span>
-              <span className="font-bold text-slate-800">48 Total Evaluated</span>
+              <span className="font-bold text-slate-800">{totalEvaluated} Total Evaluated</span>
             </div>
             <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
               <div
-                style={{ width: "60.4%" }}
+                style={{ width: passWidth }}
                 className="bg-emerald-500 transition-all"
-                title="Compliant (60.4%)"
+                title={`Compliant (${passPct}%)`}
               />
               <div
-                style={{ width: "16.7%" }}
+                style={{ width: failWidth }}
                 className="bg-red-500 transition-all"
-                title="Non-Compliant (16.7%)"
+                title={`Non-Compliant (${failPct}%)`}
               />
               <div
-                style={{ width: "22.9%" }}
+                style={{ width: reviewWidth }}
                 className="bg-amber-400 transition-all"
-                title="Requires Review (22.9%)"
+                title={`Requires Review (${reviewPct}%)`}
               />
             </div>
             <div className="flex justify-between text-[10px] text-slate-400 font-medium pt-0.5">
-              <span className="text-emerald-700 font-semibold">60% Compliant</span>
-              <span className="text-amber-700 font-semibold">23% Review</span>
-              <span className="text-red-700 font-semibold">17% Non-Compliant</span>
+              <span className="text-emerald-700 font-semibold">{passPct}% Compliant</span>
+              <span className="text-amber-700 font-semibold">{reviewPct}% Review</span>
+              <span className="text-red-700 font-semibold">{failPct}% Non-Compliant</span>
             </div>
           </div>
         </Card>

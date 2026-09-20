@@ -6,12 +6,21 @@ import { logout } from "@/lib/auth";
 import { getUser } from "@/lib/session";
 import { User } from "@/lib/types";
 import { BellIcon } from "@/components/icons";
+import { apiRequest } from "@/lib/api";
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  time?: string;
+}
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUserState] = useState<User | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   useEffect(() => {
     const u = getUser<User>();
@@ -25,6 +34,26 @@ export function Navbar() {
         organization: "Chennai Petroleum Corporation Limited",
       });
     }
+
+    async function loadNotifications() {
+      try {
+        const activities = await apiRequest<any[]>("/dashboard/recent-bid-activity?limit=5");
+        if (Array.isArray(activities) && activities.length > 0) {
+          const mapped: NotificationItem[] = activities.map((a: any) => ({
+            id: a.id || a.bid_id,
+            title: `${a.bidder_name || "Bidder"} submitted proposal`,
+            subtitle: `${a.tender_number || a.tender_id || "Tender"} · ${a.compliance_status || "Submitted"}`,
+            time: "Recent",
+          }));
+          setNotifications(mapped);
+        } else {
+          setNotifications([]);
+        }
+      } catch {
+        setNotifications([]);
+      }
+    }
+    loadNotifications();
   }, []);
 
   function handleLogout() {
@@ -92,10 +121,12 @@ export function Navbar() {
             title="Notifications"
           >
             <BellIcon className="size-4" />
-            <span className="absolute top-1.5 right-1.5 flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-blue-600" />
-            </span>
+            {notifications.length > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-blue-600" />
+              </span>
+            )}
           </button>
 
           {showNotifications && (
@@ -105,29 +136,26 @@ export function Navbar() {
                   Procurement Notifications
                 </span>
                 <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                  3 New
+                  {notifications.length} New
                 </span>
               </div>
-              <div className="space-y-2 text-xs divide-y divide-slate-50">
-                <div className="pt-1.5 first:pt-0">
-                  <p className="font-semibold text-slate-800 text-[11px]">
-                    ABC Safety Solutions submitted a bid
-                  </p>
-                  <p className="text-[10px] text-slate-400">2 minutes ago · Tender #001</p>
+              {notifications.length === 0 ? (
+                <div className="py-4 text-center text-slate-400 text-xs">
+                  <p className="font-semibold text-slate-600 text-[11px]">No New Notifications</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Procurement alerts and submission notifications will appear here.</p>
                 </div>
-                <div className="pt-1.5">
-                  <p className="font-semibold text-slate-800 text-[11px]">
-                    SecureTech OEM Authorization flag
-                  </p>
-                  <p className="text-[10px] text-amber-600 font-medium">18 minutes ago · Review Required</p>
+              ) : (
+                <div className="space-y-2 text-xs divide-y divide-slate-50">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="pt-1.5 first:pt-0">
+                      <p className="font-semibold text-slate-800 text-[11px]">
+                        {n.title}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{n.time || "Recently"} · {n.subtitle}</p>
+                    </div>
+                  ))}
                 </div>
-                <div className="pt-1.5">
-                  <p className="font-semibold text-slate-800 text-[11px]">
-                    Tender CPCL/PROC/2026/001 was published
-                  </p>
-                  <p className="text-[10px] text-slate-400">1 hour ago · Active</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>

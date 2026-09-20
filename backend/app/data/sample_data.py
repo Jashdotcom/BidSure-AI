@@ -3,11 +3,18 @@ BidSure AI Sample & In-Memory Data Store
 Provides realistic mock tenders, bidders, and compliance records for CPCL evaluation workflows.
 """
 from typing import Dict, List, Any, Optional
+import os
+import copy
 import time
 import hashlib
 import threading
 import re
 from datetime import datetime, timezone
+
+# Centralized Demo Mode Switch (default: false)
+# When DEMO_MODE=false: live in-memory store starts empty for real procurement data.
+# When DEMO_MODE=true: pre-populates with standard demo/seed dataset for development/testing.
+DEMO_MODE: bool = os.getenv("DEMO_MODE", "false").lower() in ("true", "1", "t", "yes")
 
 SAMPLE_USERS: List[Dict[str, Any]] = [
     {
@@ -45,8 +52,8 @@ SAMPLE_USERS: List[Dict[str, Any]] = [
     }
 ]
 
-# Centralized Database of 12 Authentic CPCL Procurement Tenders
-SAMPLE_TENDERS: List[Dict[str, Any]] = [
+# Seed Database of 12 Authentic CPCL Procurement Tenders (Used when DEMO_MODE=true)
+DEMO_TENDERS: List[Dict[str, Any]] = [
     {
         "id": "TND-2026-001",
         "tender_number": "CPCL/PROC/2026/001",
@@ -708,7 +715,8 @@ SAMPLE_TENDERS: List[Dict[str, Any]] = [
     }
 ]
 
-SAMPLE_BIDDERS: List[Dict[str, Any]] = [
+# Seed Database of 35 Participating Bidders (Used when DEMO_MODE=true)
+DEMO_BIDDERS: List[Dict[str, Any]] = [
     {
         "id": "BID-001",
         "bid_submission_id": "BID/2024/0912-A",
@@ -2100,6 +2108,13 @@ SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = [
     }
 ]
 
+# Live Mutable Operational Data Stores
+# In standard operational mode (DEMO_MODE=false), stores initialize empty to host real database procurement data.
+# In demo mode (DEMO_MODE=true), stores pre-populate with the seed datasets above.
+SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(DEMO_TENDERS) if DEMO_MODE else []
+SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(DEMO_BIDDERS) if DEMO_MODE else []
+SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = []
+
 # Helper data query and mutation functions
 def get_all_users() -> List[Dict[str, Any]]:
     return SAMPLE_USERS
@@ -3015,7 +3030,7 @@ def get_dashboard_stats() -> Dict[str, Any]:
         "high_risk": high_risk
     }
 
-SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = [
+DEMO_NOTIFICATIONS: List[Dict[str, Any]] = [
     {
         "id": "NOTIF-001",
         "bidder_id": "BID-001",
@@ -3045,6 +3060,8 @@ SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = [
     }
 ]
 
+SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = copy.deepcopy(DEMO_NOTIFICATIONS) if DEMO_MODE else []
+
 def get_notifications_for_bidder(bidder_id: str) -> List[Dict[str, Any]]:
     notifs = [n for n in SAMPLE_NOTIFICATIONS if n.get("bidder_id") == bidder_id]
     if not notifs:
@@ -3061,8 +3078,8 @@ def get_notifications_for_bidder(bidder_id: str) -> List[Dict[str, Any]]:
         ]
     return notifs
 
-# Immutable Audit Trail Data Store
-SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = [
+# Seed Audit Logs (Used when DEMO_MODE=true)
+DEMO_AUDIT_LOGS: List[Dict[str, Any]] = [
     {
         "id": "LOG-001",
         "timestamp": "2026-09-14T10:15:22Z",
@@ -3120,6 +3137,9 @@ SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = [
         "integrity_hash": "f62b8a0e1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8"
     }
 ]
+
+# Immutable Operational Audit Trail Data Store
+SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = copy.deepcopy(DEMO_AUDIT_LOGS) if DEMO_MODE else []
 
 def get_all_audit_logs(query: Optional[str] = None) -> List[Dict[str, Any]]:
     if not query:
@@ -3479,4 +3499,47 @@ def finalize_tender_requirements(
         "finalized_by": officer_name,
         "message": f"Successfully finalized {len(converted_reqs)} evaluation criteria for {tender.get('tender_number') or tender.get('id')}."
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment State Management & Seeding Utilities
+# ─────────────────────────────────────────────────────────────────────────────
+def is_demo_mode() -> bool:
+    """Returns whether the centralized DEMO_MODE toggle is active."""
+    return DEMO_MODE
+
+
+def reset_to_demo_data() -> None:
+    """
+    Populates operational stores with the authentic 12 CPCL demo tenders,
+    35 demo bidders, and seed audit logs for testing or development.
+    """
+    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS
+    with _tender_number_lock:
+        SAMPLE_TENDERS.clear()
+        SAMPLE_TENDERS.extend(copy.deepcopy(DEMO_TENDERS))
+        SAMPLE_BIDDERS.clear()
+        SAMPLE_BIDDERS.extend(copy.deepcopy(DEMO_BIDDERS))
+        SAMPLE_BIDDER_BIDS.clear()
+        SAMPLE_AUDIT_LOGS.clear()
+        SAMPLE_AUDIT_LOGS.extend(copy.deepcopy(DEMO_AUDIT_LOGS))
+        SAMPLE_NOTIFICATIONS.clear()
+        SAMPLE_NOTIFICATIONS.extend(copy.deepcopy(DEMO_NOTIFICATIONS))
+        SAMPLE_ANALYSIS_JOBS.clear()
+
+
+def clear_all_procurement_data() -> None:
+    """
+    Resets all operational procurement records (tenders, bidders, logs)
+    to empty state while keeping authenticated officer credentials intact.
+    """
+    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS
+    with _tender_number_lock:
+        SAMPLE_TENDERS.clear()
+        SAMPLE_BIDDERS.clear()
+        SAMPLE_BIDDER_BIDS.clear()
+        SAMPLE_AUDIT_LOGS.clear()
+        SAMPLE_NOTIFICATIONS.clear()
+        SAMPLE_ANALYSIS_JOBS.clear()
+
 

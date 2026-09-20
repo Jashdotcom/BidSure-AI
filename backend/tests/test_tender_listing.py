@@ -21,9 +21,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from fastapi.testclient import TestClient
 from app.main import app
-from app.data.sample_data import SAMPLE_TENDERS, SAMPLE_BIDDERS
+from app.data.sample_data import SAMPLE_TENDERS, SAMPLE_BIDDERS, reset_to_demo_data
 
 client = TestClient(app)
+
+@pytest.fixture(autouse=True)
+def setup_demo_data():
+    reset_to_demo_data()
 
 def get_officer_token() -> str:
     resp = client.post("/auth/login", json={

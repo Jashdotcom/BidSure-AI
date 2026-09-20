@@ -33,8 +33,8 @@ import { apiRequest } from "@/lib/api";
 
 export default function AITenderAnalyzePage() {
   const [activeTab, setActiveTab] = useState<"upload" | "processing" | "review" | "finalized">("upload");
-  const [selectedPreset, setSelectedPreset] = useState<string>("CPCL_Tender_Safety_Helmets_2026.pdf");
-  const [targetTenderId, setTargetTenderId] = useState<string>("TND-2026-001");
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [targetTenderId, setTargetTenderId] = useState<string>("");
   const [tendersList, setTendersList] = useState<Tender[]>([]);
   const [customFile, setCustomFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -81,6 +81,9 @@ export default function AITenderAnalyzePage() {
       .then((data) => {
         if (Array.isArray(data)) {
           setTendersList(data);
+          if (data.length > 0) {
+            setTargetTenderId(data[0].id || data[0].tender_id || "");
+          }
         }
       })
       .catch((err) => console.error("Failed to load tenders list:", err));
@@ -699,15 +702,15 @@ export default function AITenderAnalyzePage() {
                     onChange={(e) => setTargetTenderId(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   >
-                    {tendersList.map((t) => (
-                      <option key={t.id || t.tender_id} value={t.id || t.tender_id}>
-                        {t.tender_number || t.tender_id || t.id} — {t.title}
-                      </option>
-                    ))}
-                    <option value="TND-2026-001">CPCL/PROC/2026/001 — Industrial Safety Helmets</option>
-                    <option value="TND-2026-003">CPCL/PROC/2026/003 — Fire Safety Equipment</option>
-                    <option value="TND-2026-004">CPCL/PROC/2026/004 — High-Pressure Valves</option>
-                    <option value="TND-2026-005">CPCL/PROC/2026/005 — Pipeline Pigging Services</option>
+                    {tendersList.length === 0 ? (
+                      <option value="">No tenders available in database</option>
+                    ) : (
+                      tendersList.map((t) => (
+                        <option key={t.id || t.tender_id} value={t.id || t.tender_id}>
+                          {t.tender_number || t.tender_id || t.id} — {t.title}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -792,7 +795,26 @@ export default function AITenderAnalyzePage() {
       )}
 
       {/* TAB 3: HUMAN-IN-THE-LOOP REVIEW STUDIO */}
-      {activeTab === "review" && analysisJob && (
+      {activeTab === "review" && (
+        !analysisJob ? (
+          <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl flex items-center justify-center mx-auto">
+              <FileTextIcon className="w-8 h-8" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">No tender document analyzed yet</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                Upload a tender PDF in the Upload tab and run AI analysis to extract and review procurement requirements.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab("upload")}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow transition"
+            >
+              Go to Upload Document
+            </button>
+          </div>
+        ) : (
         <div className="space-y-6">
           {/* Document Summary Bar */}
           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -1154,6 +1176,7 @@ export default function AITenderAnalyzePage() {
             )}
           </div>
         </div>
+        )
       )}
 
       {/* TAB 4: FINALIZED */}

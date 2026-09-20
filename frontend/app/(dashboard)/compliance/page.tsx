@@ -509,7 +509,7 @@ export default function CompliancePage() {
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-900 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               {tenders.length === 0 ? (
-                <option value="">Loading tenders...</option>
+                <option value="">{loadingTenders ? "Loading tenders..." : "No tenders found"}</option>
               ) : (
                 tenders.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -575,9 +575,9 @@ export default function CompliancePage() {
         ) : bidders.length === 0 ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-xs text-amber-800">
             <AlertTriangleIcon className="size-6 text-amber-600 mx-auto mb-2" />
-            <p className="font-bold">No submitted bids found for this tender.</p>
+            <p className="font-bold">No compliance evaluation available.</p>
             <p className="text-amber-700 mt-1">
-              Bids in draft status are excluded from the official compliance evaluation studio.
+              No submitted bids found for this tender. Bids in draft status are excluded from the official compliance evaluation studio.
             </p>
           </div>
         ) : (

@@ -18,6 +18,7 @@ from app.api import (
     bidder_portal_router,
     dashboard_router
 )
+from app.data.sample_data import is_demo_mode
 
 app = FastAPI(
     title="BidSure AI - CPCL Tender Evaluation API",
@@ -68,6 +69,15 @@ async def health_check():
         "status": "healthy",
         "service": "BidSure AI Core Backend",
         "security_mode": "JWT Role-Enforced"
+    }
+
+@app.get("/system/config", tags=["System"])
+@app.get("/api/system/config", tags=["System"])
+async def get_system_config():
+    return {
+        "demo_mode": is_demo_mode(),
+        "service": "BidSure AI Core Backend",
+        "version": "1.0.0"
     }
 
 @app.get("/", tags=["Root"])

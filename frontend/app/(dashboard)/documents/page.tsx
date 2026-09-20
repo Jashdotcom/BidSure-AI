@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Card, Button, StatusBadge } from "@/components/ui";
+import React, { useState, useEffect } from "react";
+import { Card, Button } from "@/components/ui";
 import {
   FileTextIcon,
   SearchIcon,
@@ -10,6 +10,8 @@ import {
   CheckCircleIcon,
   EyeIcon,
 } from "@/components/icons";
+import { apiRequest } from "@/lib/api";
+import { Tender, Bidder } from "@/lib/types";
 
 interface BidDoc {
   id: string;
@@ -23,83 +25,120 @@ interface BidDoc {
   extracted_clauses: number;
 }
 
-const SAMPLE_DOCS: BidDoc[] = [
-  {
-    id: "DOC-001",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    bidder_name: "CPCL Official",
-    doc_name: "CPCL_Safety_Equip_Tender_Specification_2024.pdf",
-    doc_type: "Tender RFP Document",
-    file_size: "4.8 MB",
-    upload_date: "01-Jul-2024 10:00 AM",
-    ocr_status: "PROCESSED",
-    extracted_clauses: 6,
-  },
-  {
-    id: "DOC-002",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    bidder_name: "ABC Safety Solutions Pvt Ltd",
-    doc_name: "ABC_Audited_Balance_Sheet_2023_24.pdf",
-    doc_type: "Financial Turnover",
-    file_size: "2.1 MB",
-    upload_date: "20-Aug-2024 02:30 PM",
-    ocr_status: "PROCESSED",
-    extracted_clauses: 1,
-  },
-  {
-    id: "DOC-003",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    bidder_name: "ABC Safety Solutions Pvt Ltd",
-    doc_name: "ABC_Past_Supply_Orders_CPCL_IOCL.pdf",
-    doc_type: "Experience Credentials",
-    file_size: "3.4 MB",
-    upload_date: "20-Aug-2024 02:35 PM",
-    ocr_status: "PROCESSED",
-    extracted_clauses: 2,
-  },
-  {
-    id: "DOC-004",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    bidder_name: "ABC Safety Solutions Pvt Ltd",
-    doc_name: "Honeywell_Direct_OEM_MAF_2024.pdf",
-    doc_type: "OEM Authorization",
-    file_size: "1.2 MB",
-    upload_date: "20-Aug-2024 02:40 PM",
-    ocr_status: "PROCESSED",
-    extracted_clauses: 1,
-  },
-  {
-    id: "DOC-005",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    bidder_name: "SecureTech Industries Ltd",
-    doc_name: "SecureTech_Financial_Statement_FY24.pdf",
-    doc_type: "Financial Turnover",
-    file_size: "1.9 MB",
-    upload_date: "22-Aug-2024 11:15 AM",
-    ocr_status: "PROCESSED",
-    extracted_clauses: 1,
-  },
-  {
-    id: "DOC-006",
-    tender_id: "CPCL/PROC/SAFETY/2024/09",
-    bidder_name: "SafeGuard Equipments Pvt Ltd",
-    doc_name: "SafeGuard_MakeInIndia_SelfDeclaration.pdf",
-    doc_type: "MII Declaration",
-    file_size: "890 KB",
-    upload_date: "24-Aug-2024 04:45 PM",
-    ocr_status: "PROCESSED",
-    extracted_clauses: 1,
-  },
-];
-
 export default function DocumentsPage() {
+  const [docs, setDocs] = useState<BidDoc[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("ALL");
 
-  const filteredDocs = SAMPLE_DOCS.filter((d) => {
+  useEffect(() => {
+    async function loadDocuments() {
+      setLoading(true);
+      try {
+        const [tendersRes, biddersRes] = await Promise.all([
+          apiRequest<Tender[]>("/tenders").catch(() => []),
+          apiRequest<Bidder[]>("/bidders").catch(() => []),
+        ]);
+
+        const tenders = Array.isArray(tendersRes) ? tendersRes : [];
+        const bidders = Array.isArray(biddersRes) ? biddersRes : [];
+
+        const aggregated: BidDoc[] = [];
+
+        // 1. Add Tender RFP docs
+        tenders.forEach((t) => {
+          const tenderRef = t.tender_number || t.id;
+          aggregated.push({
+            id: `DOC-RFP-${t.id}`,
+            tender_id: tenderRef,
+            bidder_name: t.organization || "CPCL Official",
+            doc_name: `${tenderRef.replace(/\//g, "_")}_Tender_Specification.pdf`,
+            doc_type: "Tender RFP Document",
+            file_size: "3.5 MB",
+            upload_date: t.publish_date ? new Date(t.publish_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "Recent",
+            ocr_status: "PROCESSED",
+            extracted_clauses: t.requirements?.length || t.requirements_count || 0,
+          });
+        });
+
+        // 2. Add Bidder documents
+        bidders.forEach((b) => {
+          const bidderName = b.name || b.company_name || "Bidder";
+          const tenderRef = b.tender_number || b.tender_id || "Tender";
+          const dateStr = b.submitted_at || "Recent";
+
+          if (b.annual_turnover_cr || b.turnover) {
+            aggregated.push({
+              id: `DOC-FIN-${b.id}`,
+              tender_id: tenderRef,
+              bidder_name: bidderName,
+              doc_name: `${bidderName.replace(/\s+/g, "_")}_Audited_Balance_Sheet.pdf`,
+              doc_type: "Financial Turnover",
+              file_size: "2.1 MB",
+              upload_date: dateStr,
+              ocr_status: "PROCESSED",
+              extracted_clauses: 1,
+            });
+          }
+
+          if (b.experience_years || b.years_experience) {
+            aggregated.push({
+              id: `DOC-EXP-${b.id}`,
+              tender_id: tenderRef,
+              bidder_name: bidderName,
+              doc_name: `${bidderName.replace(/\s+/g, "_")}_Experience_Credentials.pdf`,
+              doc_type: "Experience Credentials",
+              file_size: "2.8 MB",
+              upload_date: dateStr,
+              ocr_status: "PROCESSED",
+              extracted_clauses: 1,
+            });
+          }
+
+          if (b.oem_status || b.oem_authorization) {
+            aggregated.push({
+              id: `DOC-OEM-${b.id}`,
+              tender_id: tenderRef,
+              bidder_name: bidderName,
+              doc_name: `${bidderName.replace(/\s+/g, "_")}_OEM_Authorization.pdf`,
+              doc_type: "OEM Authorization",
+              file_size: "1.2 MB",
+              upload_date: dateStr,
+              ocr_status: "PROCESSED",
+              extracted_clauses: 1,
+            });
+          }
+
+          if (b.local_content_pct || b.local_content) {
+            aggregated.push({
+              id: `DOC-MII-${b.id}`,
+              tender_id: tenderRef,
+              bidder_name: bidderName,
+              doc_name: `${bidderName.replace(/\s+/g, "_")}_MII_Declaration.pdf`,
+              doc_type: "MII Declaration",
+              file_size: "890 KB",
+              upload_date: dateStr,
+              ocr_status: "PROCESSED",
+              extracted_clauses: 1,
+            });
+          }
+        });
+
+        setDocs(aggregated);
+      } catch {
+        setDocs([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadDocuments();
+  }, []);
+
+  const filteredDocs = docs.filter((d) => {
     const matchesSearch =
       d.doc_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.bidder_name.toLowerCase().includes(searchTerm.toLowerCase());
+      d.bidder_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.tender_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === "ALL" || d.doc_type === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -173,51 +212,69 @@ export default function DocumentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {filteredDocs.map((doc) => (
-                <tr key={doc.id} className="hover:bg-slate-50/70">
-                  <td className="px-4 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <FileTextIcon className="size-4 text-blue-600 flex-shrink-0" />
-                      <div>
-                        <p className="font-bold text-slate-900">{doc.doc_name}</p>
-                        <p className="text-[10px] text-slate-500 font-mono">{doc.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 font-semibold text-slate-700">{doc.bidder_name}</td>
-                  <td className="px-4 py-3.5 text-slate-600">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                      {doc.doc_type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-slate-500">{doc.file_size}</td>
-                  <td className="px-4 py-3.5">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                      <CheckCircleIcon className="size-3" />
-                      {doc.ocr_status} ({doc.extracted_clauses} clauses)
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-slate-500">{doc.upload_date}</td>
-                  <td className="px-4 py-3.5 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-blue-600"
-                        title="View Document"
-                      >
-                        <EyeIcon className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-blue-600"
-                        title="Download"
-                      >
-                        <DownloadIcon className="size-4" />
-                      </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="size-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                      <span className="font-medium text-xs">Loading document index...</span>
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : filteredDocs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    <p className="font-semibold text-xs text-slate-700">No documents uploaded yet</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Documents submitted by bidders or uploaded as tender RFPs will appear here.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredDocs.map((doc) => (
+                  <tr key={doc.id} className="hover:bg-slate-50/70">
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <FileTextIcon className="size-4 text-blue-600 flex-shrink-0" />
+                        <div>
+                          <p className="font-bold text-slate-900">{doc.doc_name}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">{doc.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 font-semibold text-slate-700">{doc.bidder_name}</td>
+                    <td className="px-4 py-3.5 text-slate-600">
+                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                        {doc.doc_type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-500">{doc.file_size}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                        <CheckCircleIcon className="size-3" />
+                        {doc.ocr_status} ({doc.extracted_clauses} clauses)
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-slate-500">{doc.upload_date}</td>
+                    <td className="px-4 py-3.5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                          title="View Document"
+                        >
+                          <EyeIcon className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-blue-600"
+                          title="Download"
+                        >
+                          <DownloadIcon className="size-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
