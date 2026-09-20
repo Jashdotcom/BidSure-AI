@@ -135,14 +135,15 @@ export default function ComparisonPage() {
     return bidders.filter((b) => selectedBidderIds.has(b.id));
   }, [bidders, selectedBidderIds]);
 
-  const remainingToSelect = comparisonCount - selectedBidderIds.size;
+  const remainingToSelect =
+    comparisonCount !== null ? Math.max(0, comparisonCount - selectedBidderIds.size) : 0;
 
   function toggleBidderSelection(id: string) {
     const newSet = new Set(selectedBidderIds);
     if (newSet.has(id)) {
       newSet.delete(id);
     } else {
-      if (newSet.size < comparisonCount) {
+      if (comparisonCount !== null && newSet.size < comparisonCount) {
         newSet.add(id);
       }
     }
@@ -461,7 +462,8 @@ export default function ComparisonPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filteredBidders.map((b) => {
                     const isSelected = selectedBidderIds.has(b.id);
-                    const isDisabled = !isSelected && selectedBidderIds.size >= comparisonCount;
+                    const isDisabled =
+                      !isSelected && comparisonCount !== null && selectedBidderIds.size >= comparisonCount;
 
                     return (
                       <div
@@ -530,8 +532,8 @@ export default function ComparisonPage() {
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
-                  disabled={remainingToSelect > 0}
-                  className={remainingToSelect === 0 ? "bg-blue-700 hover:bg-blue-800 shadow-md ring-2 ring-offset-1 ring-blue-500/50" : ""}
+                  disabled={comparisonCount === null || remainingToSelect > 0}
+                  className={comparisonCount !== null && remainingToSelect === 0 ? "bg-blue-700 hover:bg-blue-800 shadow-md ring-2 ring-offset-1 ring-blue-500/50" : ""}
                 >
                   <ScaleIcon className="size-4" />
                   Generate Comparison Matrix
