@@ -61,6 +61,14 @@ export default function AITenderAnalyzePage() {
   const [evidenceModalReq, setEvidenceModalReq] = useState<ExtractedRequirement | null>(null);
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState<boolean>(false);
   const [finalizeNotes, setFinalizeNotes] = useState<string>("");
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
+
+  const toggleDescription = (id: string) => {
+    setExpandedDescriptions((prev) => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
   // New requirement form state
   const [newReqForm, setNewReqForm] = useState({
@@ -1135,7 +1143,20 @@ export default function AITenderAnalyzePage() {
 
                     <div>
                       <h3 className="text-base font-bold text-slate-900 dark:text-white">{req.name}</h3>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">{req.description}</p>
+                      <div className="mt-1">
+                        <p className={`text-sm text-slate-600 dark:text-slate-300 leading-relaxed ${!expandedDescriptions[req.id] && (req.description?.length || 0) > 220 ? "line-clamp-2" : ""}`}>
+                          {req.description}
+                        </p>
+                        {(req.description?.length || 0) > 220 && (
+                          <button
+                            type="button"
+                            onClick={() => toggleDescription(req.id)}
+                            className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline mt-1 block"
+                          >
+                            {expandedDescriptions[req.id] ? "Show less" : "Show more..."}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Threshold & Target Value */}

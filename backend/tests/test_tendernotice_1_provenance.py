@@ -270,3 +270,165 @@ Clause {p}.1: Standard contractual terms for procurement at IIT Guwahati.
 
     print("  ✓ Integration Test Passed: Exact defect clause on Page 11 correctly extracted as 10.0 Crore INR (never 31.0).")
 
+
+def test_concise_specifications_and_no_cross_contamination():
+    """
+    Verifies that requirement specifications are concise (1-2 sentences) and contain
+    ZERO cross-requirement contamination across all extracted criteria.
+    """
+    token = get_officer_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    pdf_bytes = create_17_page_cppp_nit_pdf()
+    files = {"file": ("Tendernotice_Conciseness_Test.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+    resp = client.post("/tenders/upload-document", headers=headers, files=files)
+    assert resp.status_code == 200
+
+    data = resp.json()
+    requirements = data["requirements"]
+
+    for r in requirements:
+        desc = r["description"]
+        # Must not be an entire huge paragraph or dump
+        assert len(desc) < 350, f"Description too verbose for {r['name']}: {desc}"
+        assert not desc.startswith("Requirement specification: Section"), f"Raw block header leaked into description for {r['name']}"
+
+    # 1. Udyam: Strictly Udyam / MSME and MSE benefits (zero mention of ₹11 Lakhs, GSTIN, PAN, or blacklisting)
+    udyam = next(r for r in requirements if r["code"] == "STAT_UDYAM_MSME")
+    udyam_desc = udyam["description"].lower()
+    assert "udyam" in udyam_desc or "msme" in udyam_desc
+    assert "11,00,000" not in udyam_desc and "eleven lakhs" not in udyam_desc
+    assert "gstin" not in udyam_desc and "pan" not in udyam_desc
+    assert "blacklisted" not in udyam_desc
+
+    # 2. Turnover: Strictly turnover amount and timeframe (zero mention of blacklisting, GST, or Assam office)
+    turnover = next(r for r in requirements if r["code"] == "TURNOVER_MIN")
+    turnover_desc = turnover["description"].lower()
+    assert "turnover" in turnover_desc
+    assert "10" in turnover_desc
+    assert "blacklisted" not in turnover_desc
+    assert "gstin" not in turnover_desc
+    assert "firewall" not in turnover_desc
+
+    # 3. GST: Strictly GST & GSTR-3B compliance (zero mention of PAN or turnover)
+    gst = next(r for r in requirements if r["code"] == "STAT_GST_REG")
+    gst_desc = gst["description"].lower()
+    assert "gst" in gst_desc
+    assert "turnover" not in gst_desc
+    assert "permanent account number" not in gst_desc
+
+    # 4. Debarment: Strictly non-blacklisting / affidavit (zero mention of turnover, local content, or EMD)
+    blacklisting = next(r for r in requirements if r["code"] == "VIG_NON_BLACKLISTED")
+    black_desc = blacklisting["description"].lower()
+    assert "blacklisted" in black_desc or "debarred" in black_desc
+    assert "turnover" not in black_desc
+    assert "local content" not in black_desc
+    assert "11,00,000" not in black_desc
+
+    print("  ✓ Verification Passed: Zero cross-requirement contamination detected across all criteria cards.")
+
+
+def test_granular_technical_specifications_splitting():
+    """
+    Verifies that complex technical specification clauses are split into discrete,
+    independently testable technical requirements (throughput, sessions, connection rate, VPN, VDOMs, safety).
+    """
+    import fitz
+    token = get_officer_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    doc = fitz.open()
+    for p in range(1, 18):
+        page = doc.new_page(width=595, height=842)
+        if p == 1:
+            text = """INDIAN INSTITUTE OF TECHNOLOGY GUWAHATI
+NOTICE INVITING TENDER (NIT)
+Tender Reference No: EPT/SNP/CC/EQT-26.1130
+Tender ID: 2026_IITG_925833_1
+Title: Supply and installation of Next Generation Firewall Solution at IIT Guwahati
+"""
+        elif p == 3:
+            text = """SECTION II: EMD
+Clause 2.1: EMD Amount: ₹ 11,00,000 (Eleven Lakhs Only).
+"""
+        elif p == 4:
+            text = """SECTION II: MSE EXEMPTION
+Clause 2.4: Bidders claiming EMD exemption must submit valid Udyam Registration Certificate.
+"""
+        elif p == 5:
+            text = """SECTION III: STATUTORY
+Clause 3.2: Valid GST Registration Certificate with latest GSTR-3B return.
+Clause 3.3: Permanent Account Number (PAN) issued by Income Tax Department.
+"""
+        elif p == 7:
+            text = """SECTION V: TECHNICAL SPECIFICATIONS FOR NEXT GEN FIREWALL
+Clause 5.1: Minimum threat protection throughput of 30 Gbps under full enterprise inspection.
+Clause 5.2: Minimum 5 Million concurrent sessions supported simultaneously.
+Clause 5.3: Minimum 250,000 new sessions per second connection processing rate.
+Clause 5.4: Support for at least 10,000 simultaneous VPN users across IPsec and SSL tunnels.
+Clause 5.5: Minimum 10 virtual systems (VDOMs) for multi-tenant network partitioning.
+Clause 5.6: Valid product safety certificates and laboratory performance test reports from NABL / BIS accredited testing laboratories.
+"""
+        elif p == 11:
+            text = """SECTION VII: ELIGIBILITY CRITERIA
+Clause 7.1: Minimum average annual financial turnover of INR 10 Crore during the last 3 financial years.
+Clause 7.2: OEM Authorization Certificate (MAF) from OEM.
+Clause 7.3: Minimum 50% Class-I Local Content.
+Clause 7.4: Experience of successfully completing at least 2 similar enterprise firewall projects.
+Clause 7.5: The bidder must not be blacklisted or debarred by any Central / State Government agency or PSU.
+"""
+        else:
+            text = f"SECTION {p}: GENERAL TERMS AND CONDITIONS\nStandard terms for procurement at IIT Guwahati.\n"
+        page.insert_text((50, 72), text, fontsize=10)
+
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    files = {"file": ("Tendernotice_Granular_Tech_Specs.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+    resp = client.post("/tenders/upload-document", headers=headers, files=files)
+    assert resp.status_code == 200
+
+    data = resp.json()
+    requirements = data["requirements"]
+
+    # 1. Throughput (30 Gbps)
+    tp = next((r for r in requirements if r["code"] == "TECH_THROUGHPUT"), None)
+    assert tp is not None, "Missing TECH_THROUGHPUT requirement"
+    assert tp["source_page"] == 7
+    assert tp["threshold_value"] == 30.0
+    assert tp["unit"] == "Gbps"
+    assert "30 gbps" in tp["evidence_text"].lower()
+
+    # 2. Concurrent Sessions (5 Million Sessions)
+    cs = next((r for r in requirements if r["code"] == "TECH_CONCURRENT_SESSIONS"), None)
+    assert cs is not None, "Missing TECH_CONCURRENT_SESSIONS requirement"
+    assert cs["source_page"] == 7
+    assert cs["threshold_value"] == 5.0
+    assert "million" in cs["unit"].lower()
+
+    # 3. Session Rate (250,000 Sessions/sec)
+    sr = next((r for r in requirements if r["code"] == "TECH_SESSION_RATE"), None)
+    assert sr is not None, "Missing TECH_SESSION_RATE requirement"
+    assert sr["source_page"] == 7
+    assert sr["threshold_value"] == 250000.0
+
+    # 4. VPN Users (10,000 Users)
+    vpn = next((r for r in requirements if r["code"] == "TECH_VPN_CAPACITY"), None)
+    assert vpn is not None, "Missing TECH_VPN_CAPACITY requirement"
+    assert vpn["source_page"] == 7
+    assert vpn["threshold_value"] == 10000.0
+
+    # 5. Virtual Systems (10 Virtual Systems)
+    vs = next((r for r in requirements if r["code"] == "TECH_VIRTUAL_SYSTEMS"), None)
+    assert vs is not None, "Missing TECH_VIRTUAL_SYSTEMS requirement"
+    assert vs["source_page"] == 7
+    assert vs["threshold_value"] == 10
+
+    # 6. Safety & Test Reports
+    safety = next((r for r in requirements if r["code"] == "QUAL_SAFETY_CERTIFICATES"), None)
+    assert safety is not None
+    assert safety["source_page"] == 7
+
+    print("  ✓ Technical Specifications Granular Splitting Passed: All 6 technical parameters extracted cleanly on Page 7.")
+
+
