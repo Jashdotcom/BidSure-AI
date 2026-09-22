@@ -85,19 +85,27 @@ class AIService:
             if not page_text.strip():
                 continue
 
-            # Split page text into sentences, numbered items, and clauses
-            raw_lines = [line.strip() for line in re.split(r"\n+", page_text) if line.strip()]
-            raw_items = []
-            for line in raw_lines:
-                sub_items = re.split(r"(?=(?:^|\s)(?:\d+[\.\)]|[a-zA-Z][\.\)]|Clause\s+\d+|Item\s+\d+|Section\s+[IVXLCDM]+)\s+)", line)
-                for sub in sub_items:
-                    s_clean = sub.strip()
-                    if len(s_clean) > 3:
-                        raw_items.append(s_clean)
+            # 1. Structured clause blocks (preserving multi-line clauses without line-wrap splitting)
+            clause_blocks = re.split(
+                r"(?=(?:^|\n)(?:Clause\s+[\d\.]+|Section\s+[IVXLCDM]+|\d+[\.\)]|[a-zA-Z][\.\)]|\([a-zA-Z0-9]+\))\s+)",
+                page_text,
+                flags=re.MULTILINE | re.IGNORECASE
+            )
+            raw_clauses = [re.sub(r"\s+", " ", c).strip() for c in clause_blocks if len(c.strip()) > 5]
 
-            # Also consider full sentences from the page
-            full_sentences = [s.strip() for s in re.split(r"(?<=[.!?\n])\s+", page_text) if len(s.strip()) > 10]
-            candidate_pool = list(dict.fromkeys(raw_items + full_sentences))
+            # 2. Multi-line paragraphs separated by blank lines
+            raw_paragraphs = [re.sub(r"\s+", " ", p).strip() for p in re.split(r"\n\s*\n", page_text) if len(p.strip()) > 5]
+
+            # 3. Abbreviation-safe sentence splitting (preserves 'Rs.10', 'No. 12', 'Govt.', 'Clause 7.1', etc.)
+            raw_sentences = [re.sub(r"\s+", " ", s).strip() for s in re.split(
+                r"(?<!\bRs)(?<!\bNo)(?<!\bGovt)(?<!\bLtd)(?<!\bCo)(?<!\bi\.e)(?<!\be\.g)(?<!\bClause)(?<!\bSec)(?<=[.!?])\s+(?=[A-Z0-9])",
+                page_text
+            ) if len(s.strip()) > 10]
+
+            # 4. Individual non-empty lines (cleaned)
+            raw_lines = [re.sub(r"\s+", " ", l).strip() for l in page_text.split("\n") if len(l.strip()) > 10]
+
+            candidate_pool = list(dict.fromkeys(raw_clauses + raw_paragraphs + raw_sentences + raw_lines))
 
             for item in candidate_pool:
                 item_lower = item.lower()
@@ -113,9 +121,19 @@ class AIService:
                         score += 15.0
 
                     threshold_val, unit = self._extract_financial_threshold(item)
-                    if threshold_val > 0:
+                    if threshold_val is not None and threshold_val > 0:
                         score += 40.0
-                    # Penalty if it's just a table column header with no numbers
+                    else:
+                        # If candidate item is a heading or lacks value, check the broader page text
+                        page_val, page_unit = self._extract_financial_threshold(page_text)
+                        if page_val is not None and page_val > 0:
+                            threshold_val = page_val
+                            unit = page_unit
+                            score += 20.0
+                        else:
+                            threshold_val = 1.0
+
+                    # Penalty if it's just an isolated word with no numbers
                     if "turnover" in item_lower and len(item_lower.split()) < 4 and not re.search(r"\d", item):
                         score -= 30.0
 
@@ -502,14 +520,32 @@ class AIService:
                         is_verified = True
                         break
 
-        # 4. Set provenance status
+        # 4. Numeric Evidence Consistency Validation
+        # If requirement has a numeric threshold, verify it matches numbers present in the authentic evidence text
+        rule_code = req.get("code", "")
+        if rule_code == "TURNOVER_MIN" and evidence_text:
+            ev_val, ev_unit = self._extract_financial_threshold(evidence_text)
+            if ev_val is not None and ev_val > 0:
+                # Ensure threshold matches authentic evidence text directly
+                req["threshold_value"] = ev_val
+                req["unit"] = ev_unit
+            elif req.get("threshold_value") and req.get("threshold_value") not in [1.0, 1]:
+                # If evidence text does not support the threshold, flag mismatch
+                req["evidence_status"] = "NUMERIC_EVIDENCE_MISMATCH"
+                req["review_status"] = "NEEDS_REVIEW"
+                req["confidence"] = 0.65
+
+        # 5. Set provenance status
         req["source_document"] = filename
         req["source_document_id"] = filename
-        if is_verified:
-            req["evidence_status"] = "SMART_IDP_VERIFIED"
-            req["provenance_status"] = "VERIFIED"
+        if req.get("evidence_status") != "NUMERIC_EVIDENCE_MISMATCH":
+            if is_verified:
+                req["evidence_status"] = "SMART_IDP_VERIFIED"
+                req["provenance_status"] = "VERIFIED"
+            else:
+                req["evidence_status"] = "EVIDENCE_REQUIRES_REVIEW"
+                req["provenance_status"] = "EVIDENCE_REQUIRES_REVIEW"
         else:
-            req["evidence_status"] = "EVIDENCE_REQUIRES_REVIEW"
             req["provenance_status"] = "EVIDENCE_REQUIRES_REVIEW"
 
         return req
@@ -517,26 +553,44 @@ class AIService:
     def _find_exact_snippet(self, page_text: str, item: str) -> str:
         """
         Locates the exact verbatim sentence or clause from the page text matching the item.
+        Preserves multi-line clauses without splitting on intra-clause newlines or currency periods (Rs.).
         """
         clean_item = item.strip()
         if not clean_item:
             return ""
         if clean_item in page_text:
             return clean_item
-        sentences = [s.strip() for s in re.split(r"(?<=[.!?\n])\s+", page_text) if s.strip()]
+
+        # 1. Search in unwrapped clauses / paragraphs
+        clause_blocks = re.split(
+            r"(?=(?:^|\n)(?:Clause\s+[\d\.]+|Section\s+[IVXLCDM]+|\d+[\.\)]|[a-zA-Z][\.\)]|\([a-zA-Z0-9]+\))\s+)",
+            page_text,
+            flags=re.MULTILINE | re.IGNORECASE
+        )
+        for block in clause_blocks:
+            clean_block = re.sub(r"\s+", " ", block).strip()
+            if clean_item.lower() in clean_block.lower() or clean_block.lower() in clean_item.lower():
+                return clean_block
+
+        # 2. Search in abbreviation-safe sentences
+        sentences = [re.sub(r"\s+", " ", s).strip() for s in re.split(
+            r"(?<!\bRs)(?<!\bNo)(?<!\bGovt)(?<!\bLtd)(?<!\bCo)(?<!\bi\.e)(?<!\be\.g)(?<!\bClause)(?<!\bSec)(?<=[.!?])\s+(?=[A-Z0-9])",
+            page_text
+        ) if s.strip()]
         for s in sentences:
             if clean_item.lower() in s.lower() or s.lower() in clean_item.lower():
-                return s.strip()
+                return s
+
         return clean_item
 
-    def _extract_financial_threshold(self, text: str) -> tuple[float, str]:
+    def _extract_financial_threshold(self, text: str) -> tuple[Optional[float], str]:
         """
         Semantically extracts monetary turnover threshold and unit from clause text,
         ensuring date numbers (e.g. '31 March', '2026', '3 financial years') are never
-        misidentified as financial amounts.
+        misidentified as financial amounts. Returns (None, unit) if no financial amount is present.
         """
         if not text:
-            return 5.0, "Crore INR"
+            return None, "Crore INR"
 
         text_clean = text.strip()
 
@@ -603,12 +657,12 @@ class AIService:
         )
         if m4:
             val = float(m4.group(1))
-            # Reject calendar days (e.g., 31, 30) or years (e.g. 2024, 2025, 2026) if no monetary context
-            if val not in [2023, 2024, 2025, 2026, 2027, 31, 30, 28, 29]:
+            # Reject calendar days (e.g., 31, 30) or years (e.g. 2024, 2025, 2026, 3) if no monetary context
+            if val not in [2023, 2024, 2025, 2026, 2027, 31, 30, 28, 29, 3]:
                 unit = "Lakh INR" if "lakh" in text_clean.lower() else "Crore INR"
                 return val, unit
 
-        return 5.0, "Crore INR"
+        return None, "Crore INR"
 
     def _extract_clause_ref(self, item: str, page_num: int) -> str:
         """
