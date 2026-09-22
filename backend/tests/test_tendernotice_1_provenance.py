@@ -164,3 +164,109 @@ def test_tendernotice_1_17_page_provenance():
     assert "11,00,000" in emd["evidence_text"] or "eleven lakhs" in emd["evidence_text"].lower()
 
     print("\n  ✓ Tendernotice_1.pdf 17-Page Grounding Passed: All 6 requirements derived to exact authentic source pages with verified IDP layout match.")
+
+
+def test_semantic_financial_numeric_extraction_variations():
+    """
+    Unit test verifying that AIService._extract_financial_threshold correctly binds
+    monetary amounts and units without misidentifying date numbers (e.g. 31 March, 2026, 3 years).
+    """
+    from app.services.ai_service import AIService
+    ai = AIService()
+
+    # Case 1: The exact defect clause from user's authentic tender PDF
+    clause_1 = "Annual turnover of the bidder in India for the previous three years, ending 31 March, 2026, should be not less than Rs.10 crores."
+    val_1, unit_1 = ai._extract_financial_threshold(clause_1)
+    assert val_1 == 10.0, f"Expected 10.0, got {val_1}"
+    assert unit_1 == "Crore INR", f"Expected 'Crore INR', got {unit_1}"
+    assert val_1 != 31.0, "Failed: 31 from '31 March' was incorrectly parsed as financial threshold!"
+    assert val_1 != 2026.0, "Failed: 2026 from year was incorrectly parsed as financial threshold!"
+    assert val_1 != 3.0, "Failed: 3 from 'three years' was incorrectly parsed as financial threshold!"
+
+    # Case 2: Rs.5 crore
+    clause_2 = "Minimum turnover of Rs.5 crore per annum over the past 3 financial years ending 31 March 2025."
+    val_2, unit_2 = ai._extract_financial_threshold(clause_2)
+    assert val_2 == 5.0, f"Expected 5.0, got {val_2}"
+    assert unit_2 == "Crore INR"
+
+    # Case 3: Rs.12.50 crores
+    clause_3 = "Average turnover shall be not less than Rs.12.50 crores in the last 3 financial years."
+    val_3, unit_3 = ai._extract_financial_threshold(clause_3)
+    assert val_3 == 12.50, f"Expected 12.50, got {val_3}"
+    assert unit_3 == "Crore INR"
+
+    # Case 4: INR 3.00 Crore
+    clause_4 = "The average annual financial turnover of the bidder during the last three financial years shall not be less than INR 3.00 Crore."
+    val_4, unit_4 = ai._extract_financial_threshold(clause_4)
+    assert val_4 == 3.0, f"Expected 3.0, got {val_4}"
+    assert unit_4 == "Crore INR"
+
+    # Case 5: ₹5.00 Crore
+    clause_5 = "Minimum annual turnover of ₹5.00 Crore over the last 3 financial years."
+    val_5, unit_5 = ai._extract_financial_threshold(clause_5)
+    assert val_5 == 5.0, f"Expected 5.0, got {val_5}"
+    assert unit_5 == "Crore INR"
+
+    # Case 6: Lakhs variation (Rs. 50 Lakhs) with ending date
+    clause_6 = "Minimum average annual turnover: Rs. 50 Lakhs during past 3 financial years ending 31st March 2026."
+    val_6, unit_6 = ai._extract_financial_threshold(clause_6)
+    assert val_6 == 50.0, f"Expected 50.0, got {val_6}"
+    assert unit_6 == "Lakh INR"
+
+    print("  ✓ All semantic financial numeric parsing variations passed with 100% precision.")
+
+
+def test_tendernotice_1_exact_defect_clause_integration():
+    """
+    End-to-end integration test creating a 17-page NIT with the exact defect clause
+    on Page 11 and asserting that the extracted requirement has threshold_value = 10.0 and unit = 'Crore INR'.
+    """
+    import fitz
+    token = get_officer_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    doc = fitz.open()
+    for p in range(1, 18):
+        page = doc.new_page(width=595, height=842)
+        if p == 1:
+            text = """INDIAN INSTITUTE OF TECHNOLOGY GUWAHATI
+NOTICE INVITING TENDER (NIT)
+Tender Reference No: EPT/SNP/CC/EQT-26.1130
+Tender ID: 2026_IITG_925833_1
+Title: Supply and installation of Next Generation Firewall Solution at IIT Guwahati
+"""
+        elif p == 11:
+            text = """SECTION VII: ELIGIBILITY & QUALIFICATION CRITERIA
+Clause 7.1: Annual turnover of the bidder in India for the previous three years, ending 31 March, 2026, should be not less than Rs.10 crores.
+Clause 7.2: OEM Authorization Certificate (Manufacturer Authorization Form - MAF) from OEM.
+Clause 7.3: Minimum 50% Class-I Local Content under Public Procurement (Preference to Make in India) Order.
+Clause 7.4: Experience of successfully completing at least 2 similar enterprise firewall projects in Central Govt/IITs/PSUs.
+Clause 7.5: The bidder must not be blacklisted or debarred by any Central / State Government agency or PSU.
+"""
+        else:
+            text = f"""SECTION {p}: GENERAL TERMS AND CONDITIONS
+Clause {p}.1: Standard contractual terms for procurement at IIT Guwahati.
+"""
+        page.insert_text((50, 72), text, fontsize=10)
+
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    files = {"file": ("Tendernotice_Defect_Verification.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+    resp = client.post("/tenders/upload-document", headers=headers, files=files)
+    assert resp.status_code == 200, f"Upload failed: {resp.text}"
+
+    data = resp.json()
+    requirements = data["requirements"]
+
+    turnover = next(r for r in requirements if r["code"] == "TURNOVER_MIN")
+    assert turnover["source_page"] == 11, f"Expected Page 11, got {turnover['source_page']}"
+    assert turnover["threshold_value"] == 10.0, f"Expected 10.0, got {turnover['threshold_value']}"
+    assert turnover["threshold_value"] != 31.0, "CRITICAL ERROR: Extracted 31 instead of 10!"
+    assert turnover["unit"] == "Crore INR"
+    assert "Rs.10 crores" in turnover["evidence_text"] or "10 crores" in turnover["evidence_text"]
+    assert turnover["evidence_status"] == "SMART_IDP_VERIFIED"
+    assert turnover["provenance_status"] == "VERIFIED"
+
+    print("  ✓ Integration Test Passed: Exact defect clause on Page 11 correctly extracted as 10.0 Crore INR (never 31.0).")
+

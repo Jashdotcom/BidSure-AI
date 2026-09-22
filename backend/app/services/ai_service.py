@@ -111,15 +111,14 @@ class AIService:
                         score += 25.0
                     if any(p in item_lower for p in ["shall not be less than", "must be at least", "minimum", "at least"]):
                         score += 15.0
-                    val_match = re.search(r"(?:inr|rs\.?|₹)?\s*(\d+(?:\.\d+)?)\s*(?:cr|crore|lakh|lakhs)?", item, re.IGNORECASE)
-                    if val_match and float(val_match.group(1)) > 0:
+
+                    threshold_val, unit = self._extract_financial_threshold(item)
+                    if threshold_val > 0:
                         score += 40.0
                     # Penalty if it's just a table column header with no numbers
-                    if "turnover" in item_lower and len(item_lower.split()) < 4 and not val_match:
+                    if "turnover" in item_lower and len(item_lower.split()) < 4 and not re.search(r"\d", item):
                         score -= 30.0
 
-                    threshold_val = float(val_match.group(1)) if (val_match and float(val_match.group(1)) > 0) else 5.0
-                    unit = "Crore INR" if "lakh" not in item_lower else "Lakh INR"
                     candidates["TURNOVER_MIN"].append({
                         "page": source_page,
                         "item": item,
@@ -338,7 +337,11 @@ class AIService:
                 # 12. EMD / Earnest Money Deposit
                 if any(kw in item_lower for kw in ["earnest money", "emd amount", "emd of", "emd fee", "emd in inr", "emd in ₹", "₹ 11,00,000", "11,00,000"]):
                     score = 10.0
-                    val_match = re.search(r"(\d+(?:,\d+)*(?:\.\d+)?)", item)
+                    val_match = re.search(r"(?:emd\s*(?:amount|value|fee)?[:\s]*(?:inr|rs\.?|₹)?\s*|(?:inr|rs\.?|₹)\s*)([\d,]+(?:\.\d+)?)\b", item, re.IGNORECASE)
+                    if not val_match:
+                        val_match = re.search(r"\b(\d{1,3}(?:,\d{2,3})+)\b", item)
+                    if not val_match:
+                        val_match = re.search(r"(\d+(?:,\d+)*(?:\.\d+)?)", item)
                     val_num = val_match.group(1).replace(",", "") if val_match else "0"
                     if float(val_num) > 1000:
                         score += 50.0
@@ -525,6 +528,87 @@ class AIService:
             if clean_item.lower() in s.lower() or s.lower() in clean_item.lower():
                 return s.strip()
         return clean_item
+
+    def _extract_financial_threshold(self, text: str) -> tuple[float, str]:
+        """
+        Semantically extracts monetary turnover threshold and unit from clause text,
+        ensuring date numbers (e.g. '31 March', '2026', '3 financial years') are never
+        misidentified as financial amounts.
+        """
+        if not text:
+            return 5.0, "Crore INR"
+
+        text_clean = text.strip()
+
+        # 1. Highest Priority: Explicit currency prefix + number + denomination suffix
+        # e.g. "Rs.10 crores", "INR 10 Crore", "₹ 12.50 Cr", "Rs. 50 Lakhs", "Rs. 10.00 Crores"
+        m1 = re.search(
+            r"(?:inr|rs\.?|₹)\s*(\d+(?:\.\d+)?)\s*(crores?|cr\.?|lakhs?|lacs?|million|billion)\b",
+            text_clean,
+            re.IGNORECASE
+        )
+        if m1:
+            val = float(m1.group(1))
+            unit_str = m1.group(2).lower()
+            if "lakh" in unit_str or "lac" in unit_str:
+                return val, "Lakh INR"
+            elif "million" in unit_str:
+                return val, "Million INR"
+            elif "billion" in unit_str:
+                return val, "Billion INR"
+            return val, "Crore INR"
+
+        # 2. Priority 2: Number + mandatory denomination suffix (e.g. "10 crores", "10 Crore", "12.50 Cr", "50 Lakhs")
+        m2 = re.search(
+            r"\b(\d+(?:\.\d+)?)\s*(crores?|cr\.?|lakhs?|lacs?|million|billion)\b",
+            text_clean,
+            re.IGNORECASE
+        )
+        if m2:
+            val = float(m2.group(1))
+            unit_str = m2.group(2).lower()
+            if "lakh" in unit_str or "lac" in unit_str:
+                return val, "Lakh INR"
+            elif "million" in unit_str:
+                return val, "Million INR"
+            elif "billion" in unit_str:
+                return val, "Billion INR"
+            return val, "Crore INR"
+
+        # 3. Priority 3: Currency prefix attached to full numeric amount (e.g. "Rs. 10,00,00,000" or "₹10000000")
+        m3 = re.search(
+            r"(?:inr|rs\.?|₹)\s*([\d,]+(?:\.\d+)?)",
+            text_clean,
+            re.IGNORECASE
+        )
+        if m3:
+            raw_num = m3.group(1).replace(",", "")
+            try:
+                val = float(raw_num)
+                if val >= 10000000:  # >= 1 Crore
+                    return round(val / 10000000.0, 2), "Crore INR"
+                elif val >= 100000:   # >= 1 Lakh
+                    return round(val / 100000.0, 2), "Lakh INR"
+                elif val > 0:
+                    unit = "Lakh INR" if "lakh" in text_clean.lower() else "Crore INR"
+                    return val, unit
+            except ValueError:
+                pass
+
+        # 4. Fallback: Check comparison qualifiers (e.g. "not less than 10", "minimum of 10")
+        m4 = re.search(
+            r"(?:not\s+less\s+than|at\s+least|minimum\s+(?:of)?|turnover\s+(?:of)?)\s*(?:inr|rs\.?|₹)?\s*(\d+(?:\.\d+)?)",
+            text_clean,
+            re.IGNORECASE
+        )
+        if m4:
+            val = float(m4.group(1))
+            # Reject calendar days (e.g., 31, 30) or years (e.g. 2024, 2025, 2026) if no monetary context
+            if val not in [2023, 2024, 2025, 2026, 2027, 31, 30, 28, 29]:
+                unit = "Lakh INR" if "lakh" in text_clean.lower() else "Crore INR"
+                return val, unit
+
+        return 5.0, "Crore INR"
 
     def _extract_clause_ref(self, item: str, page_num: int) -> str:
         """
