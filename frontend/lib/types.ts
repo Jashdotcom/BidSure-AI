@@ -289,8 +289,12 @@ export interface ExtractedRequirement {
   confidence: number;
   review_status: RequirementReviewStatus;
   source_document: string;
+  source_document_id?: string;
   source_page: number;
   evidence_text: string;
+  evidence_status?: string;
+  provenance_status?: string;
+  section?: string;
   validation_source?: string;
   weight?: number;
   original_data?: OriginalRequirementData;

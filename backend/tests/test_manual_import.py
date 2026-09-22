@@ -47,8 +47,8 @@ def create_authentic_nit_pdf() -> bytes:
 Central Procurement & Stores Division, Guwahati - 781039, Assam
 
 NOTICE INVITING TENDER (NIT)
-Tender Reference No: EPT/SNP/CC/EQT-26.1130
-Tender ID: 2026_IITG_925833_1
+Tender Reference No: EPT/SNP/CC/EQT-26.1134
+Tender ID: 2026_IITG_925834_1
 Title / Work Description: Supply and installation of Next Generation Firewall Solution at IIT Guwahati
 
 TENDER SCHEDULE & CRITICAL DATES:
@@ -90,7 +90,7 @@ def test_01_import_authentic_manual_tender_pdf():
     tender = data["tender"]
 
     # Verify extracted metadata
-    assert tender["tender_number"] == "2026_IITG_925833_1"
+    assert tender["tender_number"] == "2026_IITG_925834_1"
     assert "Indian Institute of Technology Guwahati" in tender["organization"]
     assert "Next Generation Firewall" in tender["title"]
     assert tender["emd_amount"] == 1100000.0

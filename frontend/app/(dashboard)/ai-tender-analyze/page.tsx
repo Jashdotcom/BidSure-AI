@@ -1307,17 +1307,25 @@ export default function AITenderAnalyzePage() {
 
             <div className="space-y-4 text-sm">
               <div>
-                <span className="text-xs font-semibold text-slate-500 block mb-1">Clause & Title</span>
+                <span className="text-xs font-semibold text-slate-500 block mb-1">Clause & Requirement</span>
                 <p className="font-bold text-slate-900 dark:text-white">
                   {evidenceModalReq.clause_reference}: {evidenceModalReq.name}
                 </p>
               </div>
 
-              <div>
-                <span className="text-xs font-semibold text-slate-500 block mb-1">Source Document & Page</span>
-                <p className="font-mono text-slate-700 dark:text-slate-300">
-                  {evidenceModalReq.source_document} (Page {evidenceModalReq.source_page})
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block mb-1">Source Document & Page</span>
+                  <p className="font-mono text-slate-700 dark:text-slate-300 text-xs">
+                    {evidenceModalReq.source_document} (Page {evidenceModalReq.source_page})
+                  </p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-slate-500 block mb-1">Document Section</span>
+                  <p className="font-medium text-slate-700 dark:text-slate-300 text-xs">
+                    {evidenceModalReq.section || `Page ${evidenceModalReq.source_page} Specification`}
+                  </p>
+                </div>
               </div>
 
               <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-slate-800 dark:text-slate-200 font-mono text-xs leading-relaxed">
@@ -1325,16 +1333,34 @@ export default function AITenderAnalyzePage() {
                 "{evidenceModalReq.evidence_text}"
               </div>
 
+              {/* Provenance Verification Badge */}
+              <div className="pt-2">
+                <span className="text-xs font-semibold text-slate-500 block mb-1.5">Provenance & Grounding Status</span>
+                {evidenceModalReq.evidence_status === "SMART_IDP_VERIFIED" || evidenceModalReq.provenance_status === "VERIFIED" ? (
+                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold text-xs">
+                    <CheckCircle2Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Smart IDP Layout Match Verified — Validated against PDF Page {evidenceModalReq.source_page} OCR text buffer</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-semibold text-xs">
+                    <AlertTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>EVIDENCE_REQUIRES_REVIEW — Evidence could not be automatically confirmed on Page {evidenceModalReq.source_page}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <span>AI Confidence: {(evidenceModalReq.confidence * 100).toFixed(1)}%</span>
-                <span className="font-medium text-emerald-600">Smart IDP Layout Match Verified</span>
+                <span className="font-medium text-slate-600 dark:text-slate-400">
+                  Authority: {evidenceModalReq.validation_source || "Tender Document Analysis"}
+                </span>
               </div>
             </div>
 
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setEvidenceModalReq(null)}
-                className="px-5 py-2.5 bg-slate-900 dark:bg-slate-800 text-white font-semibold rounded-xl text-sm"
+                className="px-5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold rounded-xl text-sm transition"
               >
                 Close Viewer
               </button>

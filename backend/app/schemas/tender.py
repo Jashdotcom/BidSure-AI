@@ -23,10 +23,14 @@ class RequirementSchema(BaseModel):
     constraint_type: Optional[str] = "text"  # boolean, numeric, enum, text, date
     constraint: Optional[Dict[str, Any]] = None
     source_document: Optional[str] = "CPCL_Tender_Safety_Helmets_2026.pdf"
+    source_document_id: Optional[str] = None
     source_page: Optional[int] = 1
     confidence: Optional[float] = 0.95
     review_status: Optional[str] = "VERIFIED"
     evidence_text: Optional[str] = None
+    evidence_status: Optional[str] = "SMART_IDP_VERIFIED"
+    provenance_status: Optional[str] = "VERIFIED"
+    section: Optional[str] = None
     original_data: Optional[Dict[str, Any]] = None
     rejection_reason: Optional[str] = None
     reviewed_by: Optional[str] = None
@@ -46,8 +50,12 @@ class AnalysisRequirementSchema(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
     review_status: str = Field("NEEDS_REVIEW", description="NEEDS_REVIEW, VERIFIED, EDITED, ADDED_MANUALLY, REJECTED")
     source_document: str = "Tender_Document.pdf"
+    source_document_id: Optional[str] = None
     source_page: int = 1
     evidence_text: str = ""
+    evidence_status: Optional[str] = "SMART_IDP_VERIFIED"
+    provenance_status: Optional[str] = "VERIFIED"
+    section: Optional[str] = None
     validation_source: Optional[str] = "Tender Document Analysis"
     weight: int = 10
     original_data: Optional[Dict[str, Any]] = None
