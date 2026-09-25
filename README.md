@@ -32,7 +32,7 @@ Features and architecture may change as development continues.
 
 # 📌 SIH Problem Statement
 
-**Smart India Hackathon 2026 — Problem Statement 4**
+**Smart India Hackathon 2026 — Problem Statement: 26100**
 
 ### AI-Powered Integrated Bid Compliance Verification Platform for GeM Procurement
 
