@@ -49,7 +49,7 @@ The platform aims to reduce the manual effort involved in:
 - Maintaining procurement traceability
 - Generating explainable procurement reports
 
-> **Problem Statement:** SIH 2026 Problem Statement 4
+> **Problem Statement:** SIH 2026 Problem Statement: 26100
 
 ---
 
