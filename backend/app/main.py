@@ -3,6 +3,9 @@ BidSure AI - Main FastAPI Application
 Smart India Hackathon 2024 / SIH26100 - CPCL
 Automated Bid Evaluation & Statutory Compliance Verification System
 """
+from app.config import load_project_env, settings
+load_project_env()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -19,6 +22,7 @@ from app.api import (
     dashboard_router
 )
 from app.data.sample_data import is_demo_mode
+from app.services.ai_providers import get_ai_provider
 
 app = FastAPI(
     title="BidSure AI - CPCL Tender Evaluation API",
@@ -62,6 +66,55 @@ app.include_router(audit_router, prefix="/api")
 app.include_router(bidder_portal_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initializes document store and ensures the authentic 17-page IITG NIT test tender
+    (Tendernotice_1.pdf) is seeded for real document processing and officer review.
+    """
+    try:
+        from app.data.document_store import ensure_seed_documents
+        from app.data.sample_data import get_all_tenders, add_tender
+        seed_docs = ensure_seed_documents()
+        existing_tenders = get_all_tenders()
+        if not any(
+            t.get("tender_number") == "2026_IITG_925833_1"
+            or t.get("id") == "2026_IITG_925833_1"
+            or t.get("tender_id") == "2026_IITG_925833_1"
+            for t in existing_tenders
+        ):
+            doc_hash = seed_docs[0].get("document_hash_sha256") if seed_docs else ""
+            add_tender({
+                "id": "2026_IITG_925833_1",
+                "tender_number": "2026_IITG_925833_1",
+                "ref": "EPT/SNP/CC/EQT-26.1130",
+                "tender_id": "2026_IITG_925833_1",
+                "title": "Supply and installation of Next Generation Firewall Solution at IIT Guwahati",
+                "organization": "Indian Institute of Technology Guwahati",
+                "department": "Central Procurement & Stores Division",
+                "category": "IT Hardware & Software",
+                "status": "PUBLISHED",
+                "estimated_value": 55000000.0,
+                "estimated_value_display": "₹ 5,50,00,000",
+                "emd_amount": 1100000.0,
+                "emd_amount_display": "₹ 11,00,000",
+                "publish_date": "2026-09-15T09:00:00Z",
+                "closing_date": "2026-10-15T18:00:00Z",
+                "deadline": "15 Oct 2026",
+                "bid_opening_date": "2026-10-16T15:00:00Z",
+                "description": "Notice Inviting Tender for supply, installation, testing, and commissioning of Enterprise Next Generation Firewall Solution at IIT Guwahati.",
+                "file_name": "Tendernotice_1.pdf",
+                "document_hash_sha256": doc_hash,
+                "source_type": "OFFICER_UPLOAD",
+                "documents": seed_docs or [],
+                "requirements": [],
+                "bids_count": 0,
+                "verified_count": 0
+            })
+    except Exception as e:
+        pass
+
+
 @app.get("/health", tags=["Health"])
 @app.get("/api/health", tags=["Health"])
 async def health_check():
@@ -74,10 +127,30 @@ async def health_check():
 @app.get("/system/config", tags=["System"])
 @app.get("/api/system/config", tags=["System"])
 async def get_system_config():
+    provider = get_ai_provider()
+    health = await provider.health_check()
     return {
         "demo_mode": is_demo_mode(),
+        "ai_provider": provider.provider_name(),
+        "ai_model": provider.model_name(),
+        "ai_status": health.get("status", "unknown"),
+        "ai_message": health.get("message", ""),
         "service": "BidSure AI Core Backend",
         "version": "1.0.0"
+    }
+
+@app.get("/system/ai-status", tags=["System"])
+@app.get("/api/system/ai-status", tags=["System"])
+async def get_ai_status():
+    provider = get_ai_provider()
+    health = await provider.health_check()
+    return {
+        "provider": provider.provider_name(),
+        "model": provider.model_name(),
+        "status": health.get("status", "unknown"),
+        "message": health.get("message", ""),
+        "base_url": getattr(provider, "_base_url", None),
+        "demo_mode": is_demo_mode(),
     }
 
 @app.get("/", tags=["Root"])

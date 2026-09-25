@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from app.services.tender_sources.base import BaseTenderSourceAdapter
 from app.services.ocr_service import OCRService
 from app.services.ai_service import AIService
+from app.data.sample_data import is_demo_mode
 
 class ManualTenderAdapter(BaseTenderSourceAdapter):
     """
@@ -70,7 +71,7 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
             doc_profile=extracted_data,
             filename=filename
         )
-        if not extracted_requirements:
+        if not extracted_requirements and is_demo_mode():
             extracted_requirements = [
                 {
                     "id": "REQ-001",
@@ -84,6 +85,8 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
                     "weight": 25
                 }
             ]
+        elif not extracted_requirements:
+            extracted_requirements = []
 
         # Normalized tender record
         normalized_tender = {

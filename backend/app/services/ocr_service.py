@@ -430,54 +430,6 @@ class OCRService:
             ]
 
         return title, tender_number, org, detected_sections, extra_meta
-        if emd_amount == 0.0 and "11,00,000" in combined_text:
-            emd_amount = 1100000.0
-
-        # 5. Estimated Value detection (handling NA)
-        est_value = None
-        if "NA" in combined_text or "N/A" in combined_text or "Not Applicable" in combined_text:
-            est_value = None
-        else:
-            val_match = re.search(r"(?:Tender Value|Estimated Cost|Estimated Value)[\s\w:]*(?:INR|Rs\.?|₹)?\s*([\d,]+(?:\.\d+)?)", combined_text, re.IGNORECASE)
-            if val_match:
-                try:
-                    est_value = float(val_match.group(1).replace(",", ""))
-                except Exception:
-                    pass
-
-        extra_meta = {
-            "emd_amount": emd_amount,
-            "estimated_value": est_value
-        }
-
-        # 6. Section detection across pages
-        detected_sections = []
-        section_patterns = [
-            (r"(?:Section\s*I|Notice\s*Inviting\s*Tender|NIT)", "Section I: Notice Inviting Tender (NIT)", "NOTICE"),
-            (r"(?:Section\s*II|Pre-?Qualification|PQC|Eligibility)", "Section II: Pre-Qualification Criteria (PQC)", "ELIGIBILITY"),
-            (r"(?:Section\s*III|Technical\s*Specifications|Scope\s*of\s*Supply)", "Section III: Technical Specifications", "TECHNICAL"),
-            (r"(?:Section\s*IV|Commercial|General\s*Conditions|GCC)", "Section IV: Commercial Terms & Conditions", "COMMERCIAL"),
-            (r"(?:Section\s*V|Statutory|Make\s*in\s*India|MII|Integrity)", "Section V: Statutory & Compliance Requirements", "STATUTORY"),
-        ]
-
-        for idx, page in enumerate(extracted_pages):
-            p_text = page.get("text", "")
-            for pattern, sec_title, sec_type in section_patterns:
-                if re.search(pattern, p_text, re.IGNORECASE) and not any(s["title"] == sec_title for s in detected_sections):
-                    detected_sections.append({
-                        "title": sec_title,
-                        "page_start": idx + 1,
-                        "page_end": min(idx + 2, total_pages),
-                        "type": sec_type
-                    })
-
-        if not detected_sections:
-            detected_sections = [
-                {"title": "Section I: Notice Inviting Tender", "page_start": 1, "page_end": 1, "type": "NOTICE"},
-                {"title": "Section II: Mandatory Requirements & PQC", "page_start": min(2, total_pages), "page_end": total_pages, "type": "ELIGIBILITY"}
-            ]
-
-        return title, tender_number, org, detected_sections, extra_meta
 
     def _get_safety_ppe_profile(self, filename: str, file_size_kb: int) -> Dict[str, Any]:
         return {

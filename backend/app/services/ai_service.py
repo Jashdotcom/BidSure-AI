@@ -6,10 +6,26 @@ uploaded tender PDFs and bidder documents with source grounding verification.
 from typing import Dict, Any, List, Optional
 import os
 import re
+import logging
+
+from app.services.ai_providers import get_ai_provider, AIProvider
+from app.services.ai_providers.base import (
+    AIProviderUnavailableError,
+    AIModelUnavailableError,
+    AIExtractionError,
+)
+from app.data.sample_data import is_demo_mode
+
+logger = logging.getLogger("bidsure.ai.service")
 
 class AIService:
-    def __init__(self):
-        self.provider = os.getenv("AI_PROVIDER", "mock")
+    def __init__(self, provider: Optional[AIProvider] = None):
+        self.ai_provider: AIProvider = provider or get_ai_provider()
+        self.provider = self.ai_provider.provider_name()
+
+    async def health_check(self) -> Dict[str, Any]:
+        """Delegates health check to active AI provider."""
+        return await self.ai_provider.health_check()
 
     async def extract_tender_requirements(
         self,
@@ -27,14 +43,33 @@ class AIService:
         # 1. If real extracted pages exist in doc_profile, extract dynamically from document pages
         extracted_pages = (doc_profile and doc_profile.get("extracted_pages")) or []
         if extracted_pages and len(extracted_pages) > 0 and any(p.get("text", "").strip() for p in extracted_pages):
-            return self._extract_from_document_pages(extracted_pages, doc_profile or {}, clean_filename)
+            if self.ai_provider.provider_name() == "ollama":
+                raw_candidates = await self.ai_provider.extract_requirements(
+                    pages=extracted_pages,
+                    filename=clean_filename,
+                    metadata=doc_profile
+                )
+                return self._process_llm_candidates(raw_candidates, extracted_pages, doc_profile or {}, clean_filename)
+            else:
+                return self._extract_from_document_pages(extracted_pages, doc_profile or {}, clean_filename)
 
         # 2. If raw tender text string was passed directly
         if tender_text and len(tender_text.strip()) > 0:
             synthetic_pages = [{"page_number": 1, "text": tender_text.strip(), "ocr_confidence": 0.99}]
-            return self._extract_from_document_pages(synthetic_pages, doc_profile or {}, clean_filename)
+            if self.ai_provider.provider_name() == "ollama":
+                raw_candidates = await self.ai_provider.extract_requirements(
+                    pages=synthetic_pages,
+                    filename=clean_filename,
+                    metadata=doc_profile
+                )
+                return self._process_llm_candidates(raw_candidates, synthetic_pages, doc_profile or {}, clean_filename)
+            else:
+                return self._extract_from_document_pages(synthetic_pages, doc_profile or {}, clean_filename)
 
-        # 3. Fallback for preloaded demo presets (only used when no document was uploaded)
+        # 3. Fallback for preloaded demo presets (only allowed when DEMO_MODE=true and no document was uploaded)
+        if not is_demo_mode():
+            raise ValueError("No document pages or text available for analysis and DEMO_MODE is disabled.")
+
         filename_str = clean_filename.lower()
         if "fire" in filename_str:
             return self._extract_fire_safety_requirements(doc_profile)
@@ -46,6 +81,141 @@ class AIService:
             return self._extract_safety_ppe_preset_requirements(doc_profile)
         else:
             return self._extract_generic_requirements(doc_profile)
+
+    def _process_llm_candidates(
+        self,
+        llm_candidates: List[Dict[str, Any]],
+        extracted_pages: List[Dict[str, Any]],
+        doc_profile: Dict[str, Any],
+        filename: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Processes LLM-extracted structured requirement candidates through BidSure's
+        authoritative downstream grounding pipeline:
+        1. Source page bounds checking (1 <= source_page <= total_pages).
+        2. Numeric threshold consistency validation (prevents hallucinations).
+        3. Tightly scoped verbatim evidence quote extraction from actual OCR text buffers.
+        4. Crisp, decision-critical 1-2 sentence specification synthesis.
+        5. Exact snippet & token layout alignment verification (_verify_and_align_evidence_page).
+        """
+        total_pages = max(1, len(extracted_pages))
+        processed_requirements: List[Dict[str, Any]] = []
+
+        RULE_SPECS_MAP = {
+            "TURNOVER_MIN": ("Minimum Average Annual Financial Turnover", "FINANCIAL", "FINANCIAL", 20, "Audited Balance Sheets & CA Certificate"),
+            "EXP_YEARS_MIN": ("Relevant Technical Experience", "TECHNICAL", "TECHNICAL", 20, "Client Experience Certificates & Work Orders"),
+            "EXP_SIMILAR_CONTRACTS": ("Similar Completed Supply Contracts", "TECHNICAL", "TECHNICAL", 20, "Past Work Orders & Client Completion Certificates"),
+            "EXP_MIN_ORDER_VALUE": ("Minimum Single Project / Order Value", "TECHNICAL", "TECHNICAL", 15, "Work Orders & Completion Certificates"),
+            "STAT_PAN_VALID": ("Valid Permanent Account Number (PAN)", "STATUTORY", "STATUTORY", 10, "Income Tax PAN Card Verification"),
+            "STAT_GST_REG": ("Valid GST Registration Certificate", "STATUTORY", "STATUTORY", 10, "GSTN Portal API Verification"),
+            "STAT_UDYAM_MSME": ("Valid Udyam / MSME Registration Certificate", "STATUTORY", "STATUTORY", 10, "Ministry of MSME Udyam Portal"),
+            "OEM_AUTHORIZATION": ("Manufacturer Authorization Form (MAF) / OEM Authorization", "OEM_AUTHORIZATION", "OEM_AUTHORIZATION", 15, "Direct Manufacturer Authorization Certificate"),
+            "MII_LOCAL_CONTENT": ("Make in India (MII) Local Content Requirement", "LOCAL_CONTENT", "LOCAL_CONTENT", 15, "DPIIT Local Content Self-Declaration"),
+            "STAT_EPFO_ESIC": ("Valid EPFO & ESIC Registration Compliance", "STATUTORY", "STATUTORY", 10, "EPFO Unified Portal & ESIC Verification"),
+            "VIG_NON_BLACKLISTED": ("Non-Blacklisting / Debarment Undertaking Declaration", "VIGILANCE", "VIGILANCE", 10, "Bidder Notarized Non-Blacklisting Affidavit"),
+            "QUAL_SAFETY_CERTIFICATES": ("Product Safety Certificates & Test Reports", "QUALITY_COMPLIANCE", "QUALITY_COMPLIANCE", 15, "NABL / BIS Accredited Lab Test Reports"),
+            "TECH_THROUGHPUT": ("Minimum Threat Protection / Network Throughput", "TECHNICAL_SPECIFICATION", "TECHNICAL_SPECIFICATION", 15, "OEM Datasheet & Lab Test Report"),
+            "TECH_CONCURRENT_SESSIONS": ("Minimum Concurrent Sessions Capacity", "TECHNICAL_SPECIFICATION", "TECHNICAL_SPECIFICATION", 15, "OEM Technical Specification Sheet"),
+            "TECH_SESSION_RATE": ("New Sessions Processing Rate", "TECHNICAL_SPECIFICATION", "TECHNICAL_SPECIFICATION", 15, "OEM Performance Benchmark Report"),
+            "TECH_VPN_CAPACITY": ("Simultaneous VPN Users Capacity", "TECHNICAL_SPECIFICATION", "TECHNICAL_SPECIFICATION", 15, "OEM Feature Specification Document"),
+            "TECH_VIRTUAL_SYSTEMS": ("Virtual Systems / Domains Capacity", "TECHNICAL_SPECIFICATION", "TECHNICAL_SPECIFICATION", 10, "OEM Technical Architecture Datasheet"),
+            "COMM_EMD_SECURITY": ("Earnest Money Deposit (EMD) Compliance", "COMMERCIAL", "COMMERCIAL", 10, "Bank Guarantee / EMD Transaction Receipt"),
+        }
+
+        for idx, candidate in enumerate(llm_candidates):
+            rule_code = candidate.get("code", "GENERAL")
+            raw_page = candidate.get("source_page", 1)
+            try:
+                source_page = min(max(1, int(raw_page)), total_pages)
+            except (ValueError, TypeError):
+                source_page = 1
+
+            page_text = extracted_pages[source_page - 1].get("text", "") if (source_page - 1) < len(extracted_pages) else ""
+            raw_evidence = candidate.get("evidence_text", "")
+
+            spec_info = RULE_SPECS_MAP.get(rule_code)
+            if spec_info:
+                default_name, category, req_type, weight, val_source = spec_info
+                name = candidate.get("name") or default_name
+            else:
+                name = candidate.get("name", f"Requirement {idx+1}")
+                category = candidate.get("category", "GENERAL")
+                req_type = candidate.get("type", "GENERAL")
+                weight = candidate.get("weight", 10)
+                val_source = "Tender Document Analysis"
+
+            # Threshold extraction & validation
+            raw_threshold = candidate.get("threshold_value", 1)
+            raw_unit = candidate.get("unit") or "Valid Document"
+
+            # Numeric Grounding: Ensure financial/EMD thresholds are verified against source page text
+            if rule_code == "TURNOVER_MIN":
+                val, unit = self._extract_financial_threshold(raw_evidence or page_text)
+                if val is not None and val > 0:
+                    best_threshold = val
+                    best_unit = unit
+                else:
+                    best_threshold = raw_threshold
+                    best_unit = raw_unit
+            elif rule_code == "COMM_EMD_SECURITY":
+                emd_match = re.search(r"(?:emd\s*(?:amount|value|fee)?[:\s]*(?:inr|rs\.?|₹)?\s*|(?:inr|rs\.?|₹)\s*)([\d,]+(?:\.\d+)?)\b", raw_evidence or page_text, re.IGNORECASE)
+                if emd_match:
+                    emd_val = float(emd_match.group(1).replace(",", ""))
+                    best_threshold = emd_val
+                    best_unit = "INR"
+                else:
+                    best_threshold = raw_threshold
+                    best_unit = raw_unit or "INR"
+            else:
+                best_threshold = raw_threshold
+                best_unit = raw_unit
+
+            # Tightly scoped verbatim evidence quote from the actual OCR text
+            verbatim_evidence = self._extract_scoped_evidence_quote(
+                page_text=page_text,
+                rule_code=rule_code,
+                raw_item=raw_evidence,
+                threshold_val=best_threshold
+            )
+
+            # Crisp concise description
+            concise_desc = self._generate_concise_specification(
+                rule_code=rule_code,
+                raw_item=raw_evidence or candidate.get("description", name),
+                threshold_val=best_threshold,
+                unit=best_unit,
+                category=category
+            )
+
+            clause_ref = candidate.get("clause_reference") or self._extract_clause_ref(raw_evidence or page_text, source_page)
+
+            req_obj = {
+                "id": f"REQ-{len(processed_requirements)+1:03d}",
+                "code": rule_code,
+                "clause_reference": clause_ref,
+                "name": name,
+                "category": category,
+                "type": req_type,
+                "mandatory": candidate.get("mandatory", True),
+                "description": concise_desc,
+                "threshold_value": best_threshold,
+                "unit": best_unit,
+                "confidence": candidate.get("confidence", 0.95),
+                "review_status": "NEEDS_REVIEW",
+                "source_document": filename,
+                "source_document_id": filename,
+                "source_page": source_page,
+                "evidence_text": verbatim_evidence,
+                "section": f"Page {source_page} Clause Specifications",
+                "validation_source": val_source,
+                "extraction_source": "OLLAMA_LLM",
+                "weight": weight
+            }
+
+            validated_req = self._verify_and_align_evidence_page(req_obj, extracted_pages, filename)
+            processed_requirements.append(validated_req)
+
+        return processed_requirements
 
     def _extract_from_document_pages(
         self,

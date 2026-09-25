@@ -37,7 +37,20 @@ from app.data.sample_data import (
 )
 from app.services.ocr_service import OCRService
 from app.services.ai_service import AIService
+from app.services.ai_providers.base import (
+    AIProviderUnavailableError,
+    AIModelUnavailableError,
+    AIExtractionError,
+)
 from app.services.tender_sources import CPPPTenderAdapter, ManualTenderAdapter
+from app.data.document_store import (
+    save_document,
+    get_document_bytes,
+    get_document_bytes_by_tender,
+    get_document_meta,
+    list_documents_for_tender,
+    associate_document_with_tender,
+)
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/tenders", tags=["Tenders"])
@@ -156,6 +169,26 @@ async def import_manual_tender(
             )
 
     created = add_tender(tender_record)
+
+    # Persist document to durable store and associate with tender
+    target_tender_id = created.get("tender_number") or created.get("id")
+    try:
+        doc_record = save_document(
+            file_bytes=file_bytes,
+            filename=raw_filename,
+            tender_id=target_tender_id,
+            uploaded_by=current_user.get("email", "officer@cpcl.gov.in"),
+            source="MANUAL_IMPORT",
+            metadata={
+                "title": created.get("title"),
+                "organization": created.get("organization"),
+                "estimated_value": created.get("estimated_value"),
+            }
+        )
+        created["documents"] = [doc_record]
+        created["file_name"] = doc_record["filename"]
+    except Exception:
+        pass
 
     add_audit_log({
         "user_email": current_user.get("email", "officer@cpcl.gov.in"),
@@ -738,17 +771,58 @@ async def analyze_tender_document(
     tender_id = payload.tender_id
 
     # 1. Smart OCR / Intelligent Document Processing
+    # Check if we have stored bytes for this tender or filename
+    file_bytes = None
+    if tender_id:
+        doc_data = get_document_bytes_by_tender(tender_id, filename)
+        if doc_data:
+            file_bytes, _ = doc_data
+    if not file_bytes and filename:
+        file_bytes = get_document_bytes(filename)
+
     ocr_service = OCRService()
-    doc_profile = await ocr_service.process_document(file_bytes=None, filename=filename)
+    doc_profile = await ocr_service.process_document(file_bytes=file_bytes, filename=filename)
 
     # 2. AI Requirement Extraction
     ai_service = AIService()
     raw_text = payload.raw_text
-    requirements = await ai_service.extract_tender_requirements(
-        tender_text=raw_text,
-        doc_profile=doc_profile,
-        filename=filename,
-    )
+    try:
+        requirements = await ai_service.extract_tender_requirements(
+            tender_text=raw_text,
+            doc_profile=doc_profile,
+            filename=filename,
+        )
+    except AIProviderUnavailableError as err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_PROVIDER_UNAVAILABLE",
+                "message": err.message or "Local AI provider is unavailable. Start Ollama and ensure the configured model is available.",
+                "provider": err.provider,
+                "status": "UNAVAILABLE"
+            }
+        )
+    except AIModelUnavailableError as err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_MODEL_UNAVAILABLE",
+                "message": err.message or f"Model '{err.model}' is not available in Ollama. Please run 'ollama pull {err.model}'.",
+                "provider": err.provider,
+                "model": err.model,
+                "status": "MODEL_UNAVAILABLE"
+            }
+        )
+    except AIExtractionError as err:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error": "AI_EXTRACTION_VALIDATION_FAILED",
+                "message": err.message or "AI requirement extraction could not be validated against document grounding.",
+                "reason": err.reason,
+                "details": err.details
+            }
+        )
 
     # Ensure all requirements have review_status defaulting to NEEDS_REVIEW
     for r in requirements:
@@ -857,20 +931,93 @@ async def upload_tender_document(
 
     # 4. AI Requirement Extraction
     ai_service = AIService()
-    requirements = await ai_service.extract_tender_requirements(
-        doc_profile=doc_profile, filename=clean_filename
-    )
+    try:
+        requirements = await ai_service.extract_tender_requirements(
+            doc_profile=doc_profile, filename=clean_filename
+        )
+    except AIProviderUnavailableError as err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_PROVIDER_UNAVAILABLE",
+                "message": err.message or "Local AI provider is unavailable. Start Ollama and ensure the configured model is available.",
+                "provider": err.provider,
+                "status": "UNAVAILABLE"
+            }
+        )
+    except AIModelUnavailableError as err:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "AI_MODEL_UNAVAILABLE",
+                "message": err.message or f"Model '{err.model}' is not available in Ollama. Please run 'ollama pull {err.model}'.",
+                "provider": err.provider,
+                "model": err.model,
+                "status": "MODEL_UNAVAILABLE"
+            }
+        )
+    except AIExtractionError as err:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error": "AI_EXTRACTION_VALIDATION_FAILED",
+                "message": err.message or "AI requirement extraction could not be validated against document grounding.",
+                "reason": err.reason,
+                "details": err.details
+            }
+        )
     for r in requirements:
         if not r.get("review_status"):
             r["review_status"] = "NEEDS_REVIEW"
 
-    # 5. Persist Analysis Job
+    # 5. Persist Document in durable Document Store
+    effective_tender_id = tender_id or doc_profile.get("tender_number")
+    doc_record = save_document(
+        file_bytes=file_bytes,
+        filename=clean_filename,
+        tender_id=effective_tender_id,
+        uploaded_by=current_user.get("email", "officer@cpcl.gov.in"),
+        source="OFFICER_UPLOAD",
+        metadata={
+            "content_type": file.content_type or "application/pdf",
+            "title": doc_profile.get("title"),
+            "organization": doc_profile.get("organization"),
+            "total_pages": doc_profile.get("page_count", 1),
+        }
+    )
+
+    if effective_tender_id:
+        associate_document_with_tender(doc_record["document_id"], effective_tender_id)
+        existing_t = get_tender_by_id(effective_tender_id)
+        if existing_t:
+            docs = existing_t.get("documents") or []
+            if not any(d.get("document_id") == doc_record["document_id"] for d in docs):
+                docs.append(doc_record)
+            existing_t["documents"] = docs
+            existing_t["file_name"] = doc_record["filename"]
+            existing_t["document_hash_sha256"] = doc_record["document_hash_sha256"]
+
+    # 6. Audit Trail Logging - Document Upload
+    add_audit_log({
+        "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+        "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+        "action": "TENDER_DOCUMENT_UPLOADED",
+        "entity_type": "TENDER_DOCUMENT",
+        "entity_id": doc_record["document_id"],
+        "details": (
+            f"Tender document '{clean_filename}' ({file_size_kb} KB, SHA-256: {doc_record['document_hash_sha256'][:16]}...) "
+            f"uploaded by {current_user.get('email')} and linked to tender '{effective_tender_id or 'UNLINKED'}'."
+        ),
+        "status": "SUCCESS"
+    })
+
+    # 7. Persist Analysis Job
     job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
-    effective_tender_id = tender_id or doc_profile.get("tender_number") or "TND-2026-001"
+    job_tender_id = effective_tender_id or "TND-2026-001"
     page_count = doc_profile.get("page_count") or 1
     job = create_analysis_job({
         "job_id": job_id,
-        "tender_id": effective_tender_id,
+        "tender_id": job_tender_id,
         "tender_title": doc_profile.get("title", clean_filename),
         "filename": clean_filename,
         "file_size_kb": file_size_kb,
@@ -883,13 +1030,13 @@ async def upload_tender_document(
         "requirements": requirements,
     })
 
-    # 6. Audit Trail Logging
+    # 8. Audit Trail Logging - AI Analysis
     add_audit_log({
         "user_email": current_user.get("email", "officer@cpcl.gov.in"),
         "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
         "action": "TENDER_AI_ANALYSIS_STARTED",
         "entity_type": "TENDER_DOCUMENT",
-        "entity_id": effective_tender_id or clean_filename,
+        "entity_id": job_tender_id or clean_filename,
         "details": (
             f"Custom tender document '{clean_filename}' ({file_size_kb} KB, {page_count} pages) uploaded and analyzed. "
             f"Extracted {len(requirements)} evaluation criteria with {doc_profile.get('ocr_confidence', 0.99)*100:.1f}% OCR confidence."
@@ -917,6 +1064,50 @@ async def upload_tender_document(
         "requirements": requirements,
         "created_at": job.get("created_at") or datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "message": f"Document '{clean_filename}' uploaded and analyzed successfully. {len(requirements)} criteria extracted.",
+    }
+
+
+@router.get("/{tender_id}/documents", response_model=Dict[str, Any])
+async def get_tender_documents(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Retrieves all uploaded and associated document records for a given tender.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender '{tender_id}' not found."
+        )
+
+    docs = list_documents_for_tender(tender_id)
+    # Also check if tender record has inline documents
+    if not docs and tender.get("documents"):
+        docs = tender["documents"]
+    elif not docs and tender.get("file_name"):
+        doc_meta = get_document_meta(tender.get("file_name"))
+        if doc_meta:
+            docs = [doc_meta]
+        else:
+            docs = [{
+                "document_id": f"DOC-{tender_id}",
+                "tender_id": tender_id,
+                "filename": tender.get("file_name"),
+                "file_size_kb": tender.get("file_size_kb", 0),
+                "document_hash_sha256": tender.get("document_hash_sha256", ""),
+                "uploaded_at": tender.get("created_at") or tender.get("publish_date"),
+                "uploaded_by": "officer@cpcl.gov.in",
+                "content_type": "application/pdf",
+                "source": tender.get("source_type", "OFFICER_UPLOAD")
+            }]
+
+    return {
+        "tender_id": tender_id,
+        "tender_title": tender.get("title"),
+        "total_documents": len(docs),
+        "documents": docs
     }
 
 

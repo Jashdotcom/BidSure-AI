@@ -10,6 +10,8 @@ import hashlib
 import threading
 import re
 from datetime import datetime, timezone
+from app.config import load_project_env
+load_project_env()
 
 # Centralized Demo Mode Switch (default: false)
 # When DEMO_MODE=false: live in-memory store starts empty for real procurement data.
@@ -2205,7 +2207,9 @@ def compute_tender_bid_counts(tender: Dict[str, Any]) -> Dict[str, Any]:
         tender_copy["deadline_history"] = []
     if "amendments" not in tender_copy or tender_copy["amendments"] is None:
         tender_copy["amendments"] = list(tender_copy.get("deadline_history") or [])
-    if not tender_copy.get("requirements"):
+    if "requirements" not in tender_copy or tender_copy["requirements"] is None:
+        tender_copy["requirements"] = []
+    if not tender_copy.get("requirements") and is_demo_mode():
         tender_copy["requirements"] = [
             {
                 "id": "REQ-001",

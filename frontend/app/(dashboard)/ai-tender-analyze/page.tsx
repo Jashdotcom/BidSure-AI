@@ -85,13 +85,38 @@ export default function AITenderAnalyzePage() {
   });
 
   const [demoMode, setDemoMode] = useState<boolean>(true);
+  const [aiConfig, setAiConfig] = useState<{
+    ai_provider: string;
+    ai_model: string | null;
+    ai_status: string;
+    ai_message: string;
+  }>({
+    ai_provider: "ollama",
+    ai_model: "qwen3:8b",
+    ai_status: "checking",
+    ai_message: "Checking local AI provider...",
+  });
 
   // Fetch system config and tenders list on mount
   useEffect(() => {
-    apiRequest<{ demo_mode: boolean }>("/system/config")
+    apiRequest<{
+      demo_mode: boolean;
+      ai_provider?: string;
+      ai_model?: string;
+      ai_status?: string;
+      ai_message?: string;
+    }>("/system/config")
       .then((res) => {
         if (res && typeof res.demo_mode === "boolean") {
           setDemoMode(res.demo_mode);
+        }
+        if (res && res.ai_provider) {
+          setAiConfig({
+            ai_provider: res.ai_provider,
+            ai_model: res.ai_model || null,
+            ai_status: res.ai_status || "connected",
+            ai_message: res.ai_message || "",
+          });
         }
       })
       .catch(() => {});
@@ -101,12 +126,16 @@ export default function AITenderAnalyzePage() {
         if (Array.isArray(data)) {
           setTendersList(data);
           if (data.length > 0) {
-            setTargetTenderId(data[0].id || data[0].tender_id || "");
+            const firstT = data[0];
+            const firstId = firstT.id || firstT.tender_id || firstT.tender_number || "";
+            setTargetTenderId(firstId);
+            const initialFilename = firstT.file_name || (demoMode ? "CPCL_Tender_Safety_Helmets_2026.pdf" : "Tendernotice_1.pdf");
+            setSelectedPreset(initialFilename);
           }
         }
       })
       .catch((err) => console.error("Failed to load tenders list:", err));
-  }, []);
+  }, [demoMode]);
 
   const validateAndSelectFile = (file: File): boolean => {
     setErrorMsg(null);
@@ -145,8 +174,14 @@ export default function AITenderAnalyzePage() {
   const handleClearCustomFile = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCustomFile(null);
-    setSelectedPreset("CPCL_Tender_Safety_Helmets_2026.pdf");
-    setTargetTenderId("TND-2026-001");
+    if (tendersList.length > 0) {
+      const firstT = tendersList[0];
+      setSelectedPreset(firstT.file_name || (demoMode ? "CPCL_Tender_Safety_Helmets_2026.pdf" : "Tendernotice_1.pdf"));
+      setTargetTenderId(firstT.id || firstT.tender_id || firstT.tender_number || "");
+    } else {
+      setSelectedPreset(demoMode ? "CPCL_Tender_Safety_Helmets_2026.pdf" : "Tendernotice_1.pdf");
+      setTargetTenderId(demoMode ? "TND-2026-001" : "2026_IITG_925833_1");
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -474,6 +509,51 @@ export default function AITenderAnalyzePage() {
         </div>
       </div>
 
+      {/* AI Provider & LLM Engine Connectivity Status Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-slate-300">
+        <div className="flex items-center gap-3">
+          <span className="font-semibold text-slate-400">AI Provider:</span>
+          <span className="px-2.5 py-0.5 rounded-md bg-slate-800 font-mono text-amber-300 uppercase font-bold tracking-wider">
+            {aiConfig.ai_provider} {aiConfig.ai_model ? `(${aiConfig.ai_model})` : ""}
+          </span>
+          <span className="flex items-center gap-1.5 font-medium">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                aiConfig.ai_status === "connected"
+                  ? "bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"
+                  : aiConfig.ai_status === "mock_mode"
+                  ? "bg-cyan-400"
+                  : "bg-rose-500"
+              }`}
+            />
+            <span
+              className={
+                aiConfig.ai_status === "connected"
+                  ? "text-emerald-400 font-semibold"
+                  : aiConfig.ai_status === "mock_mode"
+                  ? "text-cyan-400 font-semibold"
+                  : aiConfig.ai_status === "model_unavailable"
+                  ? "text-amber-400 font-semibold"
+                  : "text-rose-400 font-semibold"
+              }
+            >
+              {aiConfig.ai_status === "connected"
+                ? "Connected & Ready"
+                : aiConfig.ai_status === "mock_mode"
+                ? "Deterministic Provider Active"
+                : aiConfig.ai_status === "model_unavailable"
+                ? `Model '${aiConfig.ai_model}' Unavailable`
+                : "Local AI Unavailable"}
+            </span>
+          </span>
+        </div>
+        {aiConfig.ai_status !== "connected" && aiConfig.ai_provider === "ollama" && (
+          <span className="text-rose-300/90 text-xs font-mono">
+            {aiConfig.ai_message || "Ensure Ollama is running at http://localhost:11434 with your configured model."}
+          </span>
+        )}
+      </div>
+
       {successMsg && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -629,12 +709,29 @@ export default function AITenderAnalyzePage() {
                   })}
                 </div>
               ) : (
-                <div className="p-8 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-3">
+                <div className="p-8 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
                   <FileTextIcon className="w-10 h-10 text-slate-400 mx-auto" />
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No tender documents available for analysis</h3>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    DEMO_MODE is disabled and no operational tenders are currently loaded in the database. Drag & drop a custom tender PDF document below to run Smart OCR parsing and AI requirement extraction.
-                  </p>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No tender documents available for analysis</h3>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      DEMO_MODE is disabled and no operational tenders are currently loaded in the database. Upload an authentic tender PDF below, or import a tender from CPPP / manual upload.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition inline-flex items-center gap-1.5 shadow-sm"
+                    >
+                      <UploadIcon className="w-4 h-4" /> Upload Tender PDF
+                    </button>
+                    <a
+                      href="/tenders/create"
+                      className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs transition inline-flex items-center gap-1.5"
+                    >
+                      <PlusIcon className="w-4 h-4" /> Create / Import Tender
+                    </a>
+                  </div>
                 </div>
               )}
 
