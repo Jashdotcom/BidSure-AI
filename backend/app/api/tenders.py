@@ -908,6 +908,7 @@ async def upload_tender_document(
         "total_pages": page_count,
         "total_pages_parsed": page_count,
         "pages_detected": page_count,
+        "page_count": page_count,
         "ocr_confidence": doc_profile.get("ocr_confidence", 0.99),
         "document_type": doc_profile.get("document_type", "TENDER_NOTICE_NIT"),
         "organization": doc_profile.get("organization", "Chennai Petroleum Corporation Limited (CPCL)"),

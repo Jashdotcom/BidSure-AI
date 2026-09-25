@@ -432,3 +432,146 @@ Clause 7.5: The bidder must not be blacklisted or debarred by any Central / Stat
     print("  ✓ Technical Specifications Granular Splitting Passed: All 6 technical parameters extracted cleanly on Page 7.")
 
 
+def test_evidence_viewer_fallback_and_extraction_for_all_six_criteria():
+    """
+    Validates that:
+    1. All 6 core criteria (Turnover, GST, Udyam/MSME, Non-Blacklisting, Product Safety, EMD)
+       extract non-empty verbatim evidence and map to their verified source pages.
+    2. Dynamic fallback reconstruction in _verify_and_align_evidence_page recovers authentic
+       verbatim evidence even if candidate evidence_text was initially blank.
+    """
+    import fitz
+    from app.services.ai_service import ai_service
+
+    token = get_officer_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    doc = fitz.open()
+    for p in range(1, 18):
+        page = doc.new_page(width=595, height=842)
+        if p == 1:
+            text = """INDIAN INSTITUTE OF TECHNOLOGY GUWAHATI
+NOTICE INVITING TENDER (NIT)
+Tender Reference No: EPT/SNP/CC/EQT-26.1130
+Tender ID: 2026_IITG_925833_1
+Title: Supply and installation of Next Generation Firewall Solution at IIT Guwahati
+"""
+        elif p == 3:
+            text = """SECTION II: EMD
+Clause 2.1: EMD Amount: ₹ 11,00,000 (Eleven Lakhs Only).
+"""
+        elif p == 4:
+            text = """SECTION II: MSE EXEMPTION
+Clause 2.4: Bidders claiming EMD exemption must submit valid Udyam Registration Certificate.
+"""
+        elif p == 5:
+            text = """SECTION III: STATUTORY
+Clause 3.2: Valid GST Registration Certificate with latest GSTR-3B return.
+Clause 3.3: Permanent Account Number (PAN) issued by Income Tax Department.
+"""
+        elif p == 7:
+            text = """SECTION V: TECHNICAL SPECIFICATIONS FOR NEXT GEN FIREWALL
+Clause 5.1: Minimum threat protection throughput of 30 Gbps under full enterprise inspection.
+Clause 5.2: Minimum 5 Million concurrent sessions supported simultaneously.
+Clause 5.3: Minimum 250,000 new sessions per second connection processing rate.
+Clause 5.4: Support for at least 10,000 simultaneous VPN users across IPsec and SSL tunnels.
+Clause 5.5: Minimum 10 virtual systems (VDOMs) for multi-tenant network partitioning.
+Clause 5.6: Valid product safety certificates and laboratory performance test reports from NABL / BIS accredited testing laboratories.
+"""
+        elif p == 11:
+            text = """SECTION VII: ELIGIBILITY CRITERIA
+Clause 7.1: Minimum average annual financial turnover of INR 10 Crore during the last 3 financial years.
+Clause 7.2: OEM Authorization Certificate (MAF) from OEM.
+Clause 7.3: Minimum 50% Class-I Local Content.
+Clause 7.4: Experience of successfully completing at least 2 similar enterprise firewall projects.
+Clause 7.5: The bidder must not be blacklisted or debarred by any Central / State Government agency or PSU.
+"""
+        else:
+            text = f"SECTION {p}: GENERAL TERMS AND CONDITIONS\nStandard terms for procurement at IIT Guwahati.\n"
+        page.insert_text((50, 72), text, fontsize=10)
+
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    files = {"file": ("Tendernotice_Evidence_Verification.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+    resp = client.post("/tenders/upload-document", headers=headers, files=files)
+    assert resp.status_code == 200
+
+    data = resp.json()
+    requirements = data["requirements"]
+
+    # 1. Turnover: Page 11, INR 10 Crore
+    turnover = next(r for r in requirements if r["code"] == "TURNOVER_MIN")
+    assert turnover["source_page"] == 11
+    assert turnover["threshold_value"] == 10.0
+    assert turnover["evidence_text"] != ""
+    assert "10 crore" in turnover["evidence_text"].lower() or "10" in turnover["evidence_text"]
+    assert turnover.get("provenance_status") in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # 2. GST: Page 5
+    gst = next(r for r in requirements if r["code"] == "STAT_GST_REG")
+    assert gst["source_page"] == 5
+    assert gst["evidence_text"] != ""
+    assert "gst" in gst["evidence_text"].lower()
+    assert gst.get("provenance_status") in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # 3. Udyam: Page 4
+    udyam = next(r for r in requirements if r["code"] == "STAT_UDYAM_MSME")
+    assert udyam["source_page"] == 4
+    assert udyam["evidence_text"] != ""
+    assert "udyam" in udyam["evidence_text"].lower()
+    assert udyam.get("provenance_status") in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # 4. Debarment: Page 11
+    debarment = next(r for r in requirements if r["code"] == "VIG_NON_BLACKLISTED")
+    assert debarment["source_page"] == 11
+    assert debarment["evidence_text"] != ""
+    assert "blacklisted" in debarment["evidence_text"].lower() or "debarred" in debarment["evidence_text"].lower()
+    assert debarment.get("provenance_status") in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # 5. Product Safety: Page 7
+    safety = next(r for r in requirements if r["code"] == "QUAL_SAFETY_CERTIFICATES")
+    assert safety["source_page"] == 7
+    assert safety["evidence_text"] != ""
+    assert "safety" in safety["evidence_text"].lower() or "nabl" in safety["evidence_text"].lower()
+    assert safety.get("provenance_status") in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # 6. EMD: Page 3
+    emd = next(r for r in requirements if r["code"] == "COMM_EMD_SECURITY")
+    assert emd["source_page"] == 3
+    assert emd["threshold_value"] == 1100000.0
+    assert emd["evidence_text"] != ""
+    assert "11,00,000" in emd["evidence_text"] or "eleven lakhs" in emd["evidence_text"].lower()
+    assert emd.get("provenance_status") in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # Test Dynamic Fallback Reconstruction directly
+    mock_pages = [
+        {"page_number": p, "text": doc_text}
+        for p, doc_text in [
+            (3, "Clause 2.1: EMD Amount: ₹ 11,00,000 (Eleven Lakhs Only)."),
+            (4, "Clause 2.4: Bidders claiming EMD exemption must submit valid Udyam Registration Certificate."),
+            (5, "Clause 3.2: Valid GST Registration Certificate with latest GSTR-3B return."),
+            (7, "Clause 5.6: Valid product safety certificates and laboratory performance test reports from NABL / BIS accredited testing laboratories."),
+            (11, "Clause 7.1: Minimum average annual financial turnover of INR 10 Crore during the last 3 financial years.\nClause 7.5: The bidder must not be blacklisted or debarred by any Central / State Government agency or PSU.")
+        ]
+    ]
+
+    blank_req = {
+        "code": "TURNOVER_MIN",
+        "title": "Minimum Average Annual Financial Turnover",
+        "description": "Bidder must have average annual turnover of at least 10 Crore INR.",
+        "source_page": 11,
+        "evidence_text": "",  # Intentionally blank to test dynamic fallback reconstruction
+    }
+
+    reconstructed_req = ai_service._verify_and_align_evidence_page(blank_req, mock_pages, "Tendernotice_Evidence_Verification.pdf")
+    assert reconstructed_req["evidence_text"] != ""
+    assert "turnover" in reconstructed_req["evidence_text"].lower()
+    assert reconstructed_req["provenance_status"] == "VERIFIED"
+    assert reconstructed_req["evidence_status"] == "SMART_IDP_VERIFIED"
+    assert reconstructed_req["threshold_value"] == 10.0
+
+    print("  ✓ Evidence Viewer Fallback and 6-Criteria Extraction Passed: All criteria have authentic, verified verbatim evidence.")
+
+
+
