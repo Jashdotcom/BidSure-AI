@@ -59,6 +59,7 @@ export default function AITenderAnalyzePage() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [evidenceModalReq, setEvidenceModalReq] = useState<ExtractedRequirement | null>(null);
+  const [isModalEvidenceExpanded, setIsModalEvidenceExpanded] = useState<boolean>(false);
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState<boolean>(false);
   const [finalizeNotes, setFinalizeNotes] = useState<string>("");
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
@@ -1351,7 +1352,18 @@ export default function AITenderAnalyzePage() {
 
               <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-slate-800 dark:text-slate-200 font-mono text-xs leading-relaxed">
                 <span className="font-bold text-amber-700 dark:text-amber-400 block mb-1.5">Verbatim PDF Excerpt:</span>
-                "{evidenceModalReq.evidence_text}"
+                <p className={!isModalEvidenceExpanded && (evidenceModalReq.evidence_text?.length || 0) > 300 ? "line-clamp-4" : ""}>
+                  "{evidenceModalReq.evidence_text}"
+                </p>
+                {(evidenceModalReq.evidence_text?.length || 0) > 300 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsModalEvidenceExpanded(!isModalEvidenceExpanded)}
+                    className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline mt-2 inline-block font-sans"
+                  >
+                    {isModalEvidenceExpanded ? "Show less" : "Show more..."}
+                  </button>
+                )}
               </div>
 
               {/* Provenance Verification Badge */}

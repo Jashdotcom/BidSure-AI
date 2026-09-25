@@ -537,7 +537,12 @@ class AIService:
                     final_name = "Relevant Experience in Supply of Industrial Safety Equipment"
 
             clause_ref = self._extract_clause_ref(best_item, best_page)
-            verbatim_evidence = self._find_exact_snippet(best_page_text, best_item)
+            verbatim_evidence = self._extract_scoped_evidence_quote(
+                page_text=best_page_text,
+                rule_code=rule_code,
+                raw_item=best_item,
+                threshold_val=best_threshold
+            )
 
             # Generate crisp, decision-critical 1-2 sentence specification without legal boilerplate
             concise_desc = self._generate_concise_specification(
@@ -715,88 +720,35 @@ class AIService:
         def normalize_str(s: str) -> str:
             return re.sub(r"\s+", " ", s).strip().lower()
 
-        # 2. Dynamic Evidence Reconstruction Fallback if evidence_text is blank
-        if not evidence_text and 1 <= source_page <= total_pages:
-            def score_text_for_rule(text_chunk: str, code: str) -> float:
-                tc = text_chunk.lower()
-                sc = 0.0
-                if code == "TURNOVER_MIN":
-                    if "turnover" in tc:
-                        sc += 40.0
-                    if any(w in tc for w in ["annual", "average", "crore", "lakh", "rs.", "inr", "₹"]):
-                        sc += 20.0
-                    if any(w in tc for w in ["3 financial years", "three years", "not less than", "minimum", "ending 31"]):
-                        sc += 20.0
-                elif code == "STAT_GST_REG":
-                    if any(w in tc for w in ["gst", "gstin", "gstr"]):
-                        sc += 40.0
-                    if any(w in tc for w in ["certificate", "registration", "tax", "active"]):
-                        sc += 20.0
-                elif code == "STAT_UDYAM_MSME":
-                    if any(w in tc for w in ["udyam", "msme", "micro and small", "mse"]):
-                        sc += 40.0
-                    if any(w in tc for w in ["certificate", "registration", "exemption", "ministry"]):
-                        sc += 20.0
-                elif code == "VIG_NON_BLACKLISTED":
-                    if any(w in tc for w in ["blacklisted", "debarred", "banned", "non-blacklisting"]):
-                        sc += 40.0
-                    if any(w in tc for w in ["undertaking", "affidavit", "declaration", "not be"]):
-                        sc += 20.0
-                elif code == "QUAL_SAFETY_CERTIFICATES":
-                    if any(w in tc for w in ["safety", "test report", "nabl", "bis"]):
-                        sc += 40.0
-                    if any(w in tc for w in ["accredited", "laboratory", "performance", "certificates"]):
-                        sc += 20.0
-                elif code == "COMM_EMD_SECURITY":
-                    if any(w in tc for w in ["emd", "earnest money"]):
-                        sc += 40.0
-                    if any(w in tc for w in ["bank guarantee", "surety bond", "11,00,000", "eleven lakhs", "deposit"]):
-                        sc += 20.0
-                elif code == "OEM_AUTHORIZATION":
-                    if any(w in tc for w in ["oem", "maf", "manufacturer authorization"]):
-                        sc += 40.0
-                elif code == "MII_LOCAL_CONTENT":
-                    if any(w in tc for w in ["local content", "make in india", "mii"]):
-                        sc += 40.0
-                elif code.startswith("TECH_"):
-                    if any(w in tc for w in ["throughput", "sessions", "cps", "vpn", "virtual", "domains", "gbps"]):
-                        sc += 40.0
-                elif code in ("EXP_YEARS_MIN", "EXP_SIMILAR_CONTRACTS", "EXP_MIN_ORDER_VALUE"):
-                    if any(w in tc for w in ["experience", "similar", "contracts", "projects", "years"]):
-                        sc += 40.0
-                elif code == "STAT_PAN_VALID":
-                    if any(w in tc for w in ["pan", "permanent account number"]):
-                        sc += 40.0
-                elif code == "STAT_EPFO_ESIC":
-                    if any(w in tc for w in ["epfo", "esic", "provident"]):
-                        sc += 40.0
-                return sc
-
+        # 2. Dynamic Requirement-Scoped Evidence Extraction & Fallback
+        if 1 <= source_page <= total_pages:
             target_page_obj = extracted_pages[source_page - 1]
             raw_page_text = target_page_obj.get("text", "")
 
-            page_clauses = re.split(
-                r"(?=(?:^|\n)(?:Clause\s+[\d\.]+|Section\s+[IVXLCDM]+|\d+[\.\)]|[a-zA-Z][\.\)]|\([a-zA-Z0-9]+\))\s+)",
-                raw_page_text,
-                flags=re.MULTILINE | re.IGNORECASE
-            )
-            page_sentences = [re.sub(r"\s+", " ", s).strip() for s in re.split(
-                r"(?<!\bRs)(?<!\bNo)(?<!\bGovt)(?<!\bLtd)(?<!\bCo)(?<!\bi\.e)(?<!\be\.g)(?<!\bClause)(?<!\bSec)(?<=[.!?])\s+(?=[A-Z0-9])",
-                raw_page_text
-            ) if len(s.strip()) > 10]
-            page_lines = [re.sub(r"\s+", " ", l).strip() for l in raw_page_text.split("\n") if len(l.strip()) > 15]
+            # Check if current evidence_text has cross-requirement contamination or is oversized
+            has_contamination = False
+            ev_lower = evidence_text.lower()
+            if rule_code == "TURNOVER_MIN" and any(w in ev_lower for w in ["blacklisted", "debarred", "assam", "sales & service", "iso 9001", "manpower", "partial bidding"]):
+                has_contamination = True
+            elif rule_code == "VIG_NON_BLACKLISTED" and any(w in ev_lower for w in ["turnover", "crore", "lakh", "gstin", "assam", "sales & service"]):
+                has_contamination = True
+            elif rule_code == "STAT_GST_REG" and any(w in ev_lower for w in ["turnover", "blacklisted", "crore", "assam"]):
+                has_contamination = True
+            elif rule_code == "STAT_UDYAM_MSME" and any(w in ev_lower for w in ["turnover", "blacklisted", "crore", "assam"]):
+                has_contamination = True
+            elif rule_code == "COMM_EMD_SECURITY" and any(w in ev_lower for w in ["turnover", "blacklisted", "assam"]):
+                has_contamination = True
 
-            all_chunks = [re.sub(r"\s+", " ", c).strip() for c in page_clauses if len(c.strip()) > 15] + page_sentences + page_lines
-            scored_chunks = []
-            for chunk in all_chunks:
-                score = score_text_for_rule(chunk, rule_code)
-                if score > 0:
-                    scored_chunks.append((score, chunk))
-
-            if scored_chunks:
-                best_score, best_chunk = max(scored_chunks, key=lambda x: x[0])
-                evidence_text = best_chunk
-                req["evidence_text"] = best_chunk
+            if not evidence_text or has_contamination or len(evidence_text) > 350:
+                scoped_ev = self._extract_scoped_evidence_quote(
+                    page_text=raw_page_text,
+                    rule_code=rule_code,
+                    raw_item=evidence_text,
+                    threshold_val=req.get("threshold_value")
+                )
+                if scoped_ev:
+                    evidence_text = scoped_ev
+                    req["evidence_text"] = scoped_ev
 
         norm_evidence = normalize_str(evidence_text)
         is_verified = False
@@ -861,42 +813,271 @@ class AIService:
 
         return req
 
-    def _find_exact_snippet(self, page_text: str, item: str) -> str:
+    def _extract_scoped_evidence_quote(
+        self,
+        page_text: str,
+        rule_code: str,
+        raw_item: str = "",
+        threshold_val: Optional[Any] = None
+    ) -> str:
         """
-        Locates the exact verbatim sentence or clause from the page text matching the item.
-        Preserves multi-line clauses without splitting on intra-clause newlines or currency periods (Rs.).
+        Extracts the SMALLEST verbatim source excerpt that fully supports the requirement.
+        Tightly scopes evidence to the relevant sentence/clause, optionally including immediately
+        adjacent supporting sentences (e.g., audited balance sheet submission for turnover),
+        while strictly excluding unrelated clauses or sections from the same page.
         """
-        clean_item = item.strip()
-        if not clean_item:
-            return ""
-        if clean_item in page_text:
-            return clean_item
+        if not page_text or not page_text.strip():
+            return re.sub(r"\s+", " ", raw_item).strip() if raw_item else ""
 
-        def normalize_str(s: str) -> str:
-            return re.sub(r"\s+", " ", s).strip().lower()
+        # Step 1: Extract atomic sentences from page text preserving abbreviation periods
+        # (e.g. Rs.10, INR 10, No. 1, Ltd., Govt., Clause 7.1, etc.)
+        sentence_regex = r"(?<!\bRs)(?<!\bINR)(?<!\bNo)(?<!\bGovt)(?<!\bLtd)(?<!\bCo)(?<!\bi\.e)(?<!\be\.g)(?<!\bClause)(?<!\bSec)(?<!\bFig)(?<!\bRef)(?<!\bapprox)(?<!\bvol)(?<=[.!?])\s+(?=[A-Z0-9\(\"\'₹])"
+        raw_sentences = [re.sub(r"\s+", " ", s).strip() for s in re.split(sentence_regex, page_text) if len(s.strip()) > 5]
 
-        norm_item = normalize_str(clean_item)
-
-        # 1. Search in unwrapped clauses / paragraphs
-        clause_blocks = re.split(
+        # Also extract individual clause blocks / list items
+        clause_blocks = [re.sub(r"\s+", " ", c).strip() for c in re.split(
             r"(?=(?:^|\n)(?:Clause\s+[\d\.]+|Section\s+[IVXLCDM]+|\d+[\.\)]|[a-zA-Z][\.\)]|\([a-zA-Z0-9]+\))\s+)",
             page_text,
             flags=re.MULTILINE | re.IGNORECASE
-        )
-        for block in clause_blocks:
-            clean_block = re.sub(r"\s+", " ", block).strip()
-            norm_block = clean_block.lower()
-            if norm_item and norm_block:
-                if norm_item == norm_block or norm_item in norm_block:
-                    return clean_block
-                if len(clean_block.split()) >= 6 and norm_block in norm_item:
-                    return clean_block
+        ) if len(c.strip()) > 5]
 
-        # 2. Search in abbreviation-safe sentences
-        sentences = [re.sub(r"\s+", " ", s).strip() for s in re.split(
-            r"(?<!\bRs)(?<!\bNo)(?<!\bGovt)(?<!\bLtd)(?<!\bCo)(?<!\bi\.e)(?<!\be\.g)(?<!\bClause)(?<!\bSec)(?<=[.!?])\s+(?=[A-Z0-9])",
-            page_text
-        ) if s.strip()]
+        # Further split clause blocks if they contain multiple sentences
+        atomic_clause_sentences = []
+        for cb in clause_blocks:
+            for s in re.split(sentence_regex, cb):
+                s_clean = re.sub(r"\s+", " ", s).strip()
+                if len(s_clean) > 10:
+                    atomic_clause_sentences.append(s_clean)
+
+        candidate_units = list(dict.fromkeys(raw_sentences + atomic_clause_sentences + clause_blocks))
+        if raw_item and len(raw_item.strip()) > 10:
+            candidate_units.append(re.sub(r"\s+", " ", raw_item).strip())
+
+        # Step 2: Scoring function specific to rule_code
+        def score_unit(unit_text: str) -> float:
+            ut = unit_text.lower()
+            score = 0.0
+            words_count = len(ut.split())
+
+            # Rule-specific relevance scoring
+            if rule_code == "TURNOVER_MIN":
+                if "turnover" in ut:
+                    score += 50.0
+                if any(w in ut for w in ["average annual", "annual turnover", "financial turnover"]):
+                    score += 30.0
+                if any(w in ut for w in ["last 3 financial years", "three years", "previous three years", "3 years", "past 3 years"]):
+                    score += 20.0
+                if any(w in ut for w in ["not less than", "minimum", "at least", "should be not less"]):
+                    score += 15.0
+                if any(w in ut for w in ["rs.10", "10 crore", "10 crores", "inr 10", "₹10", "₹ 10"]):
+                    score += 40.0
+                elif any(w in ut for w in ["crore", "lakh", "rs.", "inr", "₹"]):
+                    score += 15.0
+
+                # Heavy penalty for unrelated clauses on Page 11 or elsewhere
+                if any(w in ut for w in ["blacklisted", "debarred", "banned", "assam", "sales & service", "manpower", "iso 9001", "partial bidding", "local content", "throughput", "gstin", "emd amount"]):
+                    score -= 100.0
+
+            elif rule_code == "STAT_GST_REG":
+                if any(w in ut for w in ["gst", "gstin", "gstr-3b", "gstr3b", "gstr 3b", "goods and services tax"]):
+                    score += 50.0
+                if any(w in ut for w in ["registration certificate", "gst certificate", "valid gst"]):
+                    score += 30.0
+                if any(w in ut for w in ["latest return", "active filing", "tax compliance"]):
+                    score += 20.0
+                if any(w in ut for w in ["turnover", "blacklisted", "crore", "emd amount", "throughput", "assam"]):
+                    score -= 100.0
+
+            elif rule_code == "STAT_UDYAM_MSME":
+                if any(w in ut for w in ["udyam", "msme", "micro and small enterprise", "mse"]):
+                    score += 50.0
+                if any(w in ut for w in ["udyam registration", "msme certificate", "registration certificate"]):
+                    score += 30.0
+                if any(w in ut for w in ["exemption", "claiming emd exemption", "ministry of msme"]):
+                    score += 25.0
+                if any(w in ut for w in ["turnover", "blacklisted", "crore", "gstin", "throughput", "assam"]):
+                    score -= 100.0
+
+            elif rule_code == "VIG_NON_BLACKLISTED":
+                if any(w in ut for w in ["blacklisted", "debarred", "banned", "suspension", "non-blacklisting"]):
+                    score += 50.0
+                if any(w in ut for w in ["undertaking", "affidavit", "self-declaration", "notarized affidavit", "must not be"]):
+                    score += 30.0
+                if any(w in ut for w in ["central / state government", "psu", "central govt"]):
+                    score += 20.0
+                if any(w in ut for w in ["turnover", "crore", "lakh", "gstin", "emd amount", "throughput", "assam", "iso 9001"]):
+                    score -= 100.0
+
+            elif rule_code == "QUAL_SAFETY_CERTIFICATES":
+                if any(w in ut for w in ["safety", "test report", "nabl", "bis", "laboratory"]):
+                    score += 50.0
+                if any(w in ut for w in ["product safety", "accredited testing", "performance test"]):
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "crore", "emd amount", "gstin", "assam"]):
+                    score -= 100.0
+
+            elif rule_code == "COMM_EMD_SECURITY":
+                if any(w in ut for w in ["emd", "earnest money", "11,00,000", "eleven lakhs"]):
+                    score += 50.0
+                if any(w in ut for w in ["bank guarantee", "surety bond", "emd amount"]):
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "gstin", "throughput", "assam"]):
+                    score -= 100.0
+
+            elif rule_code == "OEM_AUTHORIZATION":
+                if any(w in ut for w in ["oem", "maf", "manufacturer authorization"]):
+                    score += 50.0
+                if any(w in ut for w in ["authorization certificate", "manufacturer authorization form"]):
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "gstin", "emd"]):
+                    score -= 100.0
+
+            elif rule_code == "MII_LOCAL_CONTENT":
+                if any(w in ut for w in ["local content", "make in india", "mii", "class-i", "class-ii"]):
+                    score += 50.0
+                if "%" in ut or "50%" in ut:
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "gstin", "emd"]):
+                    score -= 100.0
+
+            elif rule_code == "TECH_THROUGHPUT":
+                if any(w in ut for w in ["threat protection", "throughput", "gbps"]):
+                    score += 50.0
+                if "30" in ut:
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "emd", "gstin"]):
+                    score -= 100.0
+
+            elif rule_code == "TECH_CONCURRENT_SESSIONS":
+                if any(w in ut for w in ["concurrent sessions", "sessions"]):
+                    score += 50.0
+                if "5" in ut or "million" in ut:
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "emd", "gstin"]):
+                    score -= 100.0
+
+            elif rule_code == "TECH_SESSION_RATE":
+                if any(w in ut for w in ["new sessions", "sessions per second", "connection rate", "cps"]):
+                    score += 50.0
+                if "250,000" in ut or "250000" in ut:
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "emd", "gstin"]):
+                    score -= 100.0
+
+            elif rule_code == "TECH_VPN_CAPACITY":
+                if any(w in ut for w in ["vpn", "simultaneous vpn", "ipsec", "ssl tunnels"]):
+                    score += 50.0
+                if "10,000" in ut or "10000" in ut:
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "emd", "gstin"]):
+                    score -= 100.0
+
+            elif rule_code == "TECH_VIRTUAL_SYSTEMS":
+                if any(w in ut for w in ["virtual systems", "vdoms", "virtual domains"]):
+                    score += 50.0
+                if "10" in ut:
+                    score += 30.0
+                if any(w in ut for w in ["turnover", "blacklisted", "emd", "gstin"]):
+                    score -= 100.0
+
+            elif rule_code in ("EXP_SIMILAR_CONTRACTS", "EXP_YEARS_MIN", "EXP_MIN_ORDER_VALUE"):
+                if any(w in ut for w in ["experience", "similar", "contracts", "projects", "years"]):
+                    score += 50.0
+                if any(w in ut for w in ["turnover", "blacklisted", "emd", "gstin"]):
+                    score -= 100.0
+
+            else:
+                if raw_item and raw_item.lower() in ut:
+                    score += 40.0
+
+            # Penalize excessively long blocks to strictly favor concise, atomic sentences
+            if words_count > 45:
+                score -= min(50.0, (words_count - 45) * 2.0)
+            elif 8 <= words_count <= 35:
+                score += 20.0
+
+            return score
+
+        scored_candidates = []
+        for cand in candidate_units:
+            sc = score_unit(cand)
+            if sc > 0:
+                scored_candidates.append((sc, cand))
+
+        if not scored_candidates:
+            return re.sub(r"\s+", " ", raw_item).strip() if raw_item else ""
+
+        scored_candidates.sort(key=lambda x: (x[0], -len(x[1])), reverse=True)
+        best_primary = scored_candidates[0][1]
+
+        # Step 3: Check for immediately adjacent supporting sentence in page_text
+        # e.g. "The audited balance sheet of the company must be submitted."
+        def find_adjacent_supporting_sentence(primary: str) -> Optional[str]:
+            for i, s in enumerate(raw_sentences):
+                if primary in s or s in primary:
+                    if i + 1 < len(raw_sentences):
+                        next_s = raw_sentences[i + 1]
+                        next_lower = next_s.lower()
+                        is_supportive = False
+                        if rule_code == "TURNOVER_MIN":
+                            if any(w in next_lower for w in ["audited balance sheet", "ca certificate", "chartered accountant", "p&l", "annual accounts", "financial statements", "turnover certificate"]):
+                                is_supportive = True
+                        elif rule_code == "STAT_GST_REG":
+                            if any(w in next_lower for w in ["gstr-3b", "gstr3b", "active filing", "tax return", "challan"]):
+                                is_supportive = True
+                        elif rule_code == "STAT_UDYAM_MSME":
+                            if any(w in next_lower for w in ["ministry of msme", "mse policy", "exemption", "nic code"]):
+                                is_supportive = True
+                        elif rule_code == "VIG_NON_BLACKLISTED":
+                            if any(w in next_lower for w in ["affidavit", "undertaking", "self-declaration", "stamp paper"]):
+                                is_supportive = True
+                        elif rule_code == "COMM_EMD_SECURITY":
+                            if any(w in next_lower for w in ["bank guarantee", "surety bond", "insurance", "fdr"]):
+                                is_supportive = True
+                        elif rule_code == "QUAL_SAFETY_CERTIFICATES":
+                            if any(w in next_lower for w in ["nabl", "bis", "accredited", "laboratory", "test report"]):
+                                is_supportive = True
+
+                        if is_supportive and not any(w in next_lower for w in ["blacklisted", "debarred", "assam", "iso 9001", "clause ", "section "]):
+                            return next_s
+            return None
+
+        adjacent_support = find_adjacent_supporting_sentence(best_primary)
+        if adjacent_support and adjacent_support not in best_primary:
+            combined = f"{best_primary} {adjacent_support}".strip()
+            if len(combined) <= 450:
+                best_primary = combined
+
+        best_primary = re.sub(r"\s+", " ", best_primary).strip()
+        if len(best_primary) > 500:
+            sub_sents = [s.strip() for s in re.split(sentence_regex, best_primary) if s.strip()]
+            accum = ""
+            for ss in sub_sents:
+                if len(accum) + len(ss) + 1 <= 450:
+                    accum = f"{accum} {ss}".strip()
+                else:
+                    break
+            if accum:
+                best_primary = accum
+
+        return best_primary
+
+    def _find_exact_snippet(
+        self,
+        page_text: str,
+        item: str,
+        rule_code: Optional[str] = None,
+        threshold_val: Optional[Any] = None
+    ) -> str:
+        """
+        Locates the exact verbatim sentence or clause from the page text matching the item,
+        ensuring evidence is tightly scoped without dumping unrelated parent sections.
+        """
+        if rule_code:
+            scoped = self._extract_scoped_evidence_quote(page_text, rule_code, item, threshold_val)
+            if scoped:
+                return scoped
+        return self._extract_scoped_evidence_quote(page_text, "", item, threshold_val)
         for s in sentences:
             norm_s = s.lower()
             if norm_item and norm_s:

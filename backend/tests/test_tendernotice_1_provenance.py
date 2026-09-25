@@ -574,4 +574,110 @@ Clause 7.5: The bidder must not be blacklisted or debarred by any Central / Stat
     print("  ✓ Evidence Viewer Fallback and 6-Criteria Extraction Passed: All criteria have authentic, verified verbatim evidence.")
 
 
+def test_tightly_scoped_evidence_quote_exclusion_of_unrelated_clauses():
+    """
+    Validates that:
+    1. The verbatim evidence quote for Minimum Average Annual Financial Turnover is tightly scoped
+       to the specific turnover sentence and optional adjacent balance sheet requirement.
+    2. It strictly excludes unrelated page clauses (Blacklisting, Assam support infrastructure,
+       Sales & Service Office, Technical manpower, Networking experience, Partial bidding, ISO certification).
+    3. The evidence contains the exact numeric turnover value (Rs.10 crores).
+    """
+    import fitz
+    token = get_officer_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    doc = fitz.open()
+    for p in range(1, 18):
+        page = doc.new_page(width=595, height=842)
+        if p == 1:
+            text = """INDIAN INSTITUTE OF TECHNOLOGY GUWAHATI
+NOTICE INVITING TENDER (NIT)
+Tender Reference No: EPT/SNP/CC/EQT-26.1130
+Tender ID: 2026_IITG_925833_1
+Title: Supply and installation of Next Generation Firewall Solution at IIT Guwahati
+"""
+        elif p == 3:
+            text = """SECTION II: EMD DETAILS
+Clause 2.1: EMD Amount: ₹ 11,00,000 (Eleven Lakhs Only).
+The EMD shall be submitted in the form of Insurance Surety Bond or Bank Guarantee.
+"""
+        elif p == 4:
+            text = """SECTION II: MSE EXEMPTION
+Clause 2.4: Bidders claiming EMD exemption must submit valid Udyam Registration Certificate.
+"""
+        elif p == 5:
+            text = """SECTION III: STATUTORY
+Clause 3.2: Valid GST Registration Certificate with latest GSTR-3B return.
+"""
+        elif p == 7:
+            text = """SECTION V: TECHNICAL SPECIFICATIONS
+Clause 5.4: Valid product safety certificates and laboratory performance test reports from NABL / BIS accredited testing laboratories.
+"""
+        elif p == 11:
+            text = """SECTION VII: ELIGIBILITY & QUALIFICATION CRITERIA
+1. Support Infrastructure: The bidder must have established support infrastructure in Assam with a dedicated Sales & Service Office and qualified resident technical manpower.
+2. Financial Turnover: Annual turnover of the bidder in India for the previous three years, ending 31 March, 2026, should be not less than Rs.10 crores. The audited balance sheet of the company must be submitted.
+3. Relevant Experience: The bidder must have experience in executing previous enterprise networking projects with single order value not less than ₹4 Crore. Partial bidding is strictly prohibited.
+4. Quality Standards: The bidder must hold valid ISO 9001 and ISO 27001 certifications and ensure 24x7 after-sales support.
+5. Debarment: The bidder must not be blacklisted or debarred by any Central / State Government agency or PSU.
+"""
+        else:
+            text = f"SECTION {p}: GENERAL TERMS AND CONDITIONS\nStandard terms for procurement at IIT Guwahati.\n"
+        page.insert_text((50, 72), text, fontsize=10)
+
+    pdf_bytes = doc.tobytes()
+    doc.close()
+
+    files = {"file": ("Tendernotice_Tightly_Scoped_Evidence.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+    resp = client.post("/tenders/upload-document", headers=headers, files=files)
+    assert resp.status_code == 200
+
+    data = resp.json()
+    requirements = data["requirements"]
+
+    # 1. Turnover Requirement Verification
+    turnover = next(r for r in requirements if r["code"] == "TURNOVER_MIN")
+    ev_text = turnover["evidence_text"]
+    ev_lower = ev_text.lower()
+
+    # Must contain turnover clause and numeric value
+    assert "turnover" in ev_lower
+    assert "10 crore" in ev_lower or "rs.10 crores" in ev_lower or "10" in ev_text
+    assert turnover["threshold_value"] == 10.0
+    assert turnover["source_page"] == 11
+    assert turnover["provenance_status"] in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # Strictly MUST NOT contain unrelated clauses from Page 11
+    assert "blacklisted" not in ev_lower, f"Turnover evidence contaminated with blacklisting clause: '{ev_text}'"
+    assert "debarred" not in ev_lower, f"Turnover evidence contaminated with debarment clause: '{ev_text}'"
+    assert "assam" not in ev_lower, f"Turnover evidence contaminated with Assam support infrastructure: '{ev_text}'"
+    assert "sales & service" not in ev_lower, f"Turnover evidence contaminated with Sales & Service office: '{ev_text}'"
+    assert "technical manpower" not in ev_lower, f"Turnover evidence contaminated with technical manpower: '{ev_text}'"
+    assert "partial bidding" not in ev_lower, f"Turnover evidence contaminated with partial bidding: '{ev_text}'"
+    assert "iso 9001" not in ev_lower, f"Turnover evidence contaminated with ISO certification: '{ev_text}'"
+    assert "after-sales" not in ev_lower, f"Turnover evidence contaminated with after-sales support: '{ev_text}'"
+
+    # Evidence length must be tightly scoped (< 350 chars)
+    assert len(ev_text) <= 350, f"Turnover evidence quote exceeds maximum scoped length ({len(ev_text)} chars): '{ev_text}'"
+
+    # 2. Blacklisting Requirement Verification
+    debarment = next(r for r in requirements if r["code"] == "VIG_NON_BLACKLISTED")
+    deb_ev = debarment["evidence_text"].lower()
+
+    assert "blacklisted" in deb_ev or "debarred" in deb_ev
+    assert debarment["source_page"] == 11
+    assert debarment["provenance_status"] in ("VERIFIED", "SMART_IDP_VERIFIED")
+
+    # Strictly MUST NOT contain turnover, Assam, ISO, etc.
+    assert "turnover" not in deb_ev
+    assert "crore" not in deb_ev
+    assert "assam" not in deb_ev
+    assert "iso 9001" not in deb_ev
+    assert len(debarment["evidence_text"]) <= 350
+
+    print("  ✓ Tightly Scoped Evidence Passed: Turnover evidence is precisely scoped without any unrelated Page 11 clauses.")
+
+
+
 
