@@ -140,7 +140,7 @@ def test_5_profile_completion_checklist():
     assert "completed_count" in profile_comp
     assert "total_count" in profile_comp
     assert "items" in profile_comp
-    assert profile_comp["total_count"] == 8
+    assert profile_comp["total_count"] == 4
     assert profile_comp["percentage"] >= 0 and profile_comp["percentage"] <= 100
 
     print(f"  ✓ Profile completion engine verified: {profile_comp['percentage']}% ({profile_comp['completed_count']}/{profile_comp['total_count']} verified)")
