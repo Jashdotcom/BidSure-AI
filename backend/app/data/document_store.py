@@ -18,7 +18,7 @@ DOCUMENTS_STORAGE_DIR = os.path.abspath(
 )
 INDEX_FILE_PATH = os.path.join(DOCUMENTS_STORAGE_DIR, "documents_index.json")
 
-_doc_lock = threading.Lock()
+_doc_lock = threading.RLock()
 _in_memory_index: Dict[str, Dict[str, Any]] = {}
 _is_initialized = False
 

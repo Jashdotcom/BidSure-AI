@@ -67,12 +67,21 @@ def test_3_invalid_credentials():
     assert resp.status_code == 401, f"Expected 401, got {resp.status_code}"
     print("  ✓ Invalid password returned HTTP 401 Unauthorized")
 
-    resp_nonexistent = client.post("/auth/login", json={
-        "email": "ghost.user@unknown.com",
-        "password": "somePassword123"
+    # Test wrong password for officer (including bidder's password)
+    resp_cross = client.post("/auth/login", json={
+        "email": "officer@cpcl.gov.in",
+        "password": "bidder123"
     })
-    assert resp_nonexistent.status_code == 401, f"Expected 401, got {resp_nonexistent.status_code}"
-    print("  ✓ Non-existent user returned HTTP 401 Unauthorized")
+    assert resp_cross.status_code == 401, f"Expected 401 for cross password, got {resp_cross.status_code}"
+    print("  ✓ Cross-account password rejected with HTTP 401 Unauthorized")
+
+    # Test wrong password for bidder (including officer's password)
+    resp_bidder_wrong = client.post("/auth/login", json={
+        "email": "abc@abcsafety.com",
+        "password": "admin123"
+    })
+    assert resp_bidder_wrong.status_code == 401, f"Expected 401 for wrong bidder password, got {resp_bidder_wrong.status_code}"
+    print("  ✓ Wrong bidder password rejected with HTTP 401 Unauthorized")
 
 def test_4_bidder_registration():
     print("\n[TEST 4] Verifying New Bidder Registration...")
@@ -173,6 +182,28 @@ def test_8_unauthenticated_request_rejection():
     assert resp_invalid_token.status_code == 401, f"Expected 401, got {resp_invalid_token.status_code}"
     print("  ✓ Request with invalid token returned HTTP 401 Unauthorized")
 
+def test_9_role_based_access_controls():
+    print("\n[TEST 9] Verifying Officer & Bidder Protected Endpoints...")
+    # Officer accesses officer endpoint
+    resp_off = client.post("/auth/login", json={
+        "email": "officer@cpcl.gov.in",
+        "password": "admin123"
+    })
+    off_token = resp_off.json()["access_token"]
+    off_dash = client.get("/dashboard/stats", headers={"Authorization": f"Bearer {off_token}"})
+    assert off_dash.status_code == 200, f"Expected 200, got {off_dash.status_code}"
+    print("  ✓ Officer successfully accessed protected /dashboard/stats (HTTP 200)")
+
+    # Bidder accesses bidder endpoint
+    resp_bid = client.post("/auth/login", json={
+        "email": "abc@abcsafety.com",
+        "password": "bidder123"
+    })
+    bid_token = resp_bid.json()["access_token"]
+    bid_dash = client.get("/bidder-portal/dashboard", headers={"Authorization": f"Bearer {bid_token}"})
+    assert bid_dash.status_code == 200, f"Expected 200, got {bid_dash.status_code}"
+    print("  ✓ Bidder successfully accessed protected /bidder-portal/dashboard (HTTP 200)")
+
 if __name__ == "__main__":
     print("====================================================================")
     print("BidSure AI - SIH26100 Phase 1 Auth & Security Verification Suite")
@@ -185,6 +216,7 @@ if __name__ == "__main__":
     test_6_security_prevent_role_escalation()
     test_7_bidder_token_attempting_officer_api()
     test_8_unauthenticated_request_rejection()
+    test_9_role_based_access_controls()
     print("\n====================================================================")
-    print("ALL 8 PHASE 1 AUTHENTICATION & SECURITY TESTS PASSED PERFECTLY!")
+    print("ALL 9 AUTHENTICATION & SECURITY TESTS PASSED PERFECTLY!")
     print("====================================================================")

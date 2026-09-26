@@ -73,10 +73,13 @@ async def startup_event():
     Initializes document store and ensures the authentic 17-page IITG NIT test tender
     (Tendernotice_1.pdf) is seeded for real document processing and officer review.
     """
+    print("[STARTUP] BidSure AI backend startup initiated...")
     try:
         from app.data.document_store import ensure_seed_documents
         from app.data.sample_data import get_all_tenders, add_tender
+        print("[STARTUP] Ensuring seed documents in document store...")
         seed_docs = ensure_seed_documents()
+        print(f"[STARTUP] Document store initialized with {len(seed_docs)} seed document(s).")
         existing_tenders = get_all_tenders()
         if not any(
             t.get("tender_number") == "2026_IITG_925833_1"
@@ -84,6 +87,7 @@ async def startup_event():
             or t.get("tender_id") == "2026_IITG_925833_1"
             for t in existing_tenders
         ):
+            print("[STARTUP] Seeding IITG Next Gen Firewall Tender (2026_IITG_925833_1)...")
             doc_hash = seed_docs[0].get("document_hash_sha256") if seed_docs else ""
             add_tender({
                 "id": "2026_IITG_925833_1",
@@ -112,8 +116,10 @@ async def startup_event():
                 "bids_count": 0,
                 "verified_count": 0
             })
+            print("[STARTUP] Seed tender 2026_IITG_925833_1 registered successfully.")
     except Exception as e:
-        pass
+        print(f"[STARTUP WARNING] Startup initialization encountered non-fatal error: {e}")
+    print("[STARTUP] BidSure AI backend startup completed successfully.")
 
 
 @app.get("/health", tags=["Health"])

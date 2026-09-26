@@ -1,0 +1,22 @@
+{
+  "DOC-9b07860f0cc9": {
+    "document_id": "DOC-9b07860f0cc9",
+    "tender_id": "2026_IITG_925833_1",
+    "filename": "Tendernotice_1.pdf",
+    "storage_filename": "DOC-9b07860f0cc9_Tendernotice_1.pdf",
+    "file_size_bytes": 10320,
+    "file_size_kb": 10,
+    "document_hash_sha256": "9b07860f0cc94ca7640ae90d3497a10c63f3ba63c324f1b719df854555b9dd04",
+    "uploaded_at": "2026-09-26T12:15:53Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "OFFICER_UPLOAD",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9b07860f0cc9_Tendernotice_1.pdf",
+    "metadata": {
+      "title": "Supply and installation of Next Generation Firewall Solution at IIT Guwahati",
+      "organization": "Indian Institute of Technology Guwahati",
+      "total_pages": 17,
+      "document_type": "TENDER_NOTICE_NIT"
+    }
+  }
+}

@@ -2378,7 +2378,7 @@ def get_tender_by_id(tender_id: str) -> Optional[Dict[str, Any]]:
             return compute_tender_bid_counts(t)
     return None
 
-_tender_number_lock = threading.Lock()
+_tender_number_lock = threading.RLock()
 
 def check_tender_id_exists(tender_num_or_id: str, exclude_id: Optional[str] = None) -> bool:
     """
