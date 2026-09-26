@@ -70,53 +70,14 @@ app.include_router(dashboard_router, prefix="/api")
 @app.on_event("startup")
 async def startup_event():
     """
-    Initializes document store and ensures the authentic 17-page IITG NIT test tender
-    (Tendernotice_1.pdf) is seeded for real document processing and officer review.
+    Initializes document store and infrastructure.
     """
     print("[STARTUP] BidSure AI backend startup initiated...")
     try:
         from app.data.document_store import ensure_seed_documents
-        from app.data.sample_data import get_all_tenders, add_tender
         print("[STARTUP] Ensuring seed documents in document store...")
         seed_docs = ensure_seed_documents()
         print(f"[STARTUP] Document store initialized with {len(seed_docs)} seed document(s).")
-        existing_tenders = get_all_tenders()
-        if not any(
-            t.get("tender_number") == "2026_IITG_925833_1"
-            or t.get("id") == "2026_IITG_925833_1"
-            or t.get("tender_id") == "2026_IITG_925833_1"
-            for t in existing_tenders
-        ):
-            print("[STARTUP] Seeding IITG Next Gen Firewall Tender (2026_IITG_925833_1)...")
-            doc_hash = seed_docs[0].get("document_hash_sha256") if seed_docs else ""
-            add_tender({
-                "id": "2026_IITG_925833_1",
-                "tender_number": "2026_IITG_925833_1",
-                "ref": "EPT/SNP/CC/EQT-26.1130",
-                "tender_id": "2026_IITG_925833_1",
-                "title": "Supply and installation of Next Generation Firewall Solution at IIT Guwahati",
-                "organization": "Indian Institute of Technology Guwahati",
-                "department": "Central Procurement & Stores Division",
-                "category": "IT Hardware & Software",
-                "status": "PUBLISHED",
-                "estimated_value": 55000000.0,
-                "estimated_value_display": "₹ 5,50,00,000",
-                "emd_amount": 1100000.0,
-                "emd_amount_display": "₹ 11,00,000",
-                "publish_date": "2026-09-15T09:00:00Z",
-                "closing_date": "2026-10-15T18:00:00Z",
-                "deadline": "15 Oct 2026",
-                "bid_opening_date": "2026-10-16T15:00:00Z",
-                "description": "Notice Inviting Tender for supply, installation, testing, and commissioning of Enterprise Next Generation Firewall Solution at IIT Guwahati.",
-                "file_name": "Tendernotice_1.pdf",
-                "document_hash_sha256": doc_hash,
-                "source_type": "OFFICER_UPLOAD",
-                "documents": seed_docs or [],
-                "requirements": [],
-                "bids_count": 0,
-                "verified_count": 0
-            })
-            print("[STARTUP] Seed tender 2026_IITG_925833_1 registered successfully.")
     except Exception as e:
         print(f"[STARTUP WARNING] Startup initialization encountered non-fatal error: {e}")
     print("[STARTUP] BidSure AI backend startup completed successfully.")
