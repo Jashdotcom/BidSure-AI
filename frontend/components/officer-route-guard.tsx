@@ -12,7 +12,15 @@ import { User, isBidder } from "@/lib/types";
  */
 export function OfficerRouteGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [allowed, setAllowed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const token = getToken();
+    const user = getUser<User>();
+    if (!token || !user || isBidder(user)) {
+      return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     const token = getToken();
@@ -31,18 +39,8 @@ export function OfficerRouteGuard({ children }: { children: React.ReactNode }) {
     setAllowed(true);
   }, [router]);
 
-  if (allowed === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex items-center gap-3 text-slate-600">
-          <svg className="size-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          <span className="text-sm font-medium">Verifying access...</span>
-        </div>
-      </div>
-    );
+  if (!allowed) {
+    return null;
   }
 
   return <>{children}</>;
