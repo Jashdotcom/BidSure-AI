@@ -99,6 +99,11 @@ interface BidderDashboardData {
     local_content: number;
   };
   profile_completion: ProfileCompletion;
+  business_verification: {
+    status: string;
+    general_status: string;
+    verifications: Record<string, any>;
+  };
   statistics: Statistics;
   available_tenders: AvailableTenderItem[];
   my_bids: MyBidItem[];
@@ -122,66 +127,43 @@ const EMPTY_DASHBOARD_DATA: BidderDashboardData = {
   },
   profile_completion: {
     percentage: 100,
-    completed_count: 8,
-    total_count: 8,
+    completed_count: 4,
+    total_count: 4,
     items: [
       {
-        key: "basic_info",
-        title: "Organization & Contact Details",
-        description: "Authorized signatory name, entity name, official email and phone.",
+        key: "contact_info",
+        title: "Contact Person & Account Details",
+        description: "Authorized signatory name, official email, and phone number.",
         completed: true,
-        weight: 15,
+        weight: 25,
       },
       {
-        key: "gstin",
-        title: "GSTIN Registration",
-        description: "Valid 15-digit Goods and Services Tax Identification Number.",
+        key: "business_entity",
+        title: "Business Entity & Registered Address",
+        description: "Legal business name, entity type, and registered office address.",
         completed: true,
-        weight: 15,
+        weight: 25,
       },
       {
-        key: "pan",
-        title: "Permanent Account Number (PAN)",
-        description: "Entity PAN registered with the Income Tax Department.",
+        key: "statutory_credentials",
+        title: "Statutory Credentials (PAN & GSTIN)",
+        description: "Company Permanent Account Number (PAN) and Goods & Services Tax Identification Number (GSTIN).",
         completed: true,
-        weight: 15,
+        weight: 25,
       },
       {
-        key: "udyam",
-        title: "MSME Udyam Registration",
-        description: "Udyam registration for EMD exemption & purchase preference.",
+        key: "msme_udyam",
+        title: "MSME / Udyam Registration",
+        description: "Udyam registration number for MSME preference (optional).",
         completed: true,
-        weight: 15,
-      },
-      {
-        key: "financials",
-        title: "Audited Financial Statements",
-        description: "CA certified balance sheet with UDIN for last 3 financial years.",
-        completed: true,
-        weight: 10,
-      },
-      {
-        key: "experience",
-        title: "Past PSU / Industry Experience",
-        description: "Work orders & completion certificates for similar procurement scope.",
-        completed: true,
-        weight: 10,
-      },
-      {
-        key: "oem_auth",
-        title: "OEM Authorization (MAF)",
-        description: "Direct Manufacturer Authorization Form specifically for procurement tenders.",
-        completed: true,
-        weight: 10,
-      },
-      {
-        key: "mii_declaration",
-        title: "Make in India (MII) Declaration",
-        description: "Statutory auditor / management self-declaration of domestic value addition.",
-        completed: true,
-        weight: 10,
+        weight: 25,
       },
     ],
+  },
+  business_verification: {
+    status: "IDENTITY_CONSISTENT",
+    general_status: "VERIFIED",
+    verifications: {},
   },
   statistics: {
     available_tenders: 0,

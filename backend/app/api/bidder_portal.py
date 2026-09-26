@@ -32,95 +32,57 @@ gov_service = MockGovernmentVerificationService(is_mock=True)
 
 def compute_profile_completion(bidder: Optional[Dict[str, Any]], user: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Computes profile completion checklist and percentage for a bidder.
+    Computes profile completion checklist and percentage for a bidder based strictly
+    on account and business information completeness, separated from government verification status.
     """
+    if not bidder:
+        bidder = {}
+
     checklist = []
 
-    # 1. Organization & Signatory Info
-    has_name = bool(user.get("name") or (bidder and bidder.get("name")))
-    has_org = bool(user.get("organization") or (bidder and bidder.get("name")))
-    has_phone = bool(user.get("phone") or (bidder and bidder.get("phone")))
+    # 1. Contact Person & Account Details
+    has_contact = bool(user.get("name") or bidder.get("contact_person") or bidder.get("name"))
+    has_email = bool(user.get("email") or bidder.get("email"))
+    has_phone = bool(user.get("phone") or bidder.get("phone"))
     checklist.append({
-        "key": "basic_info",
-        "title": "Organization & Contact Details",
-        "description": "Authorized signatory name, entity name, official email and phone.",
-        "completed": has_name and has_org and has_phone,
-        "weight": 15
+        "key": "contact_info",
+        "title": "Contact Person & Account Details",
+        "description": "Authorized signatory name, official email, and phone number.",
+        "completed": bool(has_contact and has_email and has_phone),
+        "weight": 25
     })
 
-    # 2. GSTIN
-    gstin = (bidder and bidder.get("gstin")) or ""
+    # 2. Business Entity Details
+    has_company = bool(bidder.get("name") or user.get("organization"))
+    has_entity_type = bool(bidder.get("entity_type"))
+    has_address = bool(bidder.get("business_address") and bidder.get("city") and bidder.get("state") and bidder.get("pincode"))
     checklist.append({
-        "key": "gstin",
-        "title": "GSTIN Registration",
-        "description": "Valid 15-digit Goods and Services Tax Identification Number.",
-        "completed": bool(gstin and len(gstin) >= 10),
-        "weight": 15
+        "key": "business_entity",
+        "title": "Business Entity & Registered Address",
+        "description": "Legal business name, entity type, and registered office address.",
+        "completed": bool(has_company and has_entity_type and has_address),
+        "weight": 25
     })
 
-    # 3. PAN
-    pan = (bidder and bidder.get("pan")) or ""
+    # 3. Statutory Credentials (PAN & GSTIN)
+    pan = bidder.get("pan", "")
+    gstin = bidder.get("gstin", "")
     checklist.append({
-        "key": "pan",
-        "title": "Permanent Account Number (PAN)",
-        "description": "Entity PAN registered with the Income Tax Department.",
-        "completed": bool(pan and len(pan) >= 10),
-        "weight": 15
+        "key": "statutory_credentials",
+        "title": "Statutory Credentials (PAN & GSTIN)",
+        "description": "Company Permanent Account Number (PAN) and Goods & Services Tax Identification Number (GSTIN).",
+        "completed": bool(pan and len(pan) >= 10 and gstin and len(gstin) >= 10),
+        "weight": 25
     })
 
-    # 4. Udyam MSME
-    udyam = (bidder and bidder.get("udyam")) or ""
+    # 4. MSME Udyam Registration (Optional / Secondary Statutory)
+    udyam = bidder.get("udyam", "")
     checklist.append({
-        "key": "udyam",
-        "title": "MSME Udyam Registration",
-        "description": "Udyam registration for EMD exemption & purchase preference.",
+        "key": "msme_udyam",
+        "title": "MSME / Udyam Registration",
+        "description": "Udyam registration number for MSME preference (optional).",
         "completed": bool(udyam and len(udyam) >= 8),
-        "weight": 15
-    })
-
-    # 5. Financials & Turnover
-    turnover = (bidder and bidder.get("annual_turnover_cr", 0.0)) or 0.0
-    docs = (bidder and bidder.get("documents", {})) or {}
-    has_financials = turnover > 0 or "audited_balance_sheet" in docs
-    checklist.append({
-        "key": "financials",
-        "title": "Audited Financial Statements",
-        "description": "CA certified balance sheet with UDIN for last 3 financial years.",
-        "completed": bool(has_financials),
-        "weight": 10
-    })
-
-    # 6. Past Experience
-    experience = (bidder and bidder.get("years_experience", 0)) or 0
-    has_exp = experience > 0 or "experience_cert" in docs
-    checklist.append({
-        "key": "experience",
-        "title": "Past PSU / Industry Experience",
-        "description": "Work orders & completion certificates for similar procurement scope.",
-        "completed": bool(has_exp),
-        "weight": 10
-    })
-
-    # 7. OEM Authorization
-    oem = (bidder and bidder.get("oem_authorization", "")) or ""
-    has_oem = (oem and oem != "Unregistered") or "oem_cert" in docs
-    checklist.append({
-        "key": "oem_auth",
-        "title": "OEM Authorization (MAF)",
-        "description": "Direct Manufacturer Authorization Form specifically for CPCL tenders.",
-        "completed": bool(has_oem),
-        "weight": 10
-    })
-
-    # 8. Make in India Declaration
-    local_content = (bidder and bidder.get("local_content", 0.0)) or 0.0
-    has_mii = local_content > 0 or "local_content_cert" in docs
-    checklist.append({
-        "key": "mii_declaration",
-        "title": "Make in India (MII) Declaration",
-        "description": "Statutory auditor / management self-declaration of domestic value addition.",
-        "completed": bool(has_mii),
-        "weight": 10
+        "weight": 25
     })
 
     completed_weight = sum(item["weight"] for item in checklist if item["completed"])
@@ -242,7 +204,18 @@ async def get_bidder_dashboard(current_user: Dict[str, Any] = Depends(require_ro
     # 4. Profile Completion
     profile_completion = compute_profile_completion(bidder_profile, current_user)
 
-    # 5. Notifications (ISOLATED TO THIS BIDDER ONLY)
+    # 5. Business Verification Status
+    business_verification = {
+        "status": bidder_profile.get("verification_status", "PENDING"),
+        "general_status": bidder_profile.get("status", "REGISTERED"),
+        "verifications": bidder_profile.get("government_verifications", {
+            "pan": {"status": "NOT_VERIFIED", "pan": bidder_profile.get("pan")},
+            "gstin": {"status": "NOT_VERIFIED", "gstin": bidder_profile.get("gstin")},
+            "udyam": {"status": "NOT_VERIFIED" if bidder_profile.get("udyam") else "NOT_PROVIDED"}
+        })
+    }
+
+    # 6. Notifications (ISOLATED TO THIS BIDDER ONLY)
     notifications = get_notifications_for_bidder(bidder_id)
 
     return {
@@ -261,6 +234,7 @@ async def get_bidder_dashboard(current_user: Dict[str, Any] = Depends(require_ro
             "local_content": bidder_profile.get("local_content", 0.0)
         },
         "profile_completion": profile_completion,
+        "business_verification": business_verification,
         "statistics": statistics,
         "available_tenders": available_tenders,
         "my_bids": my_bids,
