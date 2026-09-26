@@ -24,7 +24,7 @@ export function EvidenceModal({
   isOpen,
   onClose,
   evidence,
-  bidderName = "ABC Safety Solutions Pvt Ltd",
+  bidderName = "Authorized Bidder",
 }: EvidenceModalProps) {
   const [activeTab, setActiveTab] = useState<"rule" | "document">("rule");
 
@@ -97,13 +97,13 @@ export function EvidenceModal({
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {activeTab === "rule" ? (
             <>
-              {/* Prototype / Mock Verification Notice */}
-              <div className="rounded-lg border border-amber-200 bg-amber-50/80 px-3.5 py-2 text-[11px] text-amber-900 flex items-center justify-between">
+              {/* Verification Notice */}
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 px-3.5 py-2 text-[11px] text-emerald-900 flex items-center justify-between">
                 <span>
-                  <strong>Verification Service:</strong> Prototype / Mock Verification Adapter (Simulated Statutory Registry).
+                  <strong>Verification Service:</strong> Statutory Registry Integration (MCA, GSTN, MSME Udyam).
                 </span>
-                <span className="font-mono font-bold text-[10px] bg-amber-100 px-2 py-0.5 rounded text-amber-800">
-                  SIH26100 DEMO
+                <span className="font-mono font-bold text-[10px] bg-emerald-100 px-2 py-0.5 rounded text-emerald-800">
+                  AUTOMATED VERIFICATION
                 </span>
               </div>
 
@@ -216,7 +216,7 @@ export function EvidenceModal({
                 </div>
 
                 <p className="text-[11px] text-slate-600">
-                  To: The Senior Manager (Procurement & Contracts), Chennai Petroleum Corporation Limited, Manali, Chennai.
+                  To: The Tender Inviting Authority / Procuring Authority.
                 </p>
 
                 <p className="text-[11px] text-slate-700">

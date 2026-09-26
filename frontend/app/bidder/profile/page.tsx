@@ -48,14 +48,14 @@ export default function BidderProfilePage() {
           <div>
             <div className="flex items-center gap-3">
               <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-700 font-extrabold text-xl text-white shadow">
-                {user?.organization ? user.organization[0] : "A"}
+                {user?.organization ? user.organization[0] : "V"}
               </div>
               <div>
                 <h2 className="text-base font-bold text-slate-900">
-                  {user?.organization || "ABC Safety Solutions Pvt Ltd"}
+                  {user?.organization || "Vendor Organization"}
                 </h2>
                 <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                  Verified Vendor · BID-001
+                  Registered Vendor
                 </span>
               </div>
             </div>

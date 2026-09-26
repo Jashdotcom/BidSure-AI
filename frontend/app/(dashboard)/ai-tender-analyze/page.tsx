@@ -21,7 +21,8 @@ import {
   LayersIcon,
   BookOpenIcon,
   BuildingIcon,
-  SlidersIcon
+  SlidersIcon,
+  Loader2Icon
 } from "lucide-react";
 import {
   ExtractedRequirement,
@@ -84,7 +85,8 @@ export default function AITenderAnalyzePage() {
     weight: 15
   });
 
-  const [demoMode, setDemoMode] = useState<boolean>(true);
+  const [demoMode, setDemoMode] = useState<boolean>(false);
+  const [isLoadingTenders, setIsLoadingTenders] = useState<boolean>(true);
   const [aiConfig, setAiConfig] = useState<{
     ai_provider: string;
     ai_model: string | null;
@@ -99,43 +101,56 @@ export default function AITenderAnalyzePage() {
 
   // Fetch system config and tenders list on mount
   useEffect(() => {
-    apiRequest<{
-      demo_mode: boolean;
-      ai_provider?: string;
-      ai_model?: string;
-      ai_status?: string;
-      ai_message?: string;
-    }>("/system/config")
-      .then((res) => {
-        if (res && typeof res.demo_mode === "boolean") {
-          setDemoMode(res.demo_mode);
-        }
-        if (res && res.ai_provider) {
+    setIsLoadingTenders(true);
+
+    Promise.all([
+      apiRequest<{
+        demo_mode: boolean;
+        ai_provider?: string;
+        ai_model?: string;
+        ai_status?: string;
+        ai_message?: string;
+      }>("/system/config").catch(() => null),
+      apiRequest<Tender[]>("/tenders").catch(() => null),
+    ])
+      .then(([configRes, tendersRes]) => {
+        const isDemo =
+          configRes && typeof configRes.demo_mode === "boolean"
+            ? configRes.demo_mode
+            : false;
+        setDemoMode(isDemo);
+
+        if (configRes && configRes.ai_provider) {
           setAiConfig({
-            ai_provider: res.ai_provider,
-            ai_model: res.ai_model || null,
-            ai_status: res.ai_status || "connected",
-            ai_message: res.ai_message || "",
+            ai_provider: configRes.ai_provider,
+            ai_model: configRes.ai_model || null,
+            ai_status: configRes.ai_status || "connected",
+            ai_message: configRes.ai_message || "",
           });
         }
-      })
-      .catch(() => {});
 
-    apiRequest<Tender[]>("/tenders")
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setTendersList(data);
-          if (data.length > 0) {
-            const firstT = data[0];
-            const firstId = firstT.id || firstT.tender_id || firstT.tender_number || "";
+        if (Array.isArray(tendersRes)) {
+          setTendersList(tendersRes);
+          if (tendersRes.length > 0) {
+            const firstT = tendersRes[0];
+            const firstId =
+              firstT.id || firstT.tender_id || firstT.tender_number || "";
             setTargetTenderId(firstId);
-            const initialFilename = firstT.file_name || (demoMode ? "CPCL_Tender_Safety_Helmets_2026.pdf" : "Tendernotice_1.pdf");
+            const initialFilename = firstT.file_name || "Tendernotice_1.pdf";
             setSelectedPreset(initialFilename);
+          } else {
+            setTargetTenderId("");
+            setSelectedPreset("");
           }
         }
       })
-      .catch((err) => console.error("Failed to load tenders list:", err));
-  }, [demoMode]);
+      .catch((err) => {
+        console.error("Failed to load initial tender analysis data:", err);
+      })
+      .finally(() => {
+        setIsLoadingTenders(false);
+      });
+  }, []);
 
   const validateAndSelectFile = (file: File): boolean => {
     setErrorMsg(null);
@@ -176,11 +191,11 @@ export default function AITenderAnalyzePage() {
     setCustomFile(null);
     if (tendersList.length > 0) {
       const firstT = tendersList[0];
-      setSelectedPreset(firstT.file_name || (demoMode ? "CPCL_Tender_Safety_Helmets_2026.pdf" : "Tendernotice_1.pdf"));
+      setSelectedPreset(firstT.file_name || "Tendernotice_1.pdf");
       setTargetTenderId(firstT.id || firstT.tender_id || firstT.tender_number || "");
     } else {
-      setSelectedPreset(demoMode ? "CPCL_Tender_Safety_Helmets_2026.pdf" : "Tendernotice_1.pdf");
-      setTargetTenderId(demoMode ? "TND-2026-001" : "2026_IITG_925833_1");
+      setSelectedPreset("");
+      setTargetTenderId("");
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -270,7 +285,7 @@ export default function AITenderAnalyzePage() {
   const handleVerifyRequirement = async (reqId: string) => {
     if (!analysisJob) return;
     try {
-      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || analysisJob.tender_id || analysisJob.filename;
       await apiRequest(
         `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements/${encodeURIComponent(reqId)}/verify`,
         { method: "POST" }
@@ -291,7 +306,7 @@ export default function AITenderAnalyzePage() {
   const handleRejectRequirement = async () => {
     if (!analysisJob || !rejectingReq) return;
     try {
-      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || analysisJob.tender_id || analysisJob.filename;
       await apiRequest(
         `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements/${encodeURIComponent(rejectingReq.id)}/reject`,
         {
@@ -321,7 +336,7 @@ export default function AITenderAnalyzePage() {
     e.preventDefault();
     if (!analysisJob || !editingReq) return;
     try {
-      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || analysisJob.tender_id || analysisJob.filename;
       await apiRequest(
         `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements/${encodeURIComponent(editingReq.id)}`,
         {
@@ -368,7 +383,7 @@ export default function AITenderAnalyzePage() {
     e.preventDefault();
     if (!analysisJob) return;
     try {
-      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || analysisJob.tender_id || analysisJob.filename;
       const data = await apiRequest<{ message: string; requirement?: { id?: string } }>(
         `/tenders/${encodeURIComponent(activeJobOrTenderId)}/requirements`,
         {
@@ -421,7 +436,7 @@ export default function AITenderAnalyzePage() {
   const handleFinalizeRequirements = async () => {
     if (!analysisJob) return;
     try {
-      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || "TND-2026-001";
+      const activeJobOrTenderId = analysisJob.job_id || targetTenderId || analysisJob.tender_id || analysisJob.filename;
       await apiRequest(
         `/tenders/${encodeURIComponent(activeJobOrTenderId)}/finalize-requirements`,
         {
@@ -586,89 +601,29 @@ export default function AITenderAnalyzePage() {
             <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileTextIcon className="w-5 h-5 text-amber-500" /> {demoMode ? "Select CPCL Tender Document Preset" : "Operational Tender Documents"}
+                  <FileTextIcon className="w-5 h-5 text-amber-500" /> Operational Tender Documents
                 </h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {demoMode
-                    ? "Choose from preloaded Chennai Petroleum Corporation Limited (CPCL) tender RFP / NIT notices for instant Smart OCR parsing."
-                    : tendersList.length > 0
+                  {tendersList.length > 0
                     ? "Select from available operational tenders in the database for AI requirement extraction."
                     : "No tender documents available for analysis. Upload an operational tender PDF document below."}
                 </p>
               </div>
 
-              {demoMode ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    {
-                      filename: "CPCL_Tender_Safety_Helmets_2026.pdf",
-                      title: "Supply of Industrial Safety Helmets & PPE",
-                      tender_id: "TND-2026-001",
-                      tender_num: "CPCL/PROC/2026/001",
-                      value: "₹4.50 Cr",
-                      pages: 14,
-                      size: "4.2 MB",
-                      category: "Safety Goods"
-                    },
-                    {
-                      filename: "CPCL_Fire_Safety_Tender_2026.pdf",
-                      title: "Fire Safety Equipment & Hydrant Valves",
-                      tender_id: "TND-2026-003",
-                      tender_num: "CPCL/PROC/2026/003",
-                      value: "₹8.20 Cr",
-                      pages: 18,
-                      size: "5.4 MB",
-                      category: "Firefighting"
-                    },
-                    {
-                      filename: "CPCL_Refinery_Valves_Tender_2026.pdf",
-                      title: "High-Pressure Refinery Valve Assemblies",
-                      tender_id: "TND-2026-004",
-                      tender_num: "CPCL/PROC/2026/004",
-                      value: "₹12.50 Cr",
-                      pages: 22,
-                      size: "6.8 MB",
-                      category: "Mechanical"
-                    },
-                    {
-                      filename: "CPCL_Pipeline_Pigging_2026.pdf",
-                      title: "Intelligent Pigging Pipeline Inspection Services",
-                      tender_id: "TND-2026-005",
-                      tender_num: "CPCL/PROC/2026/005",
-                      value: "₹6.10 Cr",
-                      pages: 16,
-                      size: "4.9 MB",
-                      category: "Pipeline Services"
-                    }
-                  ].map((preset) => (
-                    <div
-                      key={preset.filename}
-                      onClick={() => {
-                        setSelectedPreset(preset.filename);
-                        setTargetTenderId(preset.tender_id);
-                        setCustomFile(null);
-                      }}
-                      className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
-                        selectedPreset === preset.filename && !customFile
-                          ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-md"
-                          : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            {preset.tender_id}
-                          </span>
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{preset.value}</span>
-                        </div>
-                        <h3 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2">{preset.title}</h3>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
-                        <span>{preset.pages} Pages ({preset.size})</span>
-                        <span className="font-medium text-amber-600 dark:text-amber-400">{preset.category}</span>
-                      </div>
-                    </div>
-                  ))}
+              {isLoadingTenders ? (
+                <div className="py-12 px-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                    <FileTextIcon className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Loader2Icon className="w-4 h-4 text-amber-500 animate-spin" />
+                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                      Loading tender documents...
+                    </p>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    Retrieving available tender documents from the database.
+                  </p>
                 </div>
               ) : tendersList.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -712,9 +667,9 @@ export default function AITenderAnalyzePage() {
                 <div className="p-8 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
                   <FileTextIcon className="w-10 h-10 text-slate-400 mx-auto" />
                   <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No tender documents available for analysis</h3>
+                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No tender documents available</h3>
                     <p className="text-xs text-slate-500 max-w-md mx-auto">
-                      DEMO_MODE is disabled and no operational tenders are currently loaded in the database. Upload an authentic tender PDF below, or import a tender from CPPP / manual upload.
+                      Import a tender or upload a tender PDF to begin AI analysis.
                     </p>
                   </div>
                   <div className="flex items-center justify-center gap-3 pt-2">

@@ -105,20 +105,20 @@ interface BidderDashboardData {
   notifications: NotificationItem[];
 }
 
-const FALLBACK_DASHBOARD_DATA: BidderDashboardData = {
+const EMPTY_DASHBOARD_DATA: BidderDashboardData = {
   bidder: {
-    id: "BID-001",
-    name: "Suresh Patel",
-    company_name: "ABC Safety Solutions Pvt Ltd",
-    email: "abc@abcsafety.com",
-    phone: "+91 98765 43210",
-    gstin: "33AABCA1234F1Z5",
-    pan: "AABCA1234F",
-    udyam: "UDYAM-TN-02-0012345",
-    annual_turnover_cr: 4.5,
-    years_experience: 5,
-    oem_authorization: "Direct OEM Tier 1 Authorization - Karam / Honeywell",
-    local_content: 65.0,
+    id: "BIDDER",
+    name: "Vendor Representative",
+    company_name: "Authorized Vendor",
+    email: "",
+    phone: "",
+    gstin: "",
+    pan: "",
+    udyam: "",
+    annual_turnover_cr: 0,
+    years_experience: 0,
+    oem_authorization: "",
+    local_content: 0,
   },
   profile_completion: {
     percentage: 100,
@@ -170,7 +170,7 @@ const FALLBACK_DASHBOARD_DATA: BidderDashboardData = {
       {
         key: "oem_auth",
         title: "OEM Authorization (MAF)",
-        description: "Direct Manufacturer Authorization Form specifically for CPCL tenders.",
+        description: "Direct Manufacturer Authorization Form specifically for procurement tenders.",
         completed: true,
         weight: 10,
       },
@@ -184,136 +184,17 @@ const FALLBACK_DASHBOARD_DATA: BidderDashboardData = {
     ],
   },
   statistics: {
-    available_tenders: 3,
-    my_bids: 3,
-    draft_bids: 1,
-    submitted_bids: 1,
-    under_verification: 1,
-    compliant_bids: 1,
+    available_tenders: 0,
+    my_bids: 0,
+    draft_bids: 0,
+    submitted_bids: 0,
+    under_verification: 0,
+    compliant_bids: 0,
     non_compliant_bids: 0,
   },
-  available_tenders: [
-    {
-      id: "TND-2024-001",
-      tender_number: "CPCL/PROC/SAFETY/2024/09",
-      title: "Supply and Maintenance of High-Grade Industrial Safety & Fire Protection Equipment",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      department: "Fire & Safety Department, Manali Refinery",
-      deadline: "2024-08-30T17:30:00Z",
-      status: "EVALUATING",
-      requirements_count: 6,
-      category: "Industrial Safety",
-      estimated_value: 45000000.0,
-    },
-    {
-      id: "TND-2024-002",
-      tender_number: "CPCL/PROC/MECH/2024/14",
-      title: "Supply of High-Pressure Seamless Alloy Pipes & Flanges for Crude Distillation Unit",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      department: "Mechanical Engineering Division",
-      deadline: "2024-09-30T15:00:00Z",
-      status: "ACTIVE",
-      requirements_count: 4,
-      category: "Mechanical & Piping",
-      estimated_value: 82000000.0,
-    },
-    {
-      id: "TND-2024-003",
-      tender_number: "CPCL/PROC/INST/2024/22",
-      title: "Annual Maintenance & Upgradation Contract for Process Automation DCS & Field Transmitters",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      department: "Instrumentation & Control Division",
-      deadline: "2024-10-15T17:00:00Z",
-      status: "ACTIVE",
-      requirements_count: 3,
-      category: "Automation & Instrumentation",
-      estimated_value: 24000000.0,
-    },
-  ],
-  my_bids: [
-    {
-      id: "BID-DOC-001",
-      tender_id: "TND-2024-001",
-      tender_number: "CPCL/PROC/SAFETY/2024/09",
-      tender_title: "Supply and Maintenance of High-Grade Industrial Safety & Fire Protection Equipment",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      bid_amount: "₹ 4,42,00,000",
-      submission_date: "2024-08-20T14:30:00Z",
-      status: "SUBMITTED",
-      verification_status: "AUTHENTICATED",
-      compliance_status: "COMPLIANT",
-      compliance_score: 100.0,
-      passed_rules: 6,
-      total_rules: 6,
-      is_draft: false,
-    },
-    {
-      id: "BID-DOC-002",
-      tender_id: "TND-2024-002",
-      tender_number: "CPCL/PROC/MECH/2024/14",
-      tender_title: "Supply of High-Pressure Seamless Alloy Pipes & Flanges for Crude Distillation Unit",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      bid_amount: "₹ 8,10,00,000",
-      submission_date: null,
-      status: "DRAFT",
-      verification_status: "PENDING",
-      compliance_status: "PENDING",
-      compliance_score: 0.0,
-      passed_rules: 0,
-      total_rules: 4,
-      is_draft: true,
-    },
-    {
-      id: "BID-DOC-003",
-      tender_id: "TND-2024-003",
-      tender_number: "CPCL/PROC/INST/2024/22",
-      tender_title: "Annual Maintenance & Upgradation Contract for Process Automation DCS & Field Transmitters",
-      organization: "Chennai Petroleum Corporation Limited (CPCL)",
-      bid_amount: "₹ 2,15,00,000",
-      submission_date: "2024-09-02T11:20:00Z",
-      status: "UNDER_VERIFICATION",
-      verification_status: "PROCESSING",
-      compliance_status: "REVIEW_REQUIRED",
-      compliance_score: 80.0,
-      passed_rules: 2,
-      total_rules: 3,
-      is_draft: false,
-    },
-  ],
-  notifications: [
-    {
-      id: "NOTIF-001",
-      title: "Technical Evaluation Passed",
-      message: "Your bid for Tender CPCL/PROC/SAFETY/2024/09 has passed technical & statutory pre-qualification with 100% compliance.",
-      timestamp: "26 Aug 2024 · 14:30 IST",
-      type: "SUCCESS",
-      read: false,
-    },
-    {
-      id: "NOTIF-002",
-      title: "MSME Udyam Exemption Verified",
-      message: "EMD Exemption of ₹9,00,000 granted under MSME Udyam Policy (Certificate: UDYAM-TN-02-0012345).",
-      timestamp: "21 Aug 2024 · 10:00 IST",
-      type: "INFO",
-      read: true,
-    },
-    {
-      id: "NOTIF-003",
-      title: "Tender Deadline Approaching",
-      message: "Tender CPCL/PROC/MECH/2024/14 (Alloy Pipes & Flanges) closes on 30-Sep-2024. Your draft submission is pending final review.",
-      timestamp: "01 Sep 2024 · 09:00 IST",
-      type: "WARNING",
-      read: false,
-    },
-    {
-      id: "NOTIF-004",
-      title: "Document Verification In Progress",
-      message: "Automated verification initiated for Process Automation AMC submission (TND-2024-003).",
-      timestamp: "02 Sep 2024 · 11:25 IST",
-      type: "INFO",
-      read: false,
-    },
-  ],
+  available_tenders: [],
+  my_bids: [],
+  notifications: [],
 };
 
 function formatDeadline(isoDateString?: string | null): string {
@@ -331,7 +212,7 @@ function formatDeadline(isoDateString?: string | null): string {
 }
 
 export default function BidderDashboardPage() {
-  const [data, setData] = useState<BidderDashboardData>(FALLBACK_DASHBOARD_DATA);
+  const [data, setData] = useState<BidderDashboardData>(EMPTY_DASHBOARD_DATA);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -342,11 +223,11 @@ export default function BidderDashboardPage() {
         if (res?.bidder) {
           setData(res);
         } else if (currentUser) {
-          // Adjust fallback with logged in user details if needed
           setData((prev) => ({
             ...prev,
             bidder: {
               ...prev.bidder,
+              id: (currentUser as any).bidder_id || "BIDDER",
               name: currentUser.name || prev.bidder.name,
               company_name: currentUser.organization || prev.bidder.company_name,
               email: currentUser.email || prev.bidder.email,
@@ -354,7 +235,7 @@ export default function BidderDashboardPage() {
           }));
         }
       } catch {
-        // Keep fallback data for seamless offline demo
+        // Safe empty state
       } finally {
         setLoading(false);
       }
@@ -547,48 +428,56 @@ export default function BidderDashboardPage() {
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {available_tenders.map((tender) => (
-              <Card key={tender.id} className="p-4 border-slate-200 hover:border-slate-300 transition-colors">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold font-mono text-blue-700 border border-blue-200">
-                        {tender.tender_number}
+          {available_tenders.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
+              <FileTextIcon className="size-6 text-slate-400 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-800">No active tenders published</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Check back later for new procurement opportunities.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {available_tenders.map((tender) => (
+                <Card key={tender.id} className="p-4 border-slate-200 hover:border-slate-300 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold font-mono text-blue-700 border border-blue-200">
+                          {tender.tender_number}
+                        </span>
+                        <TenderStatusBadge status={tender.status} />
+                      </div>
+
+                      <h3 className="text-xs font-bold text-slate-900 leading-snug">
+                        {tender.title}
+                      </h3>
+
+                      <p className="text-[11px] text-slate-500">
+                        {tender.organization} · {tender.department}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-3 text-slate-600">
+                      <span className="flex items-center gap-1 font-medium">
+                        <ClockIcon className="size-3 text-slate-400" />
+                        Deadline: {formatDeadline(tender.deadline)}
                       </span>
-                      <TenderStatusBadge status={tender.status} />
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
+                        {tender.requirements_count} Statutory Criteria
+                      </span>
                     </div>
 
-                    <h3 className="text-xs font-bold text-slate-900 leading-snug">
-                      {tender.title}
-                    </h3>
-
-                    <p className="text-[11px] text-slate-500">
-                      {tender.organization} · {tender.department}
-                    </p>
+                    <Link href="/bidder/tenders">
+                      <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
+                        View Tender
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-
-                <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                  <div className="flex items-center gap-3 text-slate-600">
-                    <span className="flex items-center gap-1 font-medium">
-                      <ClockIcon className="size-3 text-slate-400" />
-                      Deadline: {formatDeadline(tender.deadline)}
-                    </span>
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                      {tender.requirements_count} Statutory Criteria
-                    </span>
-                  </div>
-
-                  <Link href="/bidder/tenders">
-                    <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
-                      View Tender
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* My Bids */}
@@ -609,54 +498,69 @@ export default function BidderDashboardPage() {
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {my_bids.map((bid) => (
-              <Card key={bid.id} className="p-4 border-slate-200">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
+          {my_bids.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
+              <FileTextIcon className="size-6 text-slate-400 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-800">No bids submitted yet</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Explore available tenders and submit your bid dossier.</p>
+              <div className="mt-3">
+                <Link href="/bidder/tenders">
+                  <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold">
+                    Browse Active Tenders
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {my_bids.map((bid) => (
+                <Card key={bid.id} className="p-4 border-slate-200">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold font-mono text-slate-700 border border-slate-200">
+                          {bid.tender_number}
+                        </span>
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                            bid.status === "SUBMITTED"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : bid.status === "UNDER_VERIFICATION"
+                              ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}
+                        >
+                          {bid.status}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xs font-bold text-slate-900 leading-snug">
+                        {bid.tender_title}
+                      </h3>
+
+                      <p className="text-[11px] text-slate-500">
+                        Bid Amount: <span className="font-bold text-slate-800">{bid.bid_amount}</span> ·{" "}
+                        Submitted: {formatDeadline(bid.submission_date) || "Draft"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold font-mono text-slate-700 border border-slate-200">
-                        {bid.tender_number}
-                      </span>
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                          bid.status === "SUBMITTED"
-                            ? "bg-blue-50 text-blue-700 border border-blue-200"
-                            : bid.status === "UNDER_VERIFICATION"
-                            ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}
-                      >
-                        {bid.status}
-                      </span>
+                      <DocumentStatusBadge status={bid.verification_status} />
+                      <StatusBadge status={bid.compliance_status} />
                     </div>
 
-                    <h3 className="text-xs font-bold text-slate-900 leading-snug">
-                      {bid.tender_title}
-                    </h3>
-
-                    <p className="text-[11px] text-slate-500">
-                      Bid Amount: <span className="font-bold text-slate-800">{bid.bid_amount}</span> ·{" "}
-                      Submitted: {formatDeadline(bid.submission_date) || "Draft"}
-                    </p>
+                    <Link href="/bidder/bids">
+                      <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
+                        View Dossier
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-
-                <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <DocumentStatusBadge status={bid.verification_status} />
-                    <StatusBadge status={bid.compliance_status} />
-                  </div>
-
-                  <Link href="/bidder/bids">
-                    <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
-                      View Dossier
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -680,31 +584,38 @@ export default function BidderDashboardPage() {
             </span>
           </div>
 
-          <div className="space-y-3">
-            {notifications.map((notif) => {
-              const typeClasses = {
-                SUCCESS: "bg-emerald-50 border-emerald-200 text-emerald-900",
-                INFO: "bg-blue-50 border-blue-200 text-blue-900",
-                WARNING: "bg-amber-50 border-amber-200 text-amber-900",
-                URGENT: "bg-red-50 border-red-200 text-red-900",
-              }[notif.type] || "bg-slate-50 border-slate-200 text-slate-900";
+          {notifications.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/50 p-6 text-center">
+              <p className="text-xs font-medium text-slate-500">No active notifications</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Procurement and verification alerts will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {notifications.map((notif) => {
+                const typeClasses = {
+                  SUCCESS: "bg-emerald-50 border-emerald-200 text-emerald-900",
+                  INFO: "bg-blue-50 border-blue-200 text-blue-900",
+                  WARNING: "bg-amber-50 border-amber-200 text-amber-900",
+                  URGENT: "bg-red-50 border-red-200 text-red-900",
+                }[notif.type] || "bg-slate-50 border-slate-200 text-slate-900";
 
-              return (
-                <div
-                  key={notif.id}
-                  className={`rounded-xl border p-3.5 transition-all text-xs ${typeClasses}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-bold">{notif.title}</span>
-                    <span className="text-[10px] text-slate-500 shrink-0">{notif.timestamp}</span>
+                return (
+                  <div
+                    key={notif.id}
+                    className={`rounded-xl border p-3.5 transition-all text-xs ${typeClasses}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-bold">{notif.title}</span>
+                      <span className="text-[10px] text-slate-500 shrink-0">{notif.timestamp}</span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-relaxed text-slate-700">
+                      {notif.message}
+                    </p>
                   </div>
-                  <p className="mt-1 text-[11px] leading-relaxed text-slate-700">
-                    {notif.message}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </Card>
 
         {/* 6. Profile Completion Section */}

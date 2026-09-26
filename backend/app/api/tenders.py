@@ -1013,7 +1013,7 @@ async def upload_tender_document(
 
     # 7. Persist Analysis Job
     job_id = f"JOB-AI-{int(time.time() * 1000) % 100000:05d}"
-    job_tender_id = effective_tender_id or "TND-2026-001"
+    job_tender_id = effective_tender_id or clean_filename
     page_count = doc_profile.get("page_count") or 1
     job = create_analysis_job({
         "job_id": job_id,

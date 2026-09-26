@@ -41,11 +41,11 @@ export default function BidderTendersPage() {
         const res = await apiRequest<any[]>("/bidder-portal/tenders");
         if (res && Array.isArray(res) && res.length > 0) {
           const formatted: PublicTender[] = res.map((t) => {
-            const estNum = typeof t.estimated_value === "number" ? t.estimated_value : 45000000;
-            const emdNum = typeof t.emd_amount === "number" ? t.emd_amount : 900000;
+            const estNum = typeof t.estimated_value === "number" ? t.estimated_value : 0;
+            const emdNum = typeof t.emd_amount === "number" ? t.emd_amount : 0;
 
             // Format closing date
-            let closingStr = t.deadline || t.closing_date || "18 Sep 2026";
+            let closingStr = t.deadline || t.closing_date || "Open for Submission";
             if (closingStr.includes("T")) {
               try {
                 const dt = new Date(closingStr);
@@ -61,21 +61,23 @@ export default function BidderTendersPage() {
               }
             }
 
+            const estDisplay = t.estimated_value_display || (estNum > 0 ? (estNum >= 10000000 ? `₹ ${(estNum / 10000000).toFixed(2)} Cr` : `₹ ${(estNum / 100000).toFixed(2)} Lakh`) : "Refer NIT Document");
+            const emdDisplay = t.emd_amount_display || (emdNum > 0 ? `₹ ${(emdNum / 100000).toFixed(2)} Lakh (Exempt for MSME)` : "Exempt / NIL");
+
             return {
               id: t.id,
               tender_id: t.tender_number || t.id,
               tender_number: t.tender_number || t.id,
               title: t.title,
-              organization: t.organization || "Chennai Petroleum Corporation Limited (CPCL)",
+              organization: t.organization || "Procuring Authority",
               category: t.category || "Procurement",
-              estimated_value: `₹ ${(estNum / 10000000).toFixed(2)} Cr`,
-              emd_amount: `₹ ${(emdNum / 100000).toFixed(2)} L (Exempt for Udyam MSME)`,
+              estimated_value: estDisplay,
+              emd_amount: emdDisplay,
               closing_date: closingStr,
-              eligibility_status: t.id === "TND-2026-001" || t.id === "TND-2024-001" ? "ELIGIBLE" : "CONDITIONAL",
+              eligibility_status: t.eligibility_status || "CONDITIONAL",
               eligibility_reason:
-                t.id === "TND-2026-001"
-                  ? "Your turnover (₹4.50 Cr >= ₹3.0 Cr) and 5 years PSU experience meet mandatory qualification criteria."
-                  : "Review mandatory technical specification & Make in India local content clauses before submission.",
+                t.eligibility_reason ||
+                "Review mandatory technical specifications, statutory registrations (GST, PAN, Udyam) and PQC clauses in NIT document.",
               description: t.description,
             };
           });

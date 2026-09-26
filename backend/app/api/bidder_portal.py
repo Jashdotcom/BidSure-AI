@@ -409,7 +409,12 @@ async def run_bidder_pre_check(
     """
     Allows bidder to simulate a preliminary compliance check before final bid submission.
     """
-    tender_id = payload.get("tender_id", "TND-2026-001")
+    tender_id = payload.get("tender_id")
+    if not tender_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tender ID is required for pre-check."
+        )
     tender = get_tender_by_id(tender_id)
     if not tender:
         raise HTTPException(
