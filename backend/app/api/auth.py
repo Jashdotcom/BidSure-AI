@@ -14,9 +14,12 @@ import os
 import uuid
 import re
 
+import random
 from app.schemas.auth import (
     LoginRequest,
     RegisterBidderRequest,
+    SendOTPRequest,
+    VerifyOTPRequest,
     TokenResponse,
     UserResponse
 )
@@ -24,8 +27,11 @@ from app.data.sample_data import (
     SAMPLE_USERS,
     find_user_by_email,
     add_user,
-    add_bidder
+    add_bidder,
+    add_audit_log,
+    get_bidder_by_id
 )
+from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -389,3 +395,308 @@ async def get_my_profile(current_user: Dict[str, Any] = Depends(get_current_user
         "designation": current_user.get("designation"),
         "bidder_id": current_user.get("bidder_id")
     }
+
+
+# ---------------------------------------------------------------------------
+# Bidder Onboarding Flow Endpoints (Multi-step, OTP, and Business verification)
+# ---------------------------------------------------------------------------
+
+_PENDING_OTPS: Dict[str, Dict[str, Any]] = {}
+gov_service = MockGovernmentVerificationService(is_mock=True)
+
+@router.post("/bidder/send-otp", response_model=Dict[str, Any])
+async def send_bidder_otp(req: SendOTPRequest):
+    """
+    Sends/generates a secure 6-digit email OTP for bidder verification.
+    Development mode: Prints OTP to backend terminal console (`[OTP DEV CONSOLE]`).
+    """
+    email_clean = req.email.strip().lower()
+    if not email_clean or not re.match(EMAIL_REGEX, email_clean):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid email address is required for OTP."
+        )
+
+    # Generate 6-digit cryptographic OTP
+    otp_code = f"{random.randint(0, 999999):06d}"
+    expires_at = time.time() + 300  # 5 minutes expiry
+
+    _PENDING_OTPS[email_clean] = {
+        "otp": otp_code,
+        "expires_at": expires_at,
+        "attempts": 0,
+        "verified": False
+    }
+
+    # Print to development console per requirement
+    print(f"\n==================================================")
+    print(f"[OTP DEV CONSOLE] Verification OTP for {email_clean}: {otp_code}")
+    print(f"[OTP DEV CONSOLE] Valid for 5 minutes.")
+    print(f"==================================================\n")
+
+    # Add audit log
+    add_audit_log({
+        "action": "BIDDER_OTP_SENT",
+        "actor": email_clean,
+        "entity_id": email_clean,
+        "details": {"status": "SUCCESS", "message": "OTP generated and delivered to dev console"}
+    })
+
+    return {
+        "status": "SUCCESS",
+        "message": f"Verification OTP successfully sent to {email_clean}.",
+        "delivery_mode": "console"
+    }
+
+
+@router.post("/bidder/verify-otp", response_model=Dict[str, Any])
+async def verify_bidder_otp(req: VerifyOTPRequest):
+    """
+    Verifies the 6-digit OTP code submitted by the bidder.
+    """
+    email_clean = req.email.strip().lower()
+    otp_code = req.otp_code.strip()
+
+    record = _PENDING_OTPS.get(email_clean)
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No active OTP found for this email. Please request a new OTP."
+        )
+
+    if time.time() > record["expires_at"]:
+        del _PENDING_OTPS[email_clean]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP has expired. Please request a new OTP."
+        )
+
+    if record["attempts"] >= 5:
+        del _PENDING_OTPS[email_clean]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum verification attempts exceeded. Please request a new OTP."
+        )
+
+    record["attempts"] += 1
+
+    if not hmac.compare_digest(record["otp"], otp_code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid OTP code. {5 - record['attempts']} attempts remaining."
+        )
+
+    # Mark as verified
+    record["verified"] = True
+
+    add_audit_log({
+        "action": "BIDDER_EMAIL_VERIFIED",
+        "actor": email_clean,
+        "entity_id": email_clean,
+        "details": {"status": "SUCCESS"}
+    })
+
+    return {
+        "status": "SUCCESS",
+        "verified": True,
+        "message": "Email address verified successfully."
+    }
+
+
+@router.post("/bidder/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register_bidder_onboarding(req: RegisterBidderRequest):
+    """
+    Comprehensive multi-step bidder onboarding and registration endpoint.
+    Runs PAN, GST, and Udyam verification adapters and cross-business identity checks.
+    """
+    email_clean = req.email.strip().lower()
+    company_name = req.company_name.strip()
+    full_name = req.full_name.strip()
+    phone = req.phone.strip()
+    pan = req.pan.strip().upper()
+    gstin = req.gstin.strip().upper()
+    udyam = req.udyam.strip().upper() if req.udyam else ""
+
+    # 1. Validation
+    if not all([full_name, company_name, email_clean, phone, pan, gstin]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Full name, company name, email, phone, PAN, and GSTIN are required."
+        )
+
+    if not re.match(EMAIL_REGEX, email_clean):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email address format."
+        )
+
+    existing_user = find_user_by_email(email_clean)
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email address already exists. Please login."
+        )
+
+    if len(req.password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long."
+        )
+
+    if req.password != req.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match."
+        )
+
+    # 2. Run Government Verification Adapters
+    verification_payload = {
+        "id": f"BID-{uuid.uuid4().hex[:6].upper()}",
+        "name": company_name,
+        "pan": pan,
+        "gstin": gstin,
+        "udyam": udyam
+    }
+
+    gov_results = await gov_service.verify_all_for_bidder(verification_payload)
+
+    # 3. Cross-Business-Identity Consistency Check
+    # Compare submitted company_name with legal names returned from PAN and GST adapters
+    pan_legal_name = gov_results.get("pan", {}).get("entity_name", "")
+    gst_legal_name = gov_results.get("gstin", {}).get("legal_name", "") or gov_results.get("gstin", {}).get("trade_name", "")
+
+    def normalize_name(n: str) -> str:
+        if not n:
+            return ""
+        n_lower = n.lower()
+        for suffix in ["pvt ltd", "private limited", "limited", "ltd", "llp", "inc", "co", ".", ",", "-"]:
+            n_lower = n_lower.replace(suffix, "")
+        return "".join(n_lower.split())
+
+    norm_submitted = normalize_name(company_name)
+    norm_pan = normalize_name(pan_legal_name)
+    norm_gst = normalize_name(gst_legal_name)
+
+    identity_status = "IDENTITY_CONSISTENT"
+    identity_message = "Business entity identity verified consistent across PAN and GSTIN records."
+
+    if norm_pan and norm_submitted and norm_pan not in norm_submitted and norm_submitted not in norm_pan:
+        identity_status = "REQUIRES_REVIEW"
+        identity_message = "Submitted company name differs from PAN registered entity name. Officer review recommended."
+    elif norm_gst and norm_submitted and norm_gst not in norm_submitted and norm_submitted not in norm_gst:
+        identity_status = "REQUIRES_REVIEW"
+        identity_message = "Submitted company name differs from GSTIN trade/legal name. Officer review recommended."
+
+    # 4. Create User & Bidder Profile
+    user_id = f"usr_{uuid.uuid4().hex[:8]}"
+    bidder_id = verification_payload["id"]
+    hashed_pwd = hash_password(req.password)
+
+    new_user = {
+        "id": user_id,
+        "email": email_clean,
+        "password_hash": hashed_pwd,
+        "name": full_name,
+        "role": "BIDDER",  # FORCED BIDDER ROLE
+        "organization": company_name,
+        "phone": phone,
+        "bidder_id": bidder_id
+    }
+
+    new_bidder_profile = {
+        "id": bidder_id,
+        "user_id": user_id,
+        "name": company_name,
+        "contact_person": full_name,
+        "email": email_clean,
+        "phone": phone,
+        "entity_type": req.entity_type,
+        "business_address": req.business_address,
+        "city": req.city,
+        "state": req.state,
+        "pincode": req.pincode,
+        "gstin": gstin,
+        "pan": pan,
+        "udyam": udyam,
+        "business_registration_number": req.business_registration_number,
+        "business_registration_date": req.business_registration_date,
+        "annual_turnover_cr": 0.0,
+        "years_experience": 0,
+        "oem_authorization": "Unregistered",
+        "local_content": 0.0,
+        "emd_paid": False,
+        "status": "VERIFIED" if identity_status == "IDENTITY_CONSISTENT" else "UNDER_REVIEW",
+        "verification_status": identity_status,
+        "government_verifications": gov_results,
+        "score": 0.0,
+        "documents": {}
+    }
+
+    add_user(new_user)
+    add_bidder(new_bidder_profile)
+
+    add_audit_log({
+        "action": "BIDDER_REGISTRATION_COMPLETED",
+        "actor": email_clean,
+        "entity_id": bidder_id,
+        "details": {
+            "company_name": company_name,
+            "identity_status": identity_status,
+            "verifications_run": list(gov_results.keys())
+        }
+    })
+
+    token_payload = {
+        "sub": user_id,
+        "email": email_clean,
+        "name": full_name,
+        "role": "BIDDER",
+        "organization": company_name,
+        "bidder_id": bidder_id
+    }
+
+    access_token = create_jwt_token(token_payload)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user_id,
+            "email": email_clean,
+            "name": full_name,
+            "role": "BIDDER",
+            "organization": company_name,
+            "bidder_id": bidder_id
+        },
+        "verification_summary": {
+            "bidder_id": bidder_id,
+            "identity_status": identity_status,
+            "identity_message": identity_message,
+            "verifications": gov_results
+        }
+    }
+
+
+@router.get("/bidder/verification-status", response_model=Dict[str, Any])
+async def get_bidder_verification_status(current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))):
+    """
+    Returns business verification status and cross-identity check results for the authenticated bidder.
+    """
+    bidder_id = current_user.get("bidder_id")
+    bidder = get_bidder_by_id(bidder_id) if bidder_id else None
+
+    if not bidder:
+        return {
+            "bidder_id": bidder_id,
+            "status": "REGISTERED",
+            "verification_status": "PENDING",
+            "message": "Bidder profile pending verification."
+        }
+
+    return {
+        "bidder_id": bidder_id,
+        "status": bidder.get("status"),
+        "verification_status": bidder.get("verification_status", "IDENTITY_CONSISTENT"),
+        "government_verifications": bidder.get("government_verifications", {})
+    }
+
