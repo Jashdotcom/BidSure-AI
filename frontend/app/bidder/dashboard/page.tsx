@@ -2,17 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, Button, StatusBadge, DocumentStatusBadge, TenderStatusBadge } from "@/components/ui";
+import { Card, Button } from "@/components/ui";
 import {
   FileTextIcon,
   ShieldCheckIcon,
-  CheckCircleIcon,
-  AlertTriangleIcon,
-  UploadIcon,
   UsersIcon,
-  ClockIcon,
-  ArrowRightIcon,
-  BuildingIcon,
   CheckIcon,
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
@@ -68,36 +62,6 @@ interface Statistics {
   non_compliant_bids: number;
 }
 
-interface AvailableTenderItem {
-  id: string;
-  tender_number: string;
-  title: string;
-  organization: string;
-  department: string;
-  deadline: string;
-  status: string;
-  requirements_count: number;
-  category: string;
-  estimated_value: number;
-}
-
-interface MyBidItem {
-  id: string;
-  tender_id: string;
-  tender_number: string;
-  tender_title: string;
-  organization: string;
-  bid_amount: string;
-  submission_date: string | null;
-  status: string;
-  verification_status: string;
-  compliance_status: string;
-  compliance_score: number;
-  passed_rules: number;
-  total_rules: number;
-  is_draft: boolean;
-}
-
 interface NotificationItem {
   id: string;
   title: string;
@@ -126,8 +90,6 @@ interface BidderDashboardData {
   profile_completion: ProfileCompletion;
   business_verification: BusinessVerification;
   statistics: Statistics;
-  available_tenders: AvailableTenderItem[];
-  my_bids: MyBidItem[];
   notifications: NotificationItem[];
 }
 
@@ -215,24 +177,8 @@ const EMPTY_DASHBOARD_DATA: BidderDashboardData = {
     compliant_bids: 0,
     non_compliant_bids: 0,
   },
-  available_tenders: [],
-  my_bids: [],
   notifications: [],
 };
-
-function formatDeadline(isoDateString?: string | null): string {
-  if (!isoDateString) return "No deadline specified";
-  try {
-    const d = new Date(isoDateString);
-    return d.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return isoDateString;
-  }
-}
 
 export default function BidderDashboardPage() {
   const [data, setData] = useState<BidderDashboardData>(EMPTY_DASHBOARD_DATA);
@@ -266,7 +212,7 @@ export default function BidderDashboardPage() {
     loadDashboard();
   }, []);
 
-  const { bidder, profile_completion, business_verification, statistics, available_tenders, my_bids, notifications } = data;
+  const { bidder, profile_completion, business_verification, statistics, notifications } = data;
 
   return (
     <div className="space-y-8 font-sans antialiased text-slate-800">
@@ -462,168 +408,10 @@ export default function BidderDashboardPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 3. AVAILABLE TENDERS & 4. MY BIDS (2-COLUMN / STACKED)                    */}
+      {/* 3. NOTIFICATIONS & PROFILE REQUIREMENTS CHECKLIST                         */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Available Tenders */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900">
-                Available CPCL Public Tenders
-              </h2>
-              <p className="text-xs text-slate-500">
-                Live tenders open for bidder pre-qualification and submission.
-              </p>
-            </div>
-            <Link href="/bidder/tenders">
-              <Button size="sm" variant="ghost" className="text-xs text-emerald-700 hover:text-emerald-800">
-                View All Tenders →
-              </Button>
-            </Link>
-          </div>
-
-          {available_tenders.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
-              <FileTextIcon className="size-6 text-slate-400 mx-auto mb-2" />
-              <p className="text-xs font-bold text-slate-800">No active tenders published</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Check back later for new procurement opportunities.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {available_tenders.map((tender) => (
-                <Card key={tender.id} className="p-4 border-slate-200 hover:border-slate-300 transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold font-mono text-blue-700 border border-blue-200">
-                          {tender.tender_number}
-                        </span>
-                        <TenderStatusBadge status={tender.status} />
-                      </div>
-
-                      <h3 className="text-xs font-bold text-slate-900 leading-snug">
-                        {tender.title}
-                      </h3>
-
-                      <p className="text-[11px] text-slate-500">
-                        {tender.organization} · {tender.department}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                    <div className="flex items-center gap-3 text-slate-600">
-                      <span className="flex items-center gap-1 font-medium">
-                        <ClockIcon className="size-3 text-slate-400" />
-                        Deadline: {formatDeadline(tender.deadline)}
-                      </span>
-                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">
-                        {tender.requirements_count} Statutory Criteria
-                      </span>
-                    </div>
-
-                    <Link href="/bidder/tenders">
-                      <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
-                        View Tender
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* My Bids */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900">
-                My Tender Bids & Submissions
-              </h2>
-              <p className="text-xs text-slate-500">
-                Status of your submitted and draft procurement dossiers.
-              </p>
-            </div>
-            <Link href="/bidder/bids">
-              <Button size="sm" variant="ghost" className="text-xs text-emerald-700 hover:text-emerald-800">
-                View All Bids →
-              </Button>
-            </Link>
-          </div>
-
-          {my_bids.length === 0 ? (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
-              <FileTextIcon className="size-6 text-slate-400 mx-auto mb-2" />
-              <p className="text-xs font-bold text-slate-800">No bids submitted yet</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Explore available tenders and submit your bid dossier.</p>
-              <div className="mt-3">
-                <Link href="/bidder/tenders">
-                  <Button size="sm" className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold">
-                    Browse Active Tenders
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {my_bids.map((bid) => (
-                <Card key={bid.id} className="p-4 border-slate-200">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold font-mono text-slate-700 border border-slate-200">
-                          {bid.tender_number}
-                        </span>
-                        <span
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                            bid.status === "SUBMITTED"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : bid.status === "UNDER_VERIFICATION"
-                              ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
-                        >
-                          {bid.status}
-                        </span>
-                      </div>
-
-                      <h3 className="text-xs font-bold text-slate-900 leading-snug">
-                        {bid.tender_title}
-                      </h3>
-
-                      <p className="text-[11px] text-slate-500">
-                        Bid Amount: <span className="font-bold text-slate-800">{bid.bid_amount}</span> ·{" "}
-                        Submitted: {formatDeadline(bid.submission_date) || "Draft"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <DocumentStatusBadge status={bid.verification_status} />
-                      <StatusBadge status={bid.compliance_status} />
-                    </div>
-
-                    <Link href="/bidder/bids">
-                      <Button size="sm" variant="outline" className="px-2.5 py-1 text-xs">
-                        View Dossier
-                      </Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 5. NOTIFICATIONS & 6. PROFILE REQUIREMENTS CHECKLIST                      */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 5. Notifications Section */}
+        {/* Notifications Section */}
         <Card className="p-6 border-slate-200">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -673,7 +461,7 @@ export default function BidderDashboardPage() {
           )}
         </Card>
 
-        {/* 6. Profile Requirements Checklist */}
+        {/* Profile Requirements Checklist */}
         <Card className="p-6 border-slate-200">
           <div className="flex items-center justify-between mb-4">
             <div>
