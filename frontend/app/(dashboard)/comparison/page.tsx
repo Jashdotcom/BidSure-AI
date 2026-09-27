@@ -201,10 +201,10 @@ export default function ComparisonPage() {
     switch (key) {
       case "turnover":
         const toVal = b.annual_turnover_cr ?? b.turnover;
-        return toVal !== undefined && toVal !== null && toVal !== "" ? `₹${toVal} Cr` : "Not Available";
+        return toVal !== undefined && toVal !== null && String(toVal).trim() !== "" ? `₹${toVal} Cr` : "Not Available";
       case "experience":
         const expVal = b.experience_years ?? b.years_experience;
-        return expVal !== undefined && expVal !== null && expVal !== "" ? `${expVal} Years` : "Not Available";
+        return expVal !== undefined && expVal !== null && String(expVal).trim() !== "" ? `${expVal} Years` : "Not Available";
       case "oem_auth":
         return b.oem_status || b.oem_authorization || "Not Provided";
       case "mii_content":
