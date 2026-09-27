@@ -11,6 +11,7 @@ Populates the application with:
 import os
 import sys
 import hashlib
+import json
 from datetime import datetime
 
 # Ensure backend root is in sys.path
@@ -290,6 +291,22 @@ Status: SYNTHETIC DEMO
             })
 
     print(f"  ✓ Successfully created {total_bids_created} Demo Bid Submissions across all 12 CPPP tenders.")
+
+    # Save state to persistent demo_dataset_state.json so uvicorn / backend restarts load it automatically
+    state_data = {
+        "tenders": sample_data.SAMPLE_TENDERS,
+        "bidders": sample_data.SAMPLE_BIDDERS,
+        "bidder_profiles": sample_data.SAMPLE_BIDDER_PROFILES,
+        "bidder_documents": sample_data.SAMPLE_BIDDER_DOCUMENTS,
+        "bidder_bids": sample_data.SAMPLE_BIDDER_BIDS,
+        "audit_logs": sample_data.SAMPLE_AUDIT_LOGS,
+        "users": sample_data.SAMPLE_USERS
+    }
+    state_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app", "data", "demo_dataset_state.json"))
+    with open(state_path, "w", encoding="utf-8") as f:
+        json.dump(state_data, f, indent=2)
+    print(f"  ✓ Saved persistent demo dataset state to {state_path}")
+
     print("==================================================")
     print("Demo Dataset Loader Completed Successfully!")
     print(f"  - Real CPPP Tenders: {len(tenders_loaded)}")

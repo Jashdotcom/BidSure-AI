@@ -676,15 +676,238 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
     }
 ]
 
-# Live Mutable Operational Data Stores
-# Procurement data is empty by default. Demo records are only materialized when
-# explicitly enabled for a local demo session via DEMO_MODE=true.
-SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES) if DEMO_MODE else {}
-SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_TENDERS) if DEMO_MODE else []
-SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDERS) if DEMO_MODE else []
-SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_BIDS) if DEMO_MODE else []
-SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS) if DEMO_MODE else []
-SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
+# Live Mutable Operational Data Stores with Disk Persistence & Auto-Generation Support
+STATE_FILE_PATH = os.path.join(os.path.dirname(__file__), "demo_dataset_state.json")
+
+def _load_or_generate_persisted_state():
+    if os.path.exists(STATE_FILE_PATH):
+        try:
+            with open(STATE_FILE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+
+    # Auto-generate 12 real CPPP tenders & synthetic demo dataset on first initialization
+    try:
+        from app.services.tender_sources.cppp_adapter import CPPPTenderAdapter
+        cppp_adapter = CPPPTenderAdapter()
+        tenders = []
+        for tender_id, tender_meta in cppp_adapter.REAL_CPPP_REGISTRY.items():
+            tender_record = dict(tender_meta)
+            tender_record["id"] = tender_id
+            tender_record["source"] = "CPPP"
+            tender_record["source_type"] = "GOVERNMENT_PUBLIC"
+            tender_record["official_source_url"] = f"https://eprocure.gov.in/eprocure/app?page=FrontEndTenderDetails&service=page&tenderId={tender_id}"
+            tender_record["external_tender_id"] = tender_id
+            tender_record["external_reference_number"] = tender_record.get("ref", tender_id)
+            tender_record["imported_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            tender_record["last_synced_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            tender_record["document_count"] = 1
+            tenders.append(tender_record)
+
+        synthetic_bidders_config = [
+            ("BID-DEMO-001", "Apex Secure Systems Pvt. Ltd.", "demo001@bidsure.local", "COMPLIANT"),
+            ("BID-DEMO-002", "Vertex Industrial Technologies Pvt. Ltd.", "demo002@bidsure.local", "MISSING_EXPERIENCE"),
+            ("BID-DEMO-003", "Nova Infra Solutions Pvt. Ltd.", "demo003@bidsure.local", "TURNOVER_LOW"),
+            ("BID-DEMO-004", "BluePeak Engineering Pvt. Ltd.", "demo004@bidsure.local", "COMPLIANT"),
+            ("BID-DEMO-005", "Orion Technical Systems Pvt. Ltd.", "demo005@bidsure.local", "MISSING_OEM"),
+            ("BID-DEMO-006", "Pragati Electrical Solutions Pvt. Ltd.", "demo006@bidsure.local", "GST_MISMATCH"),
+            ("BID-DEMO-007", "Quantum Facility Technologies Pvt. Ltd.", "demo007@bidsure.local", "COMPLIANT"),
+            ("BID-DEMO-008", "NexGen Scientific Instruments Pvt. Ltd.", "demo008@bidsure.local", "LOCAL_CONTENT_LOW"),
+            ("BID-DEMO-009", "Trident Civil Projects Pvt. Ltd.", "demo009@bidsure.local", "COMPLIANT"),
+            ("BID-DEMO-010", "Arya Infrastructure Systems Pvt. Ltd.", "demo010@bidsure.local", "BLACKLIST_ISSUE"),
+            ("BID-DEMO-011", "Crestline Automation Pvt. Ltd.", "demo011@bidsure.local", "MISSING_DOCS"),
+            ("BID-DEMO-012", "Bharat Integrated Engineering Pvt. Ltd.", "demo012@bidsure.local", "COMPLIANT")
+        ]
+
+        bidders = []
+        bidder_profiles = {}
+        bidder_documents = []
+        audit_logs = []
+        users_list = []
+
+        for idx, (b_id, b_name, b_email, profile_variant) in enumerate(synthetic_bidders_config, start=1):
+            user_record = {
+                "id": f"USR-DEMO-{idx:03d}",
+                "name": f"Director {b_name.split()[0]}",
+                "email": b_email,
+                "role": "BIDDER",
+                "bidder_id": b_id,
+                "company_name": b_name
+            }
+            users_list.append(user_record)
+
+            profile = {
+                "id": b_id,
+                "legal_business_name": b_name,
+                "entity_type": "Private Limited Company",
+                "registered_address": f"Plot {idx*12}, Industrial Area, Phase-{idx}, Sector {idx*5}",
+                "city": ["Mumbai", "Bengaluru", "Chennai", "Hyderabad", "Pune", "Delhi", "Kolkata", "Ahmedabad", "Gurugram", "Noida", "Nagpur", "Indore"][idx-1],
+                "state": ["Maharashtra", "Karnataka", "Tamil Nadu", "Telangana", "Maharashtra", "Delhi", "West Bengal", "Gujarat", "Haryana", "Uttar Pradesh", "Maharashtra", "Madhya Pradesh"][idx-1],
+                "pincode": f"4000{idx:02d}",
+                "contact_person": f"Managing Director {idx}",
+                "business_email": b_email,
+                "phone": f"+91 98200{idx:05d}",
+                "pan": f"DEMO{idx:04d}X",
+                "gstin": f"27DEMO{idx:04d}F1Z{idx}",
+                "udyam": f"UDYAM-MH-01-{idx:07d}",
+                "company_registration": f"U74999MH2020PTC{idx:06d}",
+                "epfo_number": f"MH/BAN/00{idx:04d}/000",
+                "esic_number": f"31000{idx:05d}0001099",
+                "profile_completion": 90 if profile_variant != "MISSING_DOCS" else 60,
+                "verification_status": "SYNTHETIC_DEMO",
+                "variant": profile_variant
+            }
+            bidder_profiles[b_id] = profile
+            bidders.append({
+                "id": b_id,
+                "name": b_name,
+                "email": b_email,
+                "status": "ACTIVE",
+                "rating": 4.5,
+                "is_synthetic_demo": True
+            })
+
+            doc_types = [
+                ("01_PAN.pdf", "PAN"),
+                ("02_GST.pdf", "GST"),
+                ("03_Company_Registration.pdf", "COMPANY_REGISTRATION"),
+                ("04_Udyam.pdf", "UDYAM_MSME"),
+                ("05_Experience_Certificate.pdf", "EXPERIENCE_CERTIFICATE"),
+                ("06_OEM_Authorization.pdf", "OEM_AUTHORIZATION"),
+                ("07_Local_Content_Declaration.pdf", "LOCAL_CONTENT_DECLARATION"),
+                ("08_EPFO_ESIC.pdf", "EPFO_ESIC"),
+                ("09_Blacklisting_Declaration.pdf", "BLACKLISTING_DECLARATION")
+            ]
+
+            for fname, dtype in doc_types:
+                doc_id = f"DOC-{b_id}-{dtype}"
+                bidder_documents.append({
+                    "id": doc_id,
+                    "bidder_id": b_id,
+                    "name": dtype.replace("_", " "),
+                    "category": "PROFILE_DOCUMENT",
+                    "document_type": dtype,
+                    "status": "SYNTHETIC_DEMO",
+                    "verification_status": "SYNTHETIC_DEMO",
+                    "file_name": fname,
+                    "file_size_kb": 180,
+                    "is_synthetic_demo": True,
+                    "demo_watermark": "DEMO DOCUMENT — SYNTHETIC DATA — NOT A REAL GOVERNMENT CERTIFICATE"
+                })
+
+            audit_logs.append({
+                "id": f"AUDIT-BIDDER-{b_id}",
+                "event_type": "BIDDER_REGISTERED_DEMO",
+                "description": f"Synthetic demo bidder registered: {b_name} ({b_id})",
+                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "actor": b_email,
+                "data_source": "BIDSURE_DEMO_DATA",
+                "bidder_id": b_id
+            })
+
+        statuses = ["SUBMITTED", "UNDER_VERIFICATION", "PENDING_REVIEW", "COMPLIANT", "NON_COMPLIANT", "REQUIRES_REVIEW"]
+        bid_counter = 1
+        bidder_bids = []
+
+        for tender_idx, tender in enumerate(tenders):
+            tender_id = tender["id"]
+            bidders_for_tender = [
+                bidders[tender_idx % 12],
+                bidders[(tender_idx + 3) % 12],
+                bidders[(tender_idx + 7) % 12]
+            ]
+
+            for bidder in bidders_for_tender:
+                b_id = bidder["id"]
+                profile = bidder_profiles[b_id]
+                variant = profile["variant"]
+
+                if variant == "COMPLIANT":
+                    comp_status = "COMPLIANT"
+                    risk_level = "LOW"
+                    eval_status = "PASSED"
+                elif variant in ("MISSING_EXPERIENCE", "TURNOVER_LOW", "LOCAL_CONTENT_LOW"):
+                    comp_status = "NON_COMPLIANT"
+                    risk_level = "HIGH"
+                    eval_status = "FAILED"
+                else:
+                    comp_status = "REQUIRES_REVIEW"
+                    risk_level = "MEDIUM"
+                    eval_status = "REVIEW_REQUIRED"
+
+                bid_id = f"BID-SUB-{bid_counter:03d}"
+                bid_record = {
+                    "id": bid_id,
+                    "tender_id": tender_id,
+                    "tender_number": tender["tender_number"],
+                    "bidder_id": b_id,
+                    "bidder_name": bidder["name"],
+                    "submitted_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "status": statuses[(bid_counter - 1) % len(statuses)],
+                    "compliance_status": comp_status,
+                    "evaluation_result": eval_status,
+                    "risk_level": risk_level,
+                    "bid_source": "BIDSURE_DEMO",
+                    "is_synthetic_demo": True,
+                    "quoted_amount": tender["estimated_value"] * (0.92 + (bid_counter % 10) * 0.01),
+                    "documents": [f"DOC-{b_id}-PAN", f"DOC-{b_id}-GST", f"DOC-{b_id}-EXPERIENCE_CERTIFICATE"],
+                    "requirements_breakdown": []
+                }
+                bidder_bids.append(bid_record)
+                bid_counter += 1
+
+                audit_logs.append({
+                    "id": f"AUDIT-BIDSUB-{bid_id}",
+                    "event_type": "BID_SUBMITTED_DEMO",
+                    "description": f"Demo bid {bid_id} submitted by {bidder['name']} for tender {tender_id}",
+                    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "actor": bidder["email"],
+                    "data_source": "BIDSURE_DEMO_DATA",
+                    "tender_id": tender_id,
+                    "bid_id": bid_id
+                })
+
+        state_data = {
+            "tenders": tenders,
+            "bidders": bidders,
+            "bidder_profiles": bidder_profiles,
+            "bidder_documents": bidder_documents,
+            "bidder_bids": bidder_bids,
+            "audit_logs": audit_logs,
+            "users": users_list
+        }
+
+        os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
+        with open(STATE_FILE_PATH, "w", encoding="utf-8") as f:
+            json.dump(state_data, f, indent=2)
+        return state_data
+    except Exception as e:
+        pass
+
+    return None
+
+_persisted = _load_or_generate_persisted_state()
+if _persisted:
+    SAMPLE_BIDDER_PROFILES = _persisted.get("bidder_profiles", {})
+    SAMPLE_TENDERS = _persisted.get("tenders", [])
+    SAMPLE_BIDDERS = _persisted.get("bidders", [])
+    SAMPLE_BIDDER_BIDS = _persisted.get("bidder_bids", [])
+    SAMPLE_BIDDER_DOCUMENTS = _persisted.get("bidder_documents", [])
+    SAMPLE_AUDIT_LOGS = _persisted.get("audit_logs", [])
+    if _persisted.get("users"):
+        existing_emails = {u["email"].lower() for u in SAMPLE_USERS}
+        for u in _persisted["users"]:
+            if u["email"].lower() not in existing_emails:
+                SAMPLE_USERS.append(u)
+else:
+    SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES) if DEMO_MODE else {}
+    SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_TENDERS) if DEMO_MODE else []
+    SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDERS) if DEMO_MODE else []
+    SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_BIDS) if DEMO_MODE else []
+    SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS) if DEMO_MODE else []
+    SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
+
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = []
 SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
 
@@ -1957,6 +2180,11 @@ def clear_all_procurement_data() -> None:
         SAMPLE_NOTIFICATIONS.clear()
         SAMPLE_ANALYSIS_JOBS.clear()
         SAMPLE_BIDDER_PROFILES.clear()
+    if os.path.exists(STATE_FILE_PATH):
+        try:
+            os.remove(STATE_FILE_PATH)
+        except Exception:
+            pass
     try:
         from app.data.document_store import clear_all_documents
         clear_all_documents()
