@@ -97,7 +97,7 @@ export function Navbar() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-6 shadow-xs select-none relative">
+    <header className="sticky top-8 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-6 shadow-xs select-none">
       {/* Left: Page Title & Subtitle */}
       <div className="flex items-center gap-3">
         <div>
@@ -108,13 +108,6 @@ export function Navbar() {
             {getPageSubtitle()}
           </p>
         </div>
-      </div>
-
-      {/* Center: Government of India */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none hidden md:flex items-center gap-2">
-        <span className="text-xs sm:text-sm font-semibold tracking-wide text-slate-800">
-          Government of India
-        </span>
       </div>
 
       {/* Right: Notifications & Officer Profile */}

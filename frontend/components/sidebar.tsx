@@ -69,7 +69,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r border-slate-200 bg-white text-slate-700 shadow-sm font-sans select-none">
+      <aside className="fixed top-8 bottom-0 left-0 z-20 flex w-64 flex-col border-r border-slate-200 bg-white text-slate-700 shadow-sm font-sans select-none">
         {/* Brand Header */}
         <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
           <Logo />
