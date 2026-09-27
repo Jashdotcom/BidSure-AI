@@ -417,3 +417,66 @@ def test_system_ai_status_endpoint():
         data = resp.json()
         assert data["provider"] == "mock"
         assert data["status"] == "connected"
+
+
+# ============================================================================
+# 7. Bidder Assistant Status & Chat Endpoints
+# ============================================================================
+
+def get_bidder_token() -> str:
+    resp = client.post("/auth/login", json={
+        "email": "suresh@abcsafetysolutions.demo",
+        "password": "BidSure@Demo2026"
+    })
+    if resp.status_code != 200:
+        resp = client.post("/auth/login", json={
+            "email": "abc@abcsafety.com",
+            "password": "admin123"
+        })
+    assert resp.status_code == 200
+    return resp.json()["access_token"]
+
+
+def test_bidder_assistant_status_endpoint():
+    """Endpoint /bidder-portal/assistant/status returns ONLINE when provider is healthy."""
+    token = get_bidder_token()
+    with patch.dict(os.environ, {"AI_PROVIDER": "mock"}):
+        resp = client.get(
+            "/bidder-portal/assistant/status",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ONLINE"
+        assert data["provider"] == "mock"
+
+
+@pytest.mark.asyncio
+async def test_bidder_assistant_chat_ollama_provider():
+    """Assistant chat endpoint invokes Ollama generate_chat_response with grounded context."""
+    provider = OllamaAIProvider(base_url="http://localhost:11434", model="qwen3:8b")
+
+    mock_chat_body = json.dumps({
+        "model": "qwen3:8b",
+        "message": {
+            "role": "assistant",
+            "content": "Hello Suresh! Based on your profile, your PAN and GSTIN are verified active."
+        }
+    }).encode("utf-8")
+
+    def mock_urlopen(req, timeout=None):
+        m = MagicMock()
+        if "tags" in req.full_url:
+            m.read.return_value = json.dumps({"models": [{"name": "qwen3:8b"}]}).encode("utf-8")
+        else:
+            m.read.return_value = mock_chat_body
+        m.__enter__.return_value = m
+        return m
+
+    with patch("urllib.request.urlopen", side_effect=mock_urlopen):
+        reply = await provider.generate_chat_response(
+            messages=[{"role": "user", "content": "What is my status?"}],
+            system_prompt="You are BidSure AI Assistant."
+        )
+        assert "Suresh" in reply or "PAN" in reply
+

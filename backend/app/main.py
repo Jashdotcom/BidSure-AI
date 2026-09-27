@@ -117,7 +117,7 @@ async def get_ai_status():
         "model": provider.model_name(),
         "status": health.get("status", "unknown"),
         "message": health.get("message", ""),
-        "base_url": getattr(provider, "_base_url", None),
+        "base_url": getattr(provider, "_resolved_base_url", None) or getattr(provider, "_base_url", None),
         "demo_mode": is_demo_mode(),
     }
 

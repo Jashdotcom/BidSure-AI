@@ -85,19 +85,43 @@ class OllamaAIProvider(AIProvider):
 
     Configuration (via environment variables):
         AI_BASE_URL: Ollama server URL (default: http://localhost:11434)
-        AI_MODEL: Model name to use (default: llama3.2)
+        AI_MODEL: Model name to use (default: qwen3:8b)
     """
 
     def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None, timeout: Optional[int] = None):
         self._base_url = (base_url or os.getenv("AI_BASE_URL", "http://localhost:11434")).rstrip("/")
         self._model = model or os.getenv("AI_MODEL", "qwen3:8b")
         self._timeout = int(timeout or os.getenv("AI_TIMEOUT", "120"))
+        self._resolved_base_url: Optional[str] = None
 
     def provider_name(self) -> str:
         return "ollama"
 
     def model_name(self) -> Optional[str]:
         return self._model
+
+    def _get_candidate_base_urls(self) -> List[str]:
+        """
+        Returns list of candidate base URLs to try.
+        Handles Windows IPv4 vs IPv6 resolution differences for localhost vs 127.0.0.1.
+        """
+        urls = []
+        if self._resolved_base_url and self._resolved_base_url not in urls:
+            urls.append(self._resolved_base_url)
+        if self._base_url not in urls:
+            urls.append(self._base_url)
+        if "localhost" in self._base_url:
+            alt = self._base_url.replace("localhost", "127.0.0.1")
+            if alt not in urls:
+                urls.append(alt)
+        elif "127.0.0.1" in self._base_url:
+            alt = self._base_url.replace("127.0.0.1", "localhost")
+            if alt not in urls:
+                urls.append(alt)
+        return urls
+
+    def _get_active_base_url(self) -> str:
+        return self._resolved_base_url or self._base_url
 
     async def health_check(self) -> Dict[str, Any]:
         """
@@ -108,49 +132,70 @@ class OllamaAIProvider(AIProvider):
         import urllib.request
         import urllib.error
 
-        # 1. Check Ollama server is running
-        tags_url = f"{self._base_url}/api/tags"
-        try:
-            req = urllib.request.Request(tags_url, method="GET")
-            req.add_header("Accept", "application/json")
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                body = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.URLError as e:
+        body = None
+        last_error = None
+        working_url = None
+
+        candidate_urls = self._get_candidate_base_urls()
+        for base in candidate_urls:
+            tags_url = f"{base}/api/tags"
+            try:
+                req = urllib.request.Request(tags_url, method="GET")
+                req.add_header("Accept", "application/json")
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    body = json.loads(resp.read().decode("utf-8"))
+                    working_url = base
+                    self._resolved_base_url = working_url
+                    break
+            except urllib.error.URLError as e:
+                last_error = getattr(e, "reason", str(e))
+            except Exception as e:
+                last_error = str(e)
+
+        if not body or working_url is None:
             return {
                 "status": "unavailable",
                 "provider": "ollama",
                 "model": self._model,
                 "base_url": self._base_url,
-                "message": f"Cannot connect to Ollama at {self._base_url}. Ensure Ollama is running. Error: {e.reason}",
-            }
-        except Exception as e:
-            return {
-                "status": "unavailable",
-                "provider": "ollama",
-                "model": self._model,
-                "base_url": self._base_url,
-                "message": f"Cannot connect to Ollama at {self._base_url}. Error: {str(e)}",
+                "message": f"Cannot connect to Ollama at {self._base_url}. Ensure Ollama is running. Error: {last_error}",
             }
 
         # 2. Check model availability
         available_models = []
+        model_names_lower = set()
         for m in body.get("models", []):
-            model_name = m.get("name", "")
-            available_models.append(model_name)
-            # Also add the base name without tag (e.g. "llama3.2" from "llama3.2:latest")
-            if ":" in model_name:
-                available_models.append(model_name.split(":")[0])
+            for field in ("name", "model"):
+                val = m.get(field)
+                if val and isinstance(val, str):
+                    if field == "name" and val not in available_models:
+                        available_models.append(val)
+                    model_names_lower.add(val.lower())
+                    if ":" in val:
+                        model_names_lower.add(val.split(":")[0].lower())
+                    else:
+                        model_names_lower.add(f"{val}:latest".lower())
 
-        if self._model not in available_models:
+        target = self._model.lower()
+        target_base = target.split(":")[0]
+
+        model_found = (
+            target in model_names_lower
+            or target_base in model_names_lower
+            or any(m.startswith(target_base) for m in model_names_lower)
+            or any(target_base in m for m in model_names_lower)
+        )
+
+        if not model_found:
             return {
                 "status": "model_unavailable",
                 "provider": "ollama",
                 "model": self._model,
-                "base_url": self._base_url,
-                "available_models": [m.get("name") for m in body.get("models", [])],
+                "base_url": working_url,
+                "available_models": available_models,
                 "message": (
                     f"Model '{self._model}' is not available on Ollama. "
-                    f"Available models: {', '.join(m.get('name', '?') for m in body.get('models', []))}. "
+                    f"Available models: {', '.join(available_models) if available_models else 'None'}. "
                     f"Run 'ollama pull {self._model}' to download it."
                 ),
             }
@@ -159,7 +204,7 @@ class OllamaAIProvider(AIProvider):
             "status": "connected",
             "provider": "ollama",
             "model": self._model,
-            "base_url": self._base_url,
+            "base_url": working_url,
             "message": f"Ollama connected. Model '{self._model}' is available.",
         }
 
@@ -195,7 +240,8 @@ class OllamaAIProvider(AIProvider):
         )
 
         # 2. Call Ollama API
-        api_url = f"{self._base_url}/api/chat"
+        active_url = self._get_active_base_url()
+        api_url = f"{active_url}/api/chat"
         payload = {
             "model": self._model,
             "messages": [
@@ -362,7 +408,8 @@ class OllamaAIProvider(AIProvider):
         if health["status"] == "model_unavailable":
             raise AIModelUnavailableError("ollama", self._model, health["message"])
 
-        api_url = f"{self._base_url}/api/chat"
+        active_url = self._get_active_base_url()
+        api_url = f"{active_url}/api/chat"
         formatted_messages = []
         if system_prompt:
             formatted_messages.append({"role": "system", "content": system_prompt})

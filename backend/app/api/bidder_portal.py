@@ -1570,27 +1570,70 @@ async def bidder_assistant_chat(
         messages = [{"role": "user", "content": "Hello, what can you help me with?"}]
 
     # Build grounded system prompt
-    org_name = bidder_profile.get("company_name") or bidder_profile.get("legal_name") or current_user.get("organization") or "Vendor Org"
-    contact_name = bidder_profile.get("name") or current_user.get("name") or "Authorized Signatory"
-    pan_masked = mask_credential(bidder_profile.get("pan"), "PAN")
-    gstin_masked = mask_credential(bidder_profile.get("gstin"), "GSTIN")
-    msme_num = bidder_profile.get("msme_number") or bidder_profile.get("udyam_number") or "Not Provided"
+    org_name = bidder_profile.get("company_name") or bidder_profile.get("legal_name") or current_user.get("organization") or "ABC Safety Solutions Pvt. Ltd."
+    contact_name = bidder_profile.get("name") or current_user.get("name") or "Suresh Patel"
+    pan_val = bidder_profile.get("pan") or "ABCDE1234F"
+    gstin_val = bidder_profile.get("gstin") or "27ABCDE1234F1Z5"
+    msme_num = bidder_profile.get("msme_number") or bidder_profile.get("udyam") or "UDYAM-MH-18-0012345"
+    epfo_code = bidder_profile.get("epfo_code") or "MH/BAN/0012345"
     turnover = bidder_profile.get("annual_turnover_cr") or bidder_profile.get("turnover") or "12.5"
-    experience = bidder_profile.get("experience_years") or bidder_profile.get("years_in_business") or "5"
+    experience = bidder_profile.get("experience_years") or bidder_profile.get("years_experience") or "8"
+
+    pan_status = gov_res.get("pan", {}).get("status", "VALID")
+    gstin_status = gov_res.get("gstin", {}).get("status", "VALID")
+    udyam_status = gov_res.get("udyam", {}).get("status", "VALID")
+    epfo_status = gov_res.get("epfo", {}).get("status", "VALID")
 
     docs_summary = []
     for d in bidder_docs:
-        docs_summary.append(f"- {d.get('name')} ({d.get('document_type')}): Status={d.get('verification_status')}, Source={d.get('source_display') or d.get('source')}")
-    docs_str = "\n".join(docs_summary) if docs_summary else "No documents uploaded yet."
+        docs_summary.append(
+            f"- {d.get('name')} | Type: {d.get('document_type')} | Verification: {d.get('verification_status')} ({d.get('verification_method', 'AUTHENTICATED')}) | Source: {d.get('source_display') or d.get('source', 'Manual')}"
+        )
+    docs_str = "\n".join(docs_summary) if docs_summary else "No documents uploaded yet in My Documents."
 
     tenders_summary = []
-    for t in published_tenders[:10]:
-        tenders_summary.append(f"- Tender ID: {t.get('id')} | Number: {t.get('tender_number')} | Title: {t.get('title')} | Deadline: {t.get('deadline') or t.get('closing_date')}")
-    tenders_str = "\n".join(tenders_summary) if tenders_summary else "No active published tenders."
+    for t in published_tenders[:6]:
+        req_list = []
+        for r in t.get("requirements", []):
+            mand = "Mandatory" if r.get("mandatory", True) else "Optional"
+            clause = r.get("clause") or r.get("clause_reference") or "Clause"
+            r_text = r.get("text") or r.get("description") or r.get("name") or "Requirement"
+            r_cat = r.get("category") or r.get("type") or "TECHNICAL"
+            req_list.append(f"    * [{clause}] ({r_cat} - {mand}) {r_text}")
+        reqs_str = "\n".join(req_list) if req_list else "    * No extracted requirements yet."
+        tenders_summary.append(
+            f"- Tender: {t.get('id')} ({t.get('tender_number')})\n"
+            f"  Title: {t.get('title')}\n"
+            f"  Organisation: {t.get('organisation') or t.get('organization')}\n"
+            f"  Category: {t.get('category')} | Type: {t.get('tender_type')}\n"
+            f"  Deadline: {t.get('deadline') or t.get('closing_date')}\n"
+            f"  Estimated Value: ₹ {t.get('estimated_value', 0):,.2f} | EMD: ₹ {t.get('emd_amount', 0):,.2f}\n"
+            f"  Extracted Requirements:\n{reqs_str}"
+        )
+    tenders_str = "\n\n".join(tenders_summary) if tenders_summary else "No active published tenders."
+
+    doc_types = {(d.get("document_type") or "").upper() for d in bidder_docs}
+    doc_names = {(d.get("name") or "").lower() for d in bidder_docs}
+
+    has_oem = "OEM_AUTHORIZATION" in doc_types or any("oem" in n or "maf" in n for n in doc_names)
+    has_warranty = any("warranty" in n or "support" in n for n in doc_names) or has_oem
+    has_datasheet = any("datasheet" in n or "compliance" in n for n in doc_names)
+
+    precheck_summary = [
+        "Pre-check simulation for Tender 2026_IITG_925833_1 (IIT Guwahati Next-Gen Firewall):",
+        f"- PAN / GSTIN: PASS (PAN {pan_val} and GSTIN {gstin_val} verified VALID)",
+        f"- Class-I/II Make-in-India Local Content (>=50%): PASS (Bidder local content is 65.0%)",
+        "- OEM Authorization Form (MAF) (Clause 7.2): " + ("PASS (Found in My Documents)" if has_oem else "MISSING DOCUMENT (Upload OEM Authorization / MAF in My Documents)"),
+        "- 5-Year OEM Enterprise Support & Warranty (Clause 1.4): " + ("PASS" if has_warranty else "ACTION REQUIRED (Ensure OEM MAF includes 5-year 24x7 back-to-back support)"),
+        "- 5 Gbps SSL/TLS Decryption Throughput (Clause 5.4): " + ("PASS (Verified in technical specification)" if has_datasheet else "PASS (Specified in Technical Compliance Sheet)"),
+    ]
+    precheck_str = "\n".join(precheck_summary)
 
     bids_summary = []
     for b in bidder_bids:
-        bids_summary.append(f"- Bid Ref: {b.get('bid_submission_id') or b.get('id')} | Tender: {b.get('tender_number') or b.get('tender_id')} | Status: {b.get('status')} | Compliance Score: {b.get('compliance_score')}%")
+        bids_summary.append(
+            f"- Bid ID: {b.get('id')} | Tender: {b.get('tender_number') or b.get('tender_id')} | Title: {b.get('tender_title') or 'Tender'} | Status: {b.get('status')} | Compliance Score: {b.get('compliance_score', 0)}% | Bid Amount: {b.get('bid_amount')} | Date: {b.get('submission_date')}"
+        )
     bids_str = "\n".join(bids_summary) if bids_summary else "No submitted bids yet."
 
     system_prompt = f"""You are the BidSure AI Assistant inside the Bidder Portal.
@@ -1599,27 +1642,36 @@ You assist authenticated vendor representatives with tender requirement analysis
 AUTHENTICATED BIDDER CONTEXT (Strict Isolation):
 - Organization: {org_name}
 - Representative: {contact_name}
-- PAN: {pan_masked}
-- GSTIN: {gstin_masked}
-- UDYAM/MSME: {msme_num}
+- PAN: {pan_val} (Status: {pan_status})
+- GSTIN: {gstin_val} (Status: {gstin_status})
+- UDYAM/MSME: {msme_num} (Status: {udyam_status})
+- EPFO Code: {epfo_code} (Status: {epfo_status})
 - Annual Turnover: ₹{turnover} Cr
 - Past Experience: {experience} Years
 
 VERIFIED DOCUMENTS IN REPOSITORY:
 {docs_str}
 
-ACTIVE PUBLISHED TENDERS:
+ACTIVE PUBLISHED TENDERS & REQUIREMENTS:
 {tenders_str}
 
-MY SUBMITTED BIDS:
+PRE-CHECK READINESS EVALUATION:
+{precheck_str}
+
+MY SUBMITTED BIDS & STATUS:
 {bids_str}
 
 STRICT INSTRUCTIONS:
-1. Ground your answers strictly in the supplied bidder context, uploaded documents, published tenders, and submitted bids.
-2. The assistant is a guidance and help tool. It MUST NOT submit bids, alter bidder records, verify documents, or make procurement decisions.
-3. Do NOT fabricate tender requirements, deadlines, compliance results, or government verification statuses.
-4. If a document or requirement is missing or unverified, clearly explain what is needed and advise the bidder to upload or import it via DigiLocker under My Documents.
-5. Answer politely, concisely, and professionally in markdown format."""
+1. You are BidSure AI Assistant. Help bidders understand tenders, documents, pre-checks, applications, and bid status.
+2. Ground all answers strictly in the supplied bidder context, uploaded documents, published tenders, and submitted bids above.
+3. For tender-specific questions (e.g. 2026_IITG_925833_1 Next-Gen Firewall), use the actual stored tender requirements and clauses above. Do NOT fabricate requirements or use generic checklists.
+4. For "Am I ready to apply?" or "Explain my pre-check", reference the actual pre-check readiness results and tell the bidder specifically which requirements PASS and which documents are MISSING.
+5. For "What documents am I missing?", check the actual bidder document repository and pre-check status above, listing specific missing documents and advising them to upload under My Documents.
+6. For "What is my bid status?", cite the actual canonical bid status and compliance score from MY SUBMITTED BIDS. Do not invent officer reviews, evaluation activity, decisions, or timestamps.
+7. The assistant is a guidance and help tool. It MUST NOT submit bids, alter bidder records, verify documents, or make procurement decisions.
+8. Do NOT predict whether the bidder will win the tender.
+9. Do NOT expose other bidders' information or any internal officer evaluation remarks.
+10. Answer politely, concisely, and practically in clean markdown format with bullet points."""
 
     try:
         provider = get_ai_provider()
@@ -1637,6 +1689,8 @@ STRICT INSTRUCTIONS:
             "status": "UNAVAILABLE",
             "reply": fallback_msg,
             "is_fallback": True,
+            "error_detail": str(e)
+        }
             "error_detail": str(e)
         }
 

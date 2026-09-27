@@ -247,7 +247,7 @@ export default function BidderDashboardPage() {
     try {
       const res = await apiRequest<{ reply: string; status: string }>("/bidder-portal/assistant/chat", {
         method: "POST",
-        body: JSON.stringify({ message: messageText })
+        body: { message: messageText }
       });
 
       const assistantMsg: Message = {
@@ -257,6 +257,9 @@ export default function BidderDashboardPage() {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, assistantMsg]);
+      if (res?.status === "SUCCESS") {
+        setAssistantStatus("ONLINE");
+      }
     } catch (err) {
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -681,14 +684,14 @@ export default function BidderDashboardPage() {
             {/* Quick Prompt Pills / Suggestions */}
             <div className="px-3 py-2 bg-slate-50/50 border-b border-slate-100 flex gap-1.5 overflow-x-auto no-scrollbar">
               {[
-                { label: "Missing docs?" },
-                { label: "Am I ready?" },
-                { label: "Bid status" },
-                { label: "Requirements" }
+                { label: "Missing docs?", query: "What documents am I missing?" },
+                { label: "Am I ready?", query: "Am I ready to apply for the IITG firewall tender?" },
+                { label: "Bid status", query: "What is the status of my submitted bids?" },
+                { label: "IITG Requirements", query: "What are the requirements for the IITG firewall tender?" }
               ].map((p, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleSendMessage(`Check my ${p.label.toLowerCase()}`)}
+                  onClick={() => handleSendMessage(p.query)}
                   disabled={assistantStatus === "OFFLINE" || isTyping}
                   className="shrink-0 rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-800 transition-all disabled:opacity-50"
                 >

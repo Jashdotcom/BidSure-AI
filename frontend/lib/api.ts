@@ -42,17 +42,21 @@ export async function apiRequest<T>(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+  const serializedBody =
+    options.body !== undefined
+      ? options.body instanceof FormData
+        ? options.body
+        : typeof options.body === "string"
+          ? options.body
+          : JSON.stringify(options.body)
+      : undefined;
+
   try {
     try {
       response = await fetch(url, {
         method: options.method ?? "GET",
         headers,
-        body:
-          options.body !== undefined
-            ? options.body instanceof FormData
-              ? options.body
-              : JSON.stringify(options.body)
-            : undefined,
+        body: serializedBody,
         cache: "no-store",
         signal: controller.signal,
       });
@@ -68,12 +72,7 @@ export async function apiRequest<T>(
         response = await fetch(proxyPath, {
           method: options.method ?? "GET",
           headers,
-          body:
-            options.body !== undefined
-              ? options.body instanceof FormData
-                ? options.body
-                : JSON.stringify(options.body)
-              : undefined,
+          body: serializedBody,
           cache: "no-store",
           signal: controller.signal,
         });
