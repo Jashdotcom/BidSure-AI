@@ -210,8 +210,19 @@ export default function BidderDashboardPage() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [assistantStatus, setAssistantStatus] = useState<"ONLINE" | "OFFLINE">("ONLINE");
+  const [assistantModel, setAssistantModel] = useState<string>("gemma3:4b");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const chatEndRef = React.useRef<HTMLDivElement>(null);
+
+  const formatModelDisplayName = (modelName: string): string => {
+    if (!modelName) return "AI";
+    const parts = modelName.split(":");
+    const base = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+    if (parts.length > 1) {
+      return `${base}:${parts[1].toUpperCase()}`;
+    }
+    return base;
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -220,8 +231,9 @@ export default function BidderDashboardPage() {
   useEffect(() => {
     async function checkAssistant() {
       try {
-        const res = await apiRequest<{ status: "ONLINE" | "OFFLINE" }>("/bidder-portal/assistant/status");
+        const res = await apiRequest<{ status: "ONLINE" | "OFFLINE"; model?: string }>("/bidder-portal/assistant/status");
         if (res?.status) setAssistantStatus(res.status);
+        if (res?.model) setAssistantModel(res.model);
       } catch {
         setAssistantStatus("OFFLINE");
       }
@@ -245,7 +257,7 @@ export default function BidderDashboardPage() {
     setIsTyping(true);
 
     try {
-      const res = await apiRequest<{ reply: string; status: string; is_fallback?: boolean }>("/bidder-portal/assistant/chat", {
+      const res = await apiRequest<{ reply: string; status: string; is_fallback?: boolean; model?: string }>("/bidder-portal/assistant/chat", {
         method: "POST",
         body: { message: messageText }
       });
@@ -259,6 +271,7 @@ export default function BidderDashboardPage() {
       setMessages(prev => [...prev, assistantMsg]);
       if (res?.status === "SUCCESS") {
         setAssistantStatus("ONLINE");
+        if (res?.model) setAssistantModel(res.model);
       }
     } catch (err: any) {
       const isTimeout = err?.status === 504 || (err?.message && err.message.toLowerCase().includes("timed out"));
@@ -660,7 +673,7 @@ export default function BidderDashboardPage() {
                     {assistantStatus === "ONLINE" ? (
                       <>
                         <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Qwen3:8B Online · Context-Aware
+                        {formatModelDisplayName(assistantModel)} Online · Context-Aware
                       </>
                     ) : "Service Offline"}
                   </p>

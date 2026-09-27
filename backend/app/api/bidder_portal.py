@@ -1550,7 +1550,7 @@ async def bidder_assistant_chat(
     """
     Context-aware BidSure AI Assistant chat endpoint for authenticated bidders.
     Gathers isolated bidder profile, verified documents, active tenders, and submitted bids,
-    constructs grounded system context, and queries the configured AI provider (Ollama Qwen3:8B or mock).
+    constructs grounded system context, and queries the configured AI provider (Ollama Gemma3:4B or mock).
     Enforces strict data isolation, zero mock fallback in live mode, and graceful error separation.
     """
     t_start = datetime.now(timezone.utc)
