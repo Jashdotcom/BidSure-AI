@@ -210,6 +210,7 @@ export default function BidderDashboardPage() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [assistantStatus, setAssistantStatus] = useState<"ONLINE" | "OFFLINE">("ONLINE");
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const chatEndRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -399,157 +400,6 @@ export default function BidderDashboardPage() {
               </Link>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 1.5. BID SURE AI ASSISTANT SECTION                                         */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 flex flex-col h-[450px] border-slate-200 overflow-hidden">
-          <div className="border-b border-slate-100 bg-slate-50/50 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white">
-                  <SparklesIcon className="size-4" />
-                </div>
-                <span className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white ${assistantStatus === "ONLINE" ? "bg-emerald-500" : "bg-slate-400"}`} />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 leading-none">BidSure AI Assistant</h3>
-                <p className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1">
-                  {assistantStatus === "ONLINE" ? (
-                    <>
-                      <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Qwen3:8B Online · Context-Aware
-                    </>
-                  ) : "Service Temporarily Offline"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setMessages([messages[0]])}
-                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-                title="Clear Chat"
-              >
-                <RefreshCwIcon className="size-4" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div className={`flex gap-2.5 max-w-[85%] ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                  <div className={`flex size-7 shrink-0 items-center justify-center rounded-full border shadow-sm ${msg.role === "user" ? "bg-white text-emerald-600 border-emerald-100" : "bg-emerald-600 text-white border-emerald-700"}`}>
-                    {msg.role === "user" ? <UserIcon className="size-3.5" /> : <BotIcon className="size-3.5" />}
-                  </div>
-                  <div className={`space-y-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                    <div className={`rounded-2xl px-4 py-2 text-xs leading-relaxed shadow-sm border ${
-                      msg.role === "user"
-                        ? "bg-emerald-50 border-emerald-100 text-slate-800 rounded-tr-none"
-                        : "bg-white border-slate-200 text-slate-800 rounded-tl-none"
-                    }`}>
-                      {msg.content.split('\n').map((line, i) => (
-                        <p key={i} className={i > 0 ? "mt-1.5" : ""}>{line}</p>
-                      ))}
-                    </div>
-                    <span className="text-[9px] font-medium text-slate-400 px-1">{msg.timestamp}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="flex gap-2.5 items-center">
-                  <div className="flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white border border-emerald-700 shadow-sm">
-                    <BotIcon className="size-3.5" />
-                  </div>
-                  <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-2 flex gap-1 items-center shadow-sm">
-                    <span className="size-1 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                    <span className="size-1 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                    <span className="size-1 bg-slate-300 rounded-full animate-bounce" />
-                    <span className="text-[10px] text-slate-400 font-medium ml-1">Thinking...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          <div className="p-3 bg-white border-t border-slate-100">
-            <form
-              onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-              className="relative flex items-center"
-            >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={assistantStatus === "ONLINE" ? "Ask about your bids, documents, or tenders..." : "AI Assistant Offline"}
-                disabled={assistantStatus === "OFFLINE" || isTyping}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-12 py-2.5 text-xs focus:bg-white focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || isTyping || assistantStatus === "OFFLINE"}
-                className="absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <SendIcon className="size-4" />
-              </button>
-            </form>
-          </div>
-        </Card>
-
-        {/* Quick Actions & Tips */}
-        <div className="space-y-4">
-          <Card className="p-5 border-slate-200 flex flex-col h-full">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquareIcon className="size-4 text-emerald-600" />
-              <h3 className="text-sm font-bold text-slate-900">Quick Prompt Actions</h3>
-            </div>
-
-            <div className="flex-1 space-y-2.5">
-              {[
-                { label: "Check my missing documents", icon: <FileTextIcon className="size-3" /> },
-                { label: "Am I ready for active tenders?", icon: <ShieldCheckIcon className="size-3" /> },
-                { label: "Show status of my last bid", icon: <ClockIcon className="size-3" /> },
-                { label: "Summarize tender requirements", icon: <FileTextIcon className="size-3" /> }
-              ].map((action, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSendMessage(action.label)}
-                  disabled={assistantStatus === "OFFLINE" || isTyping}
-                  className="w-full text-left p-3 rounded-xl border border-slate-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50 group transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-6 items-center justify-center rounded-lg bg-slate-50 group-hover:bg-white border border-slate-100 group-hover:border-emerald-100 text-slate-400 group-hover:text-emerald-600 transition-colors">
-                      {action.icon}
-                    </div>
-                    <span className="text-xs font-semibold text-slate-700 group-hover:text-emerald-900">{action.label}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-6 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex size-5 items-center justify-center rounded-full bg-indigo-600 text-white shrink-0">
-                  <ShieldCheckIcon className="size-3" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-indigo-900">Assistant Data Isolation</h4>
-                  <p className="text-[10px] text-indigo-700 mt-1 leading-relaxed">
-                    The assistant only has access to your business profile, documents, and bids. It cannot see competitor data or internal officer evaluation notes.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
         </div>
       </div>
 
@@ -781,6 +631,167 @@ export default function BidderDashboardPage() {
         <span className="font-mono text-[10px] text-slate-400">
           ISO 27001 · SIH26100
         </span>
+      </div>
+
+      {/* Floating AI Assistant Button & Compact Chat Popup */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {isChatOpen && (
+          <div className="absolute bottom-20 right-0 w-[380px] sm:w-[420px] h-[520px] max-h-[80vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+            {/* Header */}
+            <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="relative">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
+                    <SparklesIcon className="size-4" />
+                  </div>
+                  <span className={`absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-white ${assistantStatus === "ONLINE" ? "bg-emerald-500" : "bg-slate-400"}`} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 leading-none">BidSure AI Assistant</h3>
+                  <p className="text-[10px] text-slate-500 mt-1 font-medium flex items-center gap-1">
+                    {assistantStatus === "ONLINE" ? (
+                      <>
+                        <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Qwen3:8B Online · Context-Aware
+                      </>
+                    ) : "Service Offline"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setMessages([messages[0]])}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                  title="Clear Chat"
+                >
+                  <RefreshCwIcon className="size-4" />
+                </button>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                  title="Close Assistant"
+                >
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Prompt Pills / Suggestions */}
+            <div className="px-3 py-2 bg-slate-50/50 border-b border-slate-100 flex gap-1.5 overflow-x-auto no-scrollbar">
+              {[
+                { label: "Missing docs?" },
+                { label: "Am I ready?" },
+                { label: "Bid status" },
+                { label: "Requirements" }
+              ].map((p, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendMessage(`Check my ${p.label.toLowerCase()}`)}
+                  disabled={assistantStatus === "OFFLINE" || isTyping}
+                  className="shrink-0 rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-800 transition-all disabled:opacity-50"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div className={`flex gap-2.5 max-w-[85%] ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                    <div className={`flex size-7 shrink-0 items-center justify-center rounded-full border shadow-sm ${msg.role === "user" ? "bg-white text-emerald-600 border-emerald-100" : "bg-emerald-600 text-white border-emerald-700"}`}>
+                      {msg.role === "user" ? <UserIcon className="size-3.5" /> : <BotIcon className="size-3.5" />}
+                    </div>
+                    <div className={`space-y-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                      <div className={`rounded-2xl px-3.5 py-2 text-xs leading-relaxed shadow-sm border ${
+                        msg.role === "user"
+                          ? "bg-emerald-50 border-emerald-100 text-slate-800 rounded-tr-none"
+                          : "bg-white border-slate-200 text-slate-800 rounded-tl-none"
+                      }`}>
+                        {msg.content.split('\n').map((line, i) => (
+                          <p key={i} className={i > 0 ? "mt-1.5" : ""}>{line}</p>
+                        ))}
+                      </div>
+                      <span className="text-[9px] font-medium text-slate-400 px-1">{msg.timestamp}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex gap-2.5 items-center">
+                    <div className="flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white border border-emerald-700 shadow-sm">
+                      <BotIcon className="size-3.5" />
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-3.5 py-2 flex gap-1 items-center shadow-sm">
+                      <span className="size-1 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="size-1 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="size-1 bg-slate-300 rounded-full animate-bounce" />
+                      <span className="text-[10px] text-slate-400 font-medium ml-1">Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Input Footer */}
+            <div className="p-3 bg-white border-t border-slate-100">
+              <form
+                onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+                className="relative flex items-center"
+              >
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={assistantStatus === "ONLINE" ? "Ask about bids, documents, tenders..." : "AI Assistant Offline"}
+                  disabled={assistantStatus === "OFFLINE" || isTyping}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-12 py-2.5 text-xs focus:bg-white focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || isTyping || assistantStatus === "OFFLINE"}
+                  className="absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <SendIcon className="size-4" />
+                </button>
+              </form>
+              <div className="mt-2 text-[10px] text-center text-slate-400 flex items-center justify-center gap-1">
+                <span>🔒 Strictly isolated to your bidder profile & documents</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Circular Button */}
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="group relative flex size-14 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xl hover:bg-emerald-700 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-emerald-500/30"
+          title="Ask BidSure AI"
+        >
+          {isChatOpen ? (
+            <svg className="size-6 transition-transform rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <SparklesIcon className="size-6 transition-transform group-hover:rotate-12" />
+          )}
+          <span className="absolute -top-1 -right-1 size-4 rounded-full border-2 border-white bg-emerald-500 animate-pulse" />
+
+          {/* Tooltip on hover when closed */}
+          {!isChatOpen && (
+            <span className="absolute right-16 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+              Ask BidSure AI Assistant 💬
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
