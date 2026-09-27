@@ -643,11 +643,65 @@ async def list_available_tenders_for_bidder(
             "estimated_value": t.get("estimated_value", 0.0),
             "emd_amount": t.get("emd_amount", 0.0),
             "description": t.get("description", ""),
+            "tender_type": t.get("tender_type", "Open Tender"),
+            "contract_type": t.get("contract_type", "Supply & Services"),
+            "location": t.get("location", "Chennai, Tamil Nadu"),
+            "bid_start_date": t.get("bid_start_date", "2026-03-01"),
+            "bid_opening_date": t.get("bid_opening_date", "2026-03-22"),
+            "pre_bid_date": t.get("pre_bid_date", "2026-03-10"),
+            "bid_validity": t.get("bid_validity", "180 Days"),
+            "work_period": t.get("work_period", "90 Days"),
+            "document_availability": t.get("document_availability", "Online Downloadable (NIT & BoQ)"),
+            "source": t.get("source", "CPPP / Government eProcurement System"),
+            "source_url": t.get("source_url", "https://etenders.gov.in/eprocure/app"),
             "requirements": t.get("requirements", []),
             "requirements_count": len(t.get("requirements", []))
         }
         for t in raw_tenders
     ]
+
+
+@router.get("/tenders/{tender_id}", response_model=Dict[str, Any])
+async def get_tender_detail_for_bidder(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Returns complete metadata and requirements for a specific published tender.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tender '{tender_id}' not found."
+        )
+    return {
+        "id": tender["id"],
+        "tender_number": tender.get("tender_number", tender["id"]),
+        "title": tender.get("title"),
+        "organization": tender.get("organization") or tender.get("organisation") or "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": tender.get("department", "Materials & Procurement"),
+        "deadline": tender.get("deadline") or tender.get("closing_date") or tender.get("bid_submission_end"),
+        "publish_date": tender.get("publish_date"),
+        "status": tender.get("status", "ACTIVE"),
+        "category": tender.get("category", "Procurement"),
+        "estimated_value": tender.get("estimated_value", 0.0),
+        "emd_amount": tender.get("emd_amount", 0.0),
+        "description": tender.get("description", ""),
+        "tender_type": tender.get("tender_type", "Open Tender"),
+        "contract_type": tender.get("contract_type", "Supply & Services"),
+        "location": tender.get("location", "Chennai, Tamil Nadu"),
+        "bid_start_date": tender.get("bid_start_date", "2026-03-01"),
+        "bid_opening_date": tender.get("bid_opening_date", "2026-03-22"),
+        "pre_bid_date": tender.get("pre_bid_date", "2026-03-10"),
+        "bid_validity": tender.get("bid_validity", "180 Days"),
+        "work_period": tender.get("work_period", "90 Days"),
+        "document_availability": tender.get("document_availability", "Online Downloadable (NIT & BoQ)"),
+        "source": tender.get("source", "CPPP / Government eProcurement System"),
+        "source_url": tender.get("source_url", "https://etenders.gov.in/eprocure/app"),
+        "requirements": tender.get("requirements", []),
+        "requirements_count": len(tender.get("requirements", []))
+    }
 
 
 @router.get("/bids", response_model=List[Dict[str, Any]])
