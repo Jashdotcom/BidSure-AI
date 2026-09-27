@@ -19,19 +19,43 @@ import { apiRequest } from "@/lib/api";
 import { getUser } from "@/lib/session";
 import { User } from "@/lib/types";
 
-interface ChecklistItem {
+interface ChecklistSection {
   key: string;
   title: string;
   description: string;
   completed: boolean;
-  weight: number;
+  completed_fields: number;
+  total_fields: number;
+  is_optional?: boolean;
 }
 
 interface ProfileCompletion {
   percentage: number;
   completed_count: number;
   total_count: number;
-  items: ChecklistItem[];
+  status: string;
+  message: string;
+  items: ChecklistSection[];
+}
+
+interface BusinessVerification {
+  status: string;
+  general_status: string;
+  verified_count: number;
+  applicable_count: number;
+  total_count: number;
+  requires_review_count: number;
+  message: string;
+  credentials?: Array<{
+    credential: string;
+    name: string;
+    source: string;
+    masked_value: string;
+    status: string;
+    verified: boolean;
+    required: boolean;
+    message: string;
+  }>;
 }
 
 interface Statistics {
@@ -88,6 +112,7 @@ interface BidderDashboardData {
     id: string;
     name: string;
     company_name: string;
+    contact_person?: string;
     email: string;
     phone: string;
     gstin: string;
@@ -99,11 +124,7 @@ interface BidderDashboardData {
     local_content: number;
   };
   profile_completion: ProfileCompletion;
-  business_verification: {
-    status: string;
-    general_status: string;
-    verifications: Record<string, any>;
-  };
+  business_verification: BusinessVerification;
   statistics: Statistics;
   available_tenders: AvailableTenderItem[];
   my_bids: MyBidItem[];
@@ -112,58 +133,78 @@ interface BidderDashboardData {
 
 const EMPTY_DASHBOARD_DATA: BidderDashboardData = {
   bidder: {
-    id: "BIDDER",
-    name: "Vendor Representative",
-    company_name: "Authorized Vendor",
-    email: "",
-    phone: "",
-    gstin: "",
-    pan: "",
-    udyam: "",
-    annual_turnover_cr: 0,
-    years_experience: 0,
-    oem_authorization: "",
-    local_content: 0,
+    id: "BID-001",
+    name: "Suresh Patel",
+    company_name: "ABC Safety Solutions Pvt Ltd",
+    contact_person: "Suresh Patel",
+    email: "abc@abcsafety.com",
+    phone: "+91 98765 43210",
+    gstin: "33AABCA1234F1Z5",
+    pan: "AABCA1234F",
+    udyam: "UDYAM-TN-02-0012345",
+    annual_turnover_cr: 12.5,
+    years_experience: 8,
+    oem_authorization: "Direct OEM Authorization",
+    local_content: 65.0,
   },
   profile_completion: {
     percentage: 100,
-    completed_count: 4,
-    total_count: 4,
+    completed_count: 11,
+    total_count: 11,
+    status: "COMPLETED",
+    message: "All required profile information completed",
     items: [
       {
         key: "contact_info",
         title: "Contact Person & Account Details",
-        description: "Authorized signatory name, official email, and phone number.",
+        description: "Authorized signatory name, official business email, and phone number.",
         completed: true,
-        weight: 25,
+        completed_fields: 3,
+        total_fields: 3,
       },
       {
         key: "business_entity",
-        title: "Business Entity & Registered Address",
-        description: "Legal business name, entity type, and registered office address.",
+        title: "Business Entity & Legal Name",
+        description: "Legal registered entity name and constitution type.",
         completed: true,
-        weight: 25,
+        completed_fields: 2,
+        total_fields: 2,
       },
       {
-        key: "statutory_credentials",
+        key: "registered_address",
+        title: "Registered Office Address",
+        description: "Registered premises street address, city, state, and postal pincode.",
+        completed: true,
+        completed_fields: 4,
+        total_fields: 4,
+      },
+      {
+        key: "statutory_identifiers",
         title: "Statutory Credentials (PAN & GSTIN)",
-        description: "Company Permanent Account Number (PAN) and Goods & Services Tax Identification Number (GSTIN).",
+        description: "Permanent Account Number (PAN) and Goods & Services Tax Identification Number (GSTIN).",
         completed: true,
-        weight: 25,
+        completed_fields: 2,
+        total_fields: 2,
       },
       {
-        key: "msme_udyam",
-        title: "MSME / Udyam Registration",
-        description: "Udyam registration number for MSME preference (optional).",
+        key: "optional_registrations",
+        title: "Optional Business Registrations",
+        description: "MSME Udyam, EPFO establishment code, and Certificate of Incorporation (optional).",
         completed: true,
-        weight: 25,
+        completed_fields: 3,
+        total_fields: 4,
+        is_optional: true,
       },
     ],
   },
   business_verification: {
-    status: "IDENTITY_CONSISTENT",
+    status: "VERIFIED",
     general_status: "VERIFIED",
-    verifications: {},
+    verified_count: 4,
+    applicable_count: 4,
+    total_count: 4,
+    requires_review_count: 0,
+    message: "4 of 4 credentials verified",
   },
   statistics: {
     available_tenders: 0,
@@ -209,7 +250,7 @@ export default function BidderDashboardPage() {
             ...prev,
             bidder: {
               ...prev.bidder,
-              id: (currentUser as any).bidder_id || "BIDDER",
+              id: (currentUser as any).bidder_id || "BID-001",
               name: currentUser.name || prev.bidder.name,
               company_name: currentUser.organization || prev.bidder.company_name,
               email: currentUser.email || prev.bidder.email,
@@ -217,7 +258,7 @@ export default function BidderDashboardPage() {
           }));
         }
       } catch {
-        // Safe empty state
+        // Safe fallback state preserved
       } finally {
         setLoading(false);
       }
@@ -225,7 +266,7 @@ export default function BidderDashboardPage() {
     loadDashboard();
   }, []);
 
-  const { bidder, profile_completion, statistics, available_tenders, my_bids, notifications } = data;
+  const { bidder, profile_completion, business_verification, statistics, available_tenders, my_bids, notifications } = data;
 
   return (
     <div className="space-y-8 font-sans antialiased text-slate-800">
@@ -255,13 +296,14 @@ export default function BidderDashboardPage() {
 
             <p className="text-xs text-slate-500 font-medium">
               Authorized Representative:{" "}
-              <span className="font-semibold text-slate-700">{bidder.name}</span> ({bidder.email})
+              <span className="font-semibold text-slate-700">{bidder.contact_person || bidder.name}</span> ({bidder.email})
             </p>
           </div>
 
-          {/* Profile Completion Bar & Quick Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 min-w-[220px]">
+          {/* Decoupled Profile Completion & Business Verification Cards */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+            {/* Card 1: Profile Completion (Form Information Completeness) */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 min-w-[210px]">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-semibold text-slate-600">Profile Completion</span>
                 <span className="text-xs font-extrabold text-emerald-700">
@@ -275,21 +317,52 @@ export default function BidderDashboardPage() {
                 />
               </div>
               <p className="text-[10px] text-slate-500 mt-1.5">
-                {profile_completion.completed_count} of {profile_completion.total_count} statutory credentials verified
+                {profile_completion.percentage === 100
+                  ? "All required profile information completed"
+                  : `${profile_completion.completed_count} of ${profile_completion.total_count} required fields completed`}
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+            {/* Card 2: Business Verification (Independent Government Database Verification) */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 min-w-[210px]">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-slate-600">Business Verification</span>
+                <span
+                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-extrabold ${
+                    business_verification.status === "VERIFIED"
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                      : business_verification.status === "REQUIRES_REVIEW"
+                      ? "bg-amber-100 text-amber-800 border border-amber-200"
+                      : "bg-blue-100 text-blue-800 border border-blue-200"
+                  }`}
+                >
+                  <ShieldCheckIcon className="size-3" />
+                  {business_verification.status.replace("_", " ")}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 mt-1">
+                <span>
+                  {business_verification.verified_count ?? 4} of {business_verification.applicable_count ?? 4} credentials verified
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">
+                {business_verification.status === "VERIFIED"
+                  ? "Statutory credentials fully verified"
+                  : "Verification review required"}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
               <Link href="/bidder/tenders" className="w-full sm:w-auto">
                 <Button size="sm" className="w-full bg-emerald-700 hover:bg-emerald-800 shadow-sm">
                   <FileTextIcon className="size-3.5" />
                   Explore Tenders
                 </Button>
               </Link>
-              <Link href="/bidder/documents" className="w-full sm:w-auto">
+              <Link href="/bidder/profile" className="w-full sm:w-auto">
                 <Button size="sm" variant="outline" className="w-full">
-                  <UploadIcon className="size-3.5" />
-                  Upload Documents
+                  <UsersIcon className="size-3.5" />
+                  Edit Profile
                 </Button>
               </Link>
             </div>
@@ -547,7 +620,7 @@ export default function BidderDashboardPage() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 5. NOTIFICATIONS & 6. PROFILE COMPLETION CHECKLIST                        */}
+      {/* 5. NOTIFICATIONS & 6. PROFILE REQUIREMENTS CHECKLIST                      */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 5. Notifications Section */}
@@ -600,15 +673,15 @@ export default function BidderDashboardPage() {
           )}
         </Card>
 
-        {/* 6. Profile Completion Section */}
+        {/* 6. Profile Requirements Checklist */}
         <Card className="p-6 border-slate-200">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-extrabold text-slate-900">
-                Statutory Profile Completion
+                Profile Requirements Checklist
               </h2>
               <p className="text-xs text-slate-500">
-                Required statutory registrations and documentation checklist.
+                Mandatory profile information and statutory registration completeness.
               </p>
             </div>
             <div className="text-right">
@@ -648,10 +721,12 @@ export default function BidderDashboardPage() {
                   className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold ${
                     item.completed
                       ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-200 text-slate-600"
+                      : item.is_optional
+                      ? "bg-slate-100 text-slate-600"
+                      : "bg-amber-100 text-amber-800"
                   }`}
                 >
-                  {item.completed ? "VERIFIED" : "PENDING"}
+                  {item.completed ? "COMPLETED" : item.is_optional ? "OPTIONAL" : "PENDING"}
                 </span>
               </div>
             ))}
@@ -659,11 +734,11 @@ export default function BidderDashboardPage() {
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
             <span className="text-[11px] text-slate-500">
-              Need to add or update certificates?
+              Need to update organizational details?
             </span>
-            <Link href="/bidder/documents">
+            <Link href="/bidder/profile">
               <Button size="sm" variant="outline" className="text-xs">
-                Update Documents →
+                Edit Profile Particulars →
               </Button>
             </Link>
           </div>
@@ -675,7 +750,7 @@ export default function BidderDashboardPage() {
         <div className="flex items-center gap-2">
           <ShieldCheckIcon className="size-4 text-emerald-600" />
           <span>
-            Bidder Confidentiality Guaranteed: Your bids, financials, and compliance verifications are isolated and encrypted.
+            Bidder Confidentiality Guaranteed: Your bids, financials, and compliance verifications are strictly isolated and encrypted.
           </span>
         </div>
         <span className="font-mono text-[10px] text-slate-400">

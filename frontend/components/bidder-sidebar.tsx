@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/logo";
@@ -12,6 +12,9 @@ import {
   CheckCircleIcon,
   UsersIcon,
 } from "@/components/icons";
+import { getUser } from "@/lib/session";
+import { User } from "@/lib/types";
+import { apiRequest } from "@/lib/api";
 
 const BIDDER_NAV_ITEMS = [
   { name: "Dashboard", href: "/bidder/dashboard", icon: BarChart3Icon },
@@ -24,6 +27,38 @@ const BIDDER_NAV_ITEMS = [
 
 export function BidderSidebar() {
   const pathname = usePathname();
+  const [orgName, setOrgName] = useState("ABC Safety Solutions Pvt Ltd");
+  const [gstin, setGstin] = useState("33AABCA1234F1Z5");
+  const [verificationStatus, setVerificationStatus] = useState("VERIFIED");
+
+  useEffect(() => {
+    // Initial load from session user
+    const u = getUser<User>();
+    if (u?.organization) {
+      setOrgName(u.organization);
+    }
+
+    // Dynamic sync from bidder profile API
+    async function syncProfile() {
+      try {
+        const res = await apiRequest<any>("/bidder-portal/profile");
+        if (res?.bidder) {
+          if (res.bidder.company_name || res.bidder.name) {
+            setOrgName(res.bidder.company_name || res.bidder.name);
+          }
+          if (res.bidder.gstin) {
+            setGstin(res.bidder.gstin);
+          }
+        }
+        if (res?.business_verification?.status) {
+          setVerificationStatus(res.business_verification.status);
+        }
+      } catch {
+        // Fallback default retained
+      }
+    }
+    syncProfile();
+  }, []);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r border-slate-200 bg-white text-slate-700">
@@ -38,15 +73,21 @@ export function BidderSidebar() {
           <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
             Bidder Portal
           </span>
-          <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-800">
-            VERIFIED
+          <span
+            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-extrabold ${
+              verificationStatus === "VERIFIED"
+                ? "bg-emerald-100 text-emerald-800"
+                : "bg-amber-100 text-amber-800"
+            }`}
+          >
+            {verificationStatus}
           </span>
         </div>
         <p className="mt-1 text-xs font-bold text-slate-900 truncate">
-          ABC Safety Solutions Pvt Ltd
+          {orgName}
         </p>
-        <p className="text-[11px] text-slate-500 truncate">
-          GSTIN: 33AABCA1234F1Z5
+        <p className="text-[11px] text-slate-500 truncate font-mono">
+          GSTIN: {gstin}
         </p>
       </div>
 

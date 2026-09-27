@@ -58,7 +58,75 @@ DEMO_BIDDERS: List[Dict[str, Any]] = []
 DEMO_NOTIFICATIONS: List[Dict[str, Any]] = []
 DEMO_AUDIT_LOGS: List[Dict[str, Any]] = []
 
-# Live Mutable Operational Data Stores (Empty by default for real database operation)
+# Pre-seeded canonical bidder profiles (isolated profile source of truth)
+SEED_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = {
+    "BID-001": {
+        "id": "BID-001",
+        "user_id": "usr_bidder_001",
+        "name": "ABC Safety Solutions Pvt Ltd",
+        "company_name": "ABC Safety Solutions Pvt Ltd",
+        "contact_person": "Suresh Patel",
+        "email": "abc@abcsafety.com",
+        "phone": "+91 98765 43210",
+        "entity_type": "Private Limited Company",
+        "business_address": "Plot 42, Guindy Industrial Estate",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pincode": "600032",
+        "pan": "AABCA1234F",
+        "gstin": "33AABCA1234F1Z5",
+        "udyam": "UDYAM-TN-02-0012345",
+        "epfo_code": "TN/MAS/0099881",
+        "business_registration_number": "U74999TN2021PTC142890",
+        "business_registration_date": "2021-04-15",
+        "annual_turnover_cr": 12.5,
+        "years_experience": 8,
+        "oem_authorization": "Direct OEM Authorization",
+        "local_content": 65.0,
+        "emd_paid": True,
+        "status": "VERIFIED",
+        "verification_status": "IDENTITY_CONSISTENT",
+        "government_verifications": {
+            "pan": {
+                "source": "Income Tax Department / NSDL PAN API (Mock Adapter)",
+                "status": "VALID",
+                "pan": "AABCA1234F",
+                "entity_name": "ABC Safety Solutions Pvt Ltd",
+                "category": "Company",
+                "message": "PAN verified as active and valid with Income Tax Department records."
+            },
+            "gstin": {
+                "source": "GSTN Portal API (Adapter)",
+                "status": "VALID",
+                "gstin": "33AABCA1234F1Z5",
+                "trade_name": "ABC Safety Solutions Pvt Ltd",
+                "legal_name": "ABC SAFETY SOLUTIONS PRIVATE LIMITED",
+                "gstin_status": "Active",
+                "message": "GSTIN verified active on Goods and Services Tax Network."
+            },
+            "udyam": {
+                "source": "MSME Udyam Portal API",
+                "status": "VALID",
+                "udyam_number": "UDYAM-TN-02-0012345",
+                "enterprise_name": "ABC Safety Solutions Pvt Ltd",
+                "category": "Small Enterprise",
+                "message": "Valid MSME Udyam registration verified with Ministry of MSME database."
+            },
+            "epfo": {
+                "source": "EPFO / ESIC Unified Portal (Mock Adapter)",
+                "status": "VALID",
+                "establishment_code": "TN/MAS/0099881",
+                "epfo_status": "Active",
+                "message": "Statutory registrations (EPFO/ESIC) verified with regular monthly contributions."
+            }
+        },
+        "score": 95.0,
+        "documents": {}
+    }
+}
+
+# Live Mutable Operational Data Stores
+SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES)
 SAMPLE_TENDERS: List[Dict[str, Any]] = []
 SAMPLE_BIDDERS: List[Dict[str, Any]] = []
 SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = []
@@ -656,13 +724,96 @@ def delete_tender(tender_id: str) -> Dict[str, Any]:
 
         raise KeyError(f"Tender '{tender_id}' not found during removal.")
 
-def get_bidder_by_id(bidder_id: str) -> Optional[Dict[str, Any]]:
+def get_bidder_profile(bidder_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves the canonical profile for a bidder by bidder_id, user_id, or email.
+    Single source of truth for bidder organization, contact, and statutory profile data.
+    """
+    if not bidder_id:
+        return None
+    if bidder_id in SAMPLE_BIDDER_PROFILES:
+        return SAMPLE_BIDDER_PROFILES[bidder_id]
+    for p in SAMPLE_BIDDER_PROFILES.values():
+        if p.get("id") == bidder_id or p.get("user_id") == bidder_id or p.get("email") == bidder_id:
+            return p
     for b in SAMPLE_BIDDERS:
-        if b.get("id") == bidder_id or b.get("bid_submission_id") == bidder_id:
+        if b.get("id") == bidder_id or b.get("bidder_id") == bidder_id:
+            return b
+    return None
+
+def update_bidder_profile(bidder_id: str, patch_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Updates or creates a bidder profile in the canonical profile store.
+    Keeps user accounts synchronized.
+    """
+    profile = get_bidder_profile(bidder_id)
+    if profile is None:
+        profile = {
+            "id": bidder_id,
+            "user_id": bidder_id,
+            "name": patch_data.get("name") or patch_data.get("company_name", "Vendor Organization"),
+            "company_name": patch_data.get("company_name") or patch_data.get("name", "Vendor Organization"),
+            "contact_person": patch_data.get("contact_person") or patch_data.get("name", "Authorized Signatory"),
+            "email": patch_data.get("email", ""),
+            "phone": patch_data.get("phone", ""),
+            "entity_type": patch_data.get("entity_type", "Private Limited Company"),
+            "business_address": patch_data.get("business_address", ""),
+            "city": patch_data.get("city", ""),
+            "state": patch_data.get("state", ""),
+            "pincode": patch_data.get("pincode", ""),
+            "pan": patch_data.get("pan", ""),
+            "gstin": patch_data.get("gstin", ""),
+            "udyam": patch_data.get("udyam", ""),
+            "epfo_code": patch_data.get("epfo_code", ""),
+            "business_registration_number": patch_data.get("business_registration_number", ""),
+            "business_registration_date": patch_data.get("business_registration_date", ""),
+            "annual_turnover_cr": float(patch_data.get("annual_turnover_cr", 0.0)),
+            "years_experience": float(patch_data.get("years_experience", 0)),
+            "oem_authorization": patch_data.get("oem_authorization", "Unregistered"),
+            "local_content": float(patch_data.get("local_content", 0.0)),
+            "emd_paid": patch_data.get("emd_paid", False),
+            "status": patch_data.get("status", "REGISTERED"),
+            "verification_status": patch_data.get("verification_status", "PENDING"),
+            "documents": patch_data.get("documents", {})
+        }
+        SAMPLE_BIDDER_PROFILES[bidder_id] = profile
+    else:
+        profile.update(patch_data)
+        bidder_key = profile.get("id") or bidder_id
+        SAMPLE_BIDDER_PROFILES[bidder_key] = profile
+
+    # Also keep SAMPLE_USERS synchronized if matching
+    user_id = profile.get("user_id") or bidder_id
+    for u in SAMPLE_USERS:
+        if u.get("id") == user_id or u.get("bidder_id") == bidder_id or u.get("email") == profile.get("email"):
+            if "contact_person" in patch_data or "name" in patch_data:
+                u["name"] = patch_data.get("contact_person") or patch_data.get("name") or u["name"]
+            if "company_name" in patch_data:
+                u["organization"] = patch_data["company_name"]
+            if "email" in patch_data:
+                u["email"] = patch_data["email"]
+            if "phone" in patch_data:
+                u["phone"] = patch_data["phone"]
+            break
+
+    return profile
+
+def get_bidder_by_id(bidder_id: str) -> Optional[Dict[str, Any]]:
+    # First check profile store
+    if bidder_id in SAMPLE_BIDDER_PROFILES:
+        return SAMPLE_BIDDER_PROFILES[bidder_id]
+    for p in SAMPLE_BIDDER_PROFILES.values():
+        if p.get("id") == bidder_id or p.get("bid_submission_id") == bidder_id or p.get("user_id") == bidder_id:
+            return p
+    for b in SAMPLE_BIDDERS:
+        if b.get("id") == bidder_id or b.get("bid_submission_id") == bidder_id or b.get("bidder_id") == bidder_id:
             return b
     return None
 
 def add_bidder(bidder_data: Dict[str, Any]) -> Dict[str, Any]:
+    b_id = bidder_data.get("id")
+    if b_id:
+        SAMPLE_BIDDER_PROFILES[b_id] = bidder_data
     SAMPLE_BIDDERS.append(bidder_data)
     return bidder_data
 
@@ -1230,10 +1381,10 @@ def reset_to_demo_data() -> None:
 
 def clear_all_procurement_data() -> None:
     """
-    Resets all operational procurement records (tenders, bidders, logs)
-    to empty state while keeping authenticated officer credentials intact.
+    Resets all operational procurement records (tenders, tender bids, logs)
+    to empty state while keeping authenticated officer credentials and bidder profiles intact.
     """
-    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS
+    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
     with _tender_number_lock:
         SAMPLE_TENDERS.clear()
         SAMPLE_BIDDERS.clear()
@@ -1241,3 +1392,4 @@ def clear_all_procurement_data() -> None:
         SAMPLE_AUDIT_LOGS.clear()
         SAMPLE_NOTIFICATIONS.clear()
         SAMPLE_ANALYSIS_JOBS.clear()
+        SAMPLE_BIDDER_PROFILES = copy.deepcopy(SEED_BIDDER_PROFILES)
