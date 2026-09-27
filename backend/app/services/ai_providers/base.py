@@ -79,6 +79,16 @@ class AIProvider(ABC):
         """Returns the configured model name, or None if not applicable."""
         ...
 
+    async def generate_chat_response(
+        self,
+        messages: List[Dict[str, str]],
+        system_prompt: Optional[str] = None,
+    ) -> str:
+        """
+        Generate chat assistant response from conversation messages and system prompt.
+        """
+        raise NotImplementedError("Chat generation not implemented for this provider")
+
 
 class AIProviderUnavailableError(Exception):
     """Raised when the AI provider service is unreachable."""

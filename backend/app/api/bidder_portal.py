@@ -36,6 +36,12 @@ from app.data.sample_data import (
 )
 from app.services.rules_engine import RulesEngine
 from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
+from app.services.ai_providers import get_ai_provider
+from app.services.ai_providers.base import (
+    AIProviderUnavailableError,
+    AIModelUnavailableError,
+    AIExtractionError,
+)
 
 router = APIRouter(prefix="/bidder-portal", tags=["Bidder Portal"])
 
@@ -1529,3 +1535,132 @@ async def check_tender_documents(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e)
         )
+
+
+@router.post("/assistant/chat", response_model=Dict[str, Any])
+async def bidder_assistant_chat(
+    payload: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Context-aware BidSure AI Assistant chat endpoint for authenticated bidders.
+    Gathers isolated bidder profile, verified documents, active tenders, and submitted bids,
+    constructs grounded system context, and queries the configured AI provider (Ollama Qwen3:8B or mock).
+    Enforces strict data isolation and graceful fallback.
+    """
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    bidder_profile = get_bidder_profile(bidder_id) or get_bidder_by_id(bidder_id) or {}
+    bidder_docs = get_documents_for_bidder(bidder_id)
+    bidder_bids = get_bids_by_bidder_id(bidder_id)
+    all_tenders = get_all_tenders()
+    published_tenders = [t for t in all_tenders if str(t.get("status", "")).upper() in ("PUBLISHED", "OPEN", "ACTIVE")]
+
+    # Get statutory verification status
+    try:
+        gov_res = await gov_service.verify_all_for_bidder(bidder_profile)
+    except Exception:
+        gov_res = {}
+
+    # Extract messages from payload
+    messages = payload.get("messages") or []
+    single_msg = payload.get("message")
+    if not messages and single_msg:
+        messages = [{"role": "user", "content": str(single_msg)}]
+    if not messages:
+        messages = [{"role": "user", "content": "Hello, what can you help me with?"}]
+
+    # Build grounded system prompt
+    org_name = bidder_profile.get("company_name") or bidder_profile.get("legal_name") or current_user.get("organization") or "Vendor Org"
+    contact_name = bidder_profile.get("name") or current_user.get("name") or "Authorized Signatory"
+    pan_masked = mask_credential(bidder_profile.get("pan"), "PAN")
+    gstin_masked = mask_credential(bidder_profile.get("gstin"), "GSTIN")
+    msme_num = bidder_profile.get("msme_number") or bidder_profile.get("udyam_number") or "Not Provided"
+    turnover = bidder_profile.get("annual_turnover_cr") or bidder_profile.get("turnover") or "12.5"
+    experience = bidder_profile.get("experience_years") or bidder_profile.get("years_in_business") or "5"
+
+    docs_summary = []
+    for d in bidder_docs:
+        docs_summary.append(f"- {d.get('name')} ({d.get('document_type')}): Status={d.get('verification_status')}, Source={d.get('source_display') or d.get('source')}")
+    docs_str = "\n".join(docs_summary) if docs_summary else "No documents uploaded yet."
+
+    tenders_summary = []
+    for t in published_tenders[:10]:
+        tenders_summary.append(f"- Tender ID: {t.get('id')} | Number: {t.get('tender_number')} | Title: {t.get('title')} | Deadline: {t.get('deadline') or t.get('closing_date')}")
+    tenders_str = "\n".join(tenders_summary) if tenders_summary else "No active published tenders."
+
+    bids_summary = []
+    for b in bidder_bids:
+        bids_summary.append(f"- Bid Ref: {b.get('bid_submission_id') or b.get('id')} | Tender: {b.get('tender_number') or b.get('tender_id')} | Status: {b.get('status')} | Compliance Score: {b.get('compliance_score')}%")
+    bids_str = "\n".join(bids_summary) if bids_summary else "No submitted bids yet."
+
+    system_prompt = f"""You are the BidSure AI Assistant inside the Bidder Portal.
+You assist authenticated vendor representatives with tender requirement analysis, pre-check readiness, document verification statuses, and bid progression tracking.
+
+AUTHENTICATED BIDDER CONTEXT (Strict Isolation):
+- Organization: {org_name}
+- Representative: {contact_name}
+- PAN: {pan_masked}
+- GSTIN: {gstin_masked}
+- UDYAM/MSME: {msme_num}
+- Annual Turnover: ₹{turnover} Cr
+- Past Experience: {experience} Years
+
+VERIFIED DOCUMENTS IN REPOSITORY:
+{docs_str}
+
+ACTIVE PUBLISHED TENDERS:
+{tenders_str}
+
+MY SUBMITTED BIDS:
+{bids_str}
+
+STRICT INSTRUCTIONS:
+1. Ground your answers strictly in the supplied bidder context, uploaded documents, published tenders, and submitted bids.
+2. The assistant is a guidance and help tool. It MUST NOT submit bids, alter bidder records, verify documents, or make procurement decisions.
+3. Do NOT fabricate tender requirements, deadlines, compliance results, or government verification statuses.
+4. If a document or requirement is missing or unverified, clearly explain what is needed and advise the bidder to upload or import it via DigiLocker under My Documents.
+5. Answer politely, concisely, and professionally in markdown format."""
+
+    try:
+        provider = get_ai_provider()
+        reply = await provider.generate_chat_response(messages=messages, system_prompt=system_prompt)
+        return {
+            "status": "SUCCESS",
+            "reply": reply,
+            "provider": provider.provider_name(),
+            "model": provider.model_name(),
+            "is_fallback": False
+        }
+    except (AIProviderUnavailableError, AIModelUnavailableError, Exception) as e:
+        fallback_msg = "AI Assistant is temporarily unavailable. You can still use Available Tenders, My Documents, Pre-check, and My Bids."
+        return {
+            "status": "UNAVAILABLE",
+            "reply": fallback_msg,
+            "is_fallback": True,
+            "error_detail": str(e)
+        }
+
+
+@router.get("/assistant/status", response_model=Dict[str, Any])
+async def get_assistant_status(
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Returns AI Assistant availability and model health status.
+    """
+    try:
+        provider = get_ai_provider()
+        health = await provider.health_check()
+        return {
+            "status": "ONLINE" if health.get("status") == "connected" else "OFFLINE",
+            "provider": provider.provider_name(),
+            "model": provider.model_name(),
+            "health": health
+        }
+    except Exception as e:
+        return {
+            "status": "OFFLINE",
+            "provider": "unknown",
+            "model": None,
+            "health": {"status": "unavailable", "message": str(e)}
+        }

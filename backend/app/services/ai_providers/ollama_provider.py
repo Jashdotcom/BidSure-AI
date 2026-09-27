@@ -344,3 +344,67 @@ class OllamaAIProvider(AIProvider):
         )
 
         return validated
+
+    async def generate_chat_response(
+        self,
+        messages: List[Dict[str, str]],
+        system_prompt: Optional[str] = None,
+    ) -> str:
+        """
+        Generate chat assistant response using Ollama /api/chat endpoint.
+        """
+        import urllib.request
+        import urllib.error
+
+        health = await self.health_check()
+        if health["status"] == "unavailable":
+            raise AIProviderUnavailableError("ollama", health["message"])
+        if health["status"] == "model_unavailable":
+            raise AIModelUnavailableError("ollama", self._model, health["message"])
+
+        api_url = f"{self._base_url}/api/chat"
+        formatted_messages = []
+        if system_prompt:
+            formatted_messages.append({"role": "system", "content": system_prompt})
+        for m in messages:
+            role = m.get("role", "user")
+            content = m.get("content", "")
+            if role in ("user", "assistant", "system") and content:
+                formatted_messages.append({"role": role, "content": content})
+
+        payload = {
+            "model": self._model,
+            "messages": formatted_messages,
+            "stream": False,
+            "options": {
+                "temperature": 0.3,
+                "num_predict": 2048,
+            },
+        }
+
+        try:
+            req_data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                api_url,
+                data=req_data,
+                method="POST",
+                headers={"Content-Type": "application/json", "Accept": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                response_body = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.URLError as e:
+            raise AIProviderUnavailableError(
+                "ollama",
+                f"Ollama chat request failed: {getattr(e, 'reason', str(e))}",
+            )
+        except Exception as e:
+            raise AIProviderUnavailableError(
+                "ollama",
+                f"Ollama chat request failed: {str(e)}",
+            )
+
+        message = response_body.get("message", {})
+        content = message.get("content", "")
+        if not content or not content.strip():
+            return "Hello! I am your BidSure AI Assistant. How can I help you with your tenders and bids today?"
+        return content.strip()
