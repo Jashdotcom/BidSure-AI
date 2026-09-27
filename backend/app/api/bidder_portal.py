@@ -1716,8 +1716,8 @@ STRICT INSTRUCTIONS:
         return {
             "status": "TIMEOUT",
             "reply": "The AI assistant took too long to respond. Please try again.",
-            "provider": "ollama",
-            "model": "qwen3:8b",
+            "provider": getattr(e, "provider", "ollama"),
+            "model": settings.AI_MODEL,
             "duration_seconds": round(duration, 2),
             "is_fallback": True,
             "error_detail": "Generation timed out"
@@ -1729,7 +1729,7 @@ STRICT INSTRUCTIONS:
             "status": "UNAVAILABLE",
             "reply": "AI response failed. Please try again.",
             "provider": getattr(e, "provider", "ollama"),
-            "model": getattr(e, "model", "qwen3:8b"),
+            "model": getattr(e, "model", settings.AI_MODEL),
             "duration_seconds": round(duration, 2),
             "is_fallback": True,
             "error_detail": str(e)

@@ -63,11 +63,11 @@ class Settings:
 
     @property
     def AI_MODEL(self) -> str:
-        return os.getenv("AI_MODEL", "qwen3:8b").strip()
+        return os.getenv("AI_MODEL", "gemma3:4b").strip()
 
     @property
     def AI_BASE_URL(self) -> str:
-        return os.getenv("AI_BASE_URL", "http://localhost:11434").strip().rstrip("/")
+        return os.getenv("AI_BASE_URL", "http://127.0.0.1:11434").strip().rstrip("/")
 
     @property
     def AI_TIMEOUT(self) -> int:

@@ -454,10 +454,10 @@ def test_bidder_assistant_status_endpoint():
 @pytest.mark.asyncio
 async def test_bidder_assistant_chat_ollama_provider():
     """Assistant chat endpoint invokes Ollama generate_chat_response with grounded context."""
-    provider = OllamaAIProvider(base_url="http://localhost:11434", model="qwen3:8b")
+    provider = OllamaAIProvider(base_url="http://127.0.0.1:11434", model="gemma3:4b")
 
     mock_chat_body = json.dumps({
-        "model": "qwen3:8b",
+        "model": "gemma3:4b",
         "message": {
             "role": "assistant",
             "content": "Hello Suresh! Based on your profile, your PAN and GSTIN are verified active."
@@ -467,7 +467,7 @@ async def test_bidder_assistant_chat_ollama_provider():
     def mock_urlopen(req, timeout=None):
         m = MagicMock()
         if "tags" in req.full_url:
-            m.read.return_value = json.dumps({"models": [{"name": "qwen3:8b"}]}).encode("utf-8")
+            m.read.return_value = json.dumps({"models": [{"name": "gemma3:4b"}]}).encode("utf-8")
         else:
             m.read.return_value = mock_chat_body
         m.__enter__.return_value = m
@@ -484,10 +484,10 @@ async def test_bidder_assistant_chat_ollama_provider():
 @pytest.mark.asyncio
 async def test_ollama_chat_strips_think_tags():
     """Provider automatically strips <think>...</think> tags emitted by reasoning models."""
-    provider = OllamaAIProvider(base_url="http://localhost:11434", model="qwen3:8b")
+    provider = OllamaAIProvider(base_url="http://127.0.0.1:11434", model="gemma3:4b")
 
     mock_chat_body = json.dumps({
-        "model": "qwen3:8b",
+        "model": "gemma3:4b",
         "message": {
             "role": "assistant",
             "content": "<think>Let me reason about the user's question...</think>Hello! How can I assist you today?"
@@ -497,7 +497,7 @@ async def test_ollama_chat_strips_think_tags():
     def mock_urlopen(req, timeout=None):
         m = MagicMock()
         if "tags" in req.full_url:
-            m.read.return_value = json.dumps({"models": [{"name": "qwen3:8b"}]}).encode("utf-8")
+            m.read.return_value = json.dumps({"models": [{"name": "gemma3:4b"}]}).encode("utf-8")
         else:
             m.read.return_value = mock_chat_body
         m.__enter__.return_value = m
@@ -516,7 +516,7 @@ def test_bidder_assistant_chat_api_endpoint_greeting_success():
     """POST /bidder-portal/assistant/chat processes greeting and returns SUCCESS status."""
     token = get_bidder_token()
     mock_chat_body = json.dumps({
-        "model": "qwen3:8b",
+        "model": "gemma3:4b",
         "message": {
             "role": "assistant",
             "content": "Hello! I am your BidSure AI Assistant. I can help you check missing documents and pre-check eligibility."
@@ -526,7 +526,7 @@ def test_bidder_assistant_chat_api_endpoint_greeting_success():
     def mock_urlopen(req, timeout=None):
         m = MagicMock()
         if "tags" in req.full_url:
-            m.read.return_value = json.dumps({"models": [{"name": "qwen3:8b"}]}).encode("utf-8")
+            m.read.return_value = json.dumps({"models": [{"name": "gemma3:4b"}]}).encode("utf-8")
         else:
             m.read.return_value = mock_chat_body
         m.__enter__.return_value = m
@@ -553,7 +553,7 @@ def test_bidder_assistant_chat_api_endpoint_handles_timeout_gracefully():
     def mock_urlopen_timeout(req, timeout=None):
         if "tags" in req.full_url:
             m = MagicMock()
-            m.read.return_value = json.dumps({"models": [{"name": "qwen3:8b"}]}).encode("utf-8")
+            m.read.return_value = json.dumps({"models": [{"name": "gemma3:4b"}]}).encode("utf-8")
             m.__enter__.return_value = m
             return m
         raise urllib.error.URLError("The read operation timed out")

@@ -94,7 +94,7 @@ export default function AITenderAnalyzePage() {
     ai_message: string;
   }>({
     ai_provider: "ollama",
-    ai_model: "qwen3:8b",
+    ai_model: "gemma3:4b",
     ai_status: "checking",
     ai_message: "Checking local AI provider...",
   });

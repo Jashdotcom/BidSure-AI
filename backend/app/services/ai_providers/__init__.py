@@ -22,8 +22,8 @@ def get_ai_provider() -> AIProvider:
     provider_name = os.getenv("AI_PROVIDER", "ollama").strip().lower()
 
     if provider_name == "ollama":
-        base_url = os.getenv("AI_BASE_URL", "http://localhost:11434")
-        model = os.getenv("AI_MODEL", "qwen3:8b")
+        base_url = os.getenv("AI_BASE_URL", "http://127.0.0.1:11434")
+        model = os.getenv("AI_MODEL", "gemma3:4b")
         timeout = int(os.getenv("AI_TIMEOUT", "120"))
         return OllamaAIProvider(base_url=base_url, model=model, timeout=timeout)
     elif provider_name == "mock":
@@ -34,6 +34,6 @@ def get_ai_provider() -> AIProvider:
             provider_name
         )
         return OllamaAIProvider(
-            base_url=os.getenv("AI_BASE_URL", "http://localhost:11434"),
-            model=os.getenv("AI_MODEL", "qwen3:8b")
+            base_url=os.getenv("AI_BASE_URL", "http://127.0.0.1:11434"),
+            model=os.getenv("AI_MODEL", "gemma3:4b")
         )

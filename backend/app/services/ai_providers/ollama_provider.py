@@ -86,13 +86,13 @@ class OllamaAIProvider(AIProvider):
     Real local LLM provider using Ollama's HTTP API.
 
     Configuration (via environment variables):
-        AI_BASE_URL: Ollama server URL (default: http://localhost:11434)
-        AI_MODEL: Model name to use (default: qwen3:8b)
+        AI_BASE_URL: Ollama server URL (default: http://127.0.0.1:11434)
+        AI_MODEL: Model name to use (default: gemma3:4b)
     """
 
     def __init__(self, base_url: Optional[str] = None, model: Optional[str] = None, timeout: Optional[int] = None):
-        self._base_url = (base_url or os.getenv("AI_BASE_URL", "http://localhost:11434")).rstrip("/")
-        self._model = model or os.getenv("AI_MODEL", "qwen3:8b")
+        self._base_url = (base_url or os.getenv("AI_BASE_URL", "http://127.0.0.1:11434")).rstrip("/")
+        self._model = model or os.getenv("AI_MODEL", "gemma3:4b")
         self._timeout = int(timeout or os.getenv("AI_TIMEOUT", "120"))
         self._resolved_base_url: Optional[str] = None
 
