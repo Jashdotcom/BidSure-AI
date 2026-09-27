@@ -318,8 +318,12 @@ def associate_document_with_tender(document_id: str, tender_id: str) -> Optional
 def ensure_seed_documents() -> List[Dict[str, Any]]:
     """
     Ensures that essential test/operational seed documents (such as Tendernotice_1.pdf for IITG)
-    are present in durable document storage.
+    are present in durable document storage, only if DEMO_MODE is enabled.
     """
+    demo_mode = os.getenv("DEMO_MODE", "false").lower() in ("true", "1", "t", "yes")
+    if not demo_mode:
+        return []
+
     with _doc_lock:
         if not _is_initialized:
             _load_index()
