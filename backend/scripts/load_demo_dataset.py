@@ -3,7 +3,7 @@ BidSure AI - Realistic Demo Dataset Loader Script
 Populates the application with:
 - 12 Real CPPP Tenders from official CPPP registry
 - 12 Synthetic Bidders with realistic variation (PASS / FAIL / REVIEW)
-- Synthetic Documents with mandatory DEMO / SYNTHETIC watermarks
+- Synthetic Documents with mandatory DEMO / SYNTHETIC watermarks (Valid PDFs)
 - 24-30 Demo Bid Submissions across tenders
 - Deterministic Compliance Evaluations & Audit Trail
 """
@@ -12,7 +12,8 @@ import os
 import sys
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
+import fitz
 
 # Ensure backend root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -47,17 +48,31 @@ def run_demo_dataset_loader():
         tender_record["official_source_url"] = f"https://eprocure.gov.in/eprocure/app?page=FrontEndTenderDetails&service=page&tenderId={tender_id}"
         tender_record["external_tender_id"] = tender_id
         tender_record["external_reference_number"] = tender_record.get("ref", tender_id)
-        tender_record["imported_at"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-        tender_record["last_synced_at"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        tender_record["imported_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        tender_record["last_synced_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         tender_record["document_count"] = 1
 
         sample_data.SAMPLE_TENDERS.append(tender_record)
         tenders_loaded.append(tender_record)
 
-        # Create official CPPP tender document in document store
-        pdf_content = f"OFFICIAL CPPP TENDER DOCUMENT\nTender ID: {tender_id}\nTitle: {tender_record['title']}\nOrganization: {tender_record['organization']}\nEstimated Value: {tender_record['estimated_value_display']}\nSource: CPPP Government Public Data".encode("utf-8")
+        # Create official CPPP tender document in document store using valid PDF (fitz)
+        doc_pdf = fitz.open()
+        page = doc_pdf.new_page(width=595, height=842)
+        tender_text = f"""OFFICIAL CPPP TENDER DOCUMENT
+Tender ID: {tender_id}
+Title: {tender_record['title']}
+Organization: {tender_record['organization']}
+Estimated Value: {tender_record['estimated_value_display']}
+Source: CPPP Government Public Data (eprocure.gov.in)
+"""
+        page.insert_text((50, 72), tender_text, fontsize=10)
+        pdf_bytes = doc_pdf.tobytes()
+        doc_pdf.close()
+
+        assert pdf_bytes.startswith(b"%PDF-"), "Generated tender document must be a valid PDF"
+
         document_store.save_document(
-            file_bytes=pdf_content,
+            file_bytes=pdf_bytes,
             filename=tender_record["file_name"],
             tender_id=tender_id,
             uploaded_by="officer@cpcl.gov.in",
@@ -74,7 +89,7 @@ def run_demo_dataset_loader():
             "id": f"AUDIT-TENDER-{tender_id}",
             "event_type": "TENDER_IMPORTED_FROM_CPPP",
             "description": f"Successfully imported real CPPP tender {tender_id} ({tender_record['title']}) from eprocure.gov.in",
-            "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "actor": "system@bidsure.ai",
             "data_source": "CPPP_PUBLIC_DATA",
             "tender_id": tender_id
@@ -99,6 +114,8 @@ def run_demo_dataset_loader():
     ]
 
     created_bidders = []
+    total_docs_created = 0
+
     for idx, (b_id, b_name, b_email, profile_variant) in enumerate(synthetic_bidders_config, start=1):
         # Create user account
         user_record = {
@@ -145,7 +162,7 @@ def run_demo_dataset_loader():
 
         created_bidders.append(profile)
 
-        # Create 9 standard synthetic documents for each bidder
+        # Create 9 standard synthetic documents for each bidder as valid PDFs
         doc_types = [
             ("01_PAN.pdf", "PAN"),
             ("02_GST.pdf", "GST"),
@@ -169,8 +186,16 @@ Turnover: {'₹ 6.0 Crore' if profile_variant == 'TURNOVER_LOW' else '₹ 18.5 C
 Experience: {'1 Project' if profile_variant == 'MISSING_EXPERIENCE' else '3 Enterprise Projects'}
 Local Content: {'35%' if profile_variant == 'LOCAL_CONTENT_LOW' else '65%'}
 Status: SYNTHETIC DEMO
+FOR BIDSURE AI PROTOTYPE DEMONSTRATION ONLY
 """
-            pdf_bytes = content_text.encode("utf-8")
+            doc_pdf = fitz.open()
+            page = doc_pdf.new_page(width=595, height=842)
+            page.insert_text((50, 72), content_text, fontsize=10)
+            pdf_bytes = doc_pdf.tobytes()
+            doc_pdf.close()
+
+            assert pdf_bytes.startswith(b"%PDF-"), f"Generated document {fname} must be a valid PDF"
+
             document_store.save_document(
                 file_bytes=pdf_bytes,
                 filename=fname,
@@ -193,23 +218,24 @@ Status: SYNTHETIC DEMO
                 "status": "SYNTHETIC_DEMO",
                 "verification_status": "SYNTHETIC_DEMO",
                 "file_name": fname,
-                "file_size_kb": 180,
+                "file_size_kb": len(pdf_bytes) // 1024,
                 "is_synthetic_demo": True,
                 "demo_watermark": "DEMO DOCUMENT — SYNTHETIC DATA — NOT A REAL GOVERNMENT CERTIFICATE"
             })
+            total_docs_created += 1
 
         # Audit log for bidder registration
         sample_data.SAMPLE_AUDIT_LOGS.append({
             "id": f"AUDIT-BIDDER-{b_id}",
             "event_type": "BIDDER_REGISTERED_DEMO",
             "description": f"Synthetic demo bidder registered: {b_name} ({b_id})",
-            "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "actor": b_email,
             "data_source": "BIDSURE_DEMO_DATA",
             "bidder_id": b_id
         })
 
-    print(f"  ✓ Successfully created {len(created_bidders)} Synthetic Bidders with 9 documents each.")
+    print(f"  ✓ Successfully created {len(created_bidders)} Synthetic Bidders with {total_docs_created} valid PDF documents (12 x 9 = 108).")
 
     # 4. Create 24-30 Demo Bid Submissions across the 12 Real Tenders
     statuses = ["SUBMITTED", "UNDER_VERIFICATION", "PENDING_REVIEW", "COMPLIANT", "NON_COMPLIANT", "REQUIRES_REVIEW"]
@@ -219,7 +245,6 @@ Status: SYNTHETIC DEMO
     # Distribute bids across tenders (2 to 3 bidders per tender)
     for tender_idx, tender in enumerate(tenders_loaded):
         tender_id = tender["id"]
-        # Select 2 or 3 synthetic bidders for this tender
         bidders_for_tender = [
             created_bidders[tender_idx % 12],
             created_bidders[(tender_idx + 3) % 12],
@@ -230,7 +255,6 @@ Status: SYNTHETIC DEMO
             b_id = bidder["id"]
             variant = bidder["variant"]
 
-            # Determine compliance outcome based on variant
             if variant == "COMPLIANT":
                 comp_status = "COMPLIANT"
                 risk_level = "LOW"
@@ -251,7 +275,7 @@ Status: SYNTHETIC DEMO
                 "tender_number": tender["tender_number"],
                 "bidder_id": b_id,
                 "bidder_name": bidder["legal_business_name"],
-                "submitted_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "submitted_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "status": statuses[(bid_counter - 1) % len(statuses)],
                 "compliance_status": comp_status,
                 "evaluation_result": eval_status,
@@ -283,7 +307,7 @@ Status: SYNTHETIC DEMO
                 "id": f"AUDIT-BIDSUB-{bid_id}",
                 "event_type": "BID_SUBMITTED_DEMO",
                 "description": f"Demo bid {bid_id} submitted by {bidder['legal_business_name']} for tender {tender_id}",
-                "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "actor": bidder["business_email"],
                 "data_source": "BIDSURE_DEMO_DATA",
                 "tender_id": tender_id,
@@ -303,15 +327,17 @@ Status: SYNTHETIC DEMO
         "users": sample_data.SAMPLE_USERS
     }
     state_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app", "data", "demo_dataset_state.json"))
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
     with open(state_path, "w", encoding="utf-8") as f:
         json.dump(state_data, f, indent=2)
     print(f"  ✓ Saved persistent demo dataset state to {state_path}")
 
     print("==================================================")
-    print("Demo Dataset Loader Completed Successfully!")
+    print("BidSure AI Demo Dataset Loader Completed Successfully")
+    print("==================================================")
     print(f"  - Real CPPP Tenders: {len(tenders_loaded)}")
     print(f"  - Synthetic Bidders: {len(created_bidders)}")
-    print(f"  - Synthetic Documents: {len(sample_data.SAMPLE_BIDDER_DOCUMENTS)}")
+    print(f"  - Synthetic Documents: {total_docs_created}")
     print(f"  - Demo Bids: {total_bids_created}")
     print(f"  - Audit Events: {len(sample_data.SAMPLE_AUDIT_LOGS)}")
     print("==================================================")
