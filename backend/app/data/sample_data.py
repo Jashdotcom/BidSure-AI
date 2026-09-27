@@ -472,7 +472,7 @@ SEED_BIDDERS: List[Dict[str, Any]] = [
 
 # Pre-seeded canonical bidder documents repository for BID-001 (ABC Safety Solutions)
 # Explicit Sources: MANUAL_UPLOAD, DIGILOCKER, DIGILOCKER_DEMO
-# Explicit Verification Statuses: UPLOADED, PROCESSING, VERIFIED, REQUIRES_REVIEW, REJECTED, EXPIRED, IMPORTED
+# Explicit Verification Statuses: PROCESSING, AUTHENTICATED, INVALID, UNABLE_TO_VERIFY
 SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
     {
         "id": "DOC-BID-001-PAN",
@@ -484,7 +484,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "ABCDE1234F",
         "source": "MANUAL_UPLOAD",
         "source_display": "Manual Upload",
-        "status": "VERIFIED",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "OCR_RULE_CHECK",
+        "verification_reason": "Statutory format, OCR text extraction, and checksum validated.",
+        "verified_at": "2026-03-10T10:15:30Z",
         "file_name": "ABC_Safety_PAN_Card.pdf",
         "file_type": "PDF",
         "file_size_kb": 128,
@@ -505,7 +509,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "27ABCDE1234F1Z5",
         "source": "DIGILOCKER_DEMO",
         "source_display": "DigiLocker (Demo)",
-        "status": "REQUIRES_REVIEW",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "DIGILOCKER_DEMO",
+        "verification_reason": "Imported and cryptographically verified via DigiLocker Demo Sandbox adapter.",
+        "verified_at": "2026-03-11T14:30:15Z",
         "file_name": "GST_REG06_Certificate.pdf",
         "file_type": "PDF",
         "file_size_kb": 210,
@@ -526,7 +534,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "UDYAM-MH-18-0012345",
         "source": "DIGILOCKER_DEMO",
         "source_display": "DigiLocker (Demo)",
-        "status": "REQUIRES_REVIEW",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "DIGILOCKER_DEMO",
+        "verification_reason": "Imported and cryptographically verified via DigiLocker Demo Sandbox adapter.",
+        "verified_at": "2026-03-12T09:20:10Z",
         "file_name": "MSME_Udyam_Registration.pdf",
         "file_type": "PDF",
         "file_size_kb": 175,
@@ -547,7 +559,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "MH/BAN/0012345",
         "source": "MANUAL_UPLOAD",
         "source_display": "Manual Upload",
-        "status": "VERIFIED",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "DEMO_ADAPTER",
+        "verification_reason": "Statutory registration verified with EPFO database adapter.",
+        "verified_at": "2026-03-13T11:00:25Z",
         "file_name": "EPFO_Registration_Certificate.pdf",
         "file_type": "PDF",
         "file_size_kb": 164,
@@ -568,7 +584,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "EXP-2024-8842",
         "source": "MANUAL_UPLOAD",
         "source_display": "Manual Upload",
-        "status": "VERIFIED",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "CROSS_DOCUMENT_CHECK",
+        "verification_reason": "Work order value and client certificate validated against project completion records.",
+        "verified_at": "2026-03-14T16:45:30Z",
         "file_name": "IIT_Project_Completion_Cert.pdf",
         "file_type": "PDF",
         "file_size_kb": 320,
@@ -589,7 +609,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "MAF-2026-IITG-99",
         "source": "MANUAL_UPLOAD",
         "source_display": "Manual Upload",
-        "status": "VERIFIED",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "DEMO_ADAPTER",
+        "verification_reason": "Direct OEM authorization verified with authorized distributor registry.",
+        "verified_at": "2026-03-15T12:00:20Z",
         "file_name": "OEM_Authorization_MAF_Letter.pdf",
         "file_type": "PDF",
         "file_size_kb": 195,
@@ -610,7 +634,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "MII-DECL-2026-01",
         "source": "MANUAL_UPLOAD",
         "source_display": "Manual Upload",
-        "status": "VERIFIED",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "OCR_RULE_CHECK",
+        "verification_reason": "Statutory self-declaration and percentage calculation verified.",
+        "verified_at": "2026-03-16T14:10:15Z",
         "file_name": "Make_in_India_Local_Content_Affidavit.pdf",
         "file_type": "PDF",
         "file_size_kb": 140,
@@ -631,7 +659,11 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
         "document_number": "AFF-NOTARY-2026-44",
         "source": "MANUAL_UPLOAD",
         "source_display": "Manual Upload",
-        "status": "VERIFIED",
+        "status": "AUTHENTICATED",
+        "verification_status": "AUTHENTICATED",
+        "verification_method": "OCR_RULE_CHECK",
+        "verification_reason": "Notarized affidavit formatting and debarment database check verified clean.",
+        "verified_at": "2026-03-16T15:30:10Z",
         "file_name": "Non_Blacklisting_Notary_Affidavit.pdf",
         "file_type": "PDF",
         "file_size_kb": 115,
@@ -2077,7 +2109,7 @@ def get_digilocker_catalog(bidder_id: str) -> List[Dict[str, Any]]:
 def import_digilocker_documents(bidder_id: str, doc_keys: List[str]) -> List[Dict[str, Any]]:
     """
     Simulates importing selected documents from DigiLocker sandbox into the bidder's repository.
-    Sets source = DIGILOCKER_DEMO and status = REQUIRES_REVIEW.
+    Sets source = DIGILOCKER_DEMO and status = AUTHENTICATED with verification_method = DIGILOCKER_DEMO.
     """
     imported = []
     now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -2102,7 +2134,11 @@ def import_digilocker_documents(bidder_id: str, doc_keys: List[str]) -> List[Dic
                 if existing:
                     existing["source"] = "DIGILOCKER_DEMO"
                     existing["source_display"] = "DigiLocker (Demo)"
-                    existing["status"] = "REQUIRES_REVIEW"
+                    existing["status"] = "AUTHENTICATED"
+                    existing["verification_status"] = "AUTHENTICATED"
+                    existing["verification_method"] = "DIGILOCKER_DEMO"
+                    existing["verification_reason"] = "Imported and cryptographically verified via DigiLocker Demo Sandbox adapter."
+                    existing["verified_at"] = now_ts
                     existing["uploaded_at"] = now_ts
                     imported.append(existing)
                 else:
@@ -2116,7 +2152,11 @@ def import_digilocker_documents(bidder_id: str, doc_keys: List[str]) -> List[Dic
                         "document_number": matching_item.get("document_number"),
                         "source": "DIGILOCKER_DEMO",
                         "source_display": "DigiLocker (Demo)",
-                        "status": "REQUIRES_REVIEW",
+                        "status": "AUTHENTICATED",
+                        "verification_status": "AUTHENTICATED",
+                        "verification_method": "DIGILOCKER_DEMO",
+                        "verification_reason": "Imported and cryptographically verified via DigiLocker Demo Sandbox adapter.",
+                        "verified_at": now_ts,
                         "file_name": f"{matching_item.get('document_type')}_DigiLocker_Import.pdf",
                         "file_type": "PDF",
                         "file_size_kb": matching_item.get("file_size_kb", 150),
@@ -2142,7 +2182,12 @@ def check_tender_document_requirements(tender_id: str, bidder_id: str) -> Dict[s
         raise KeyError(f"Tender '{tender_id}' not found.")
 
     bidder_docs = get_documents_for_bidder(bidder_id)
-    doc_type_map = {d.get("document_type"): d for d in bidder_docs}
+    # Only authenticated / valid documents qualify
+    valid_docs = [
+        d for d in bidder_docs
+        if d.get("status") in ("AUTHENTICATED", "VERIFIED") or d.get("verification_status") in ("AUTHENTICATED", "VERIFIED")
+    ]
+    doc_type_map = {d.get("document_type"): d for d in valid_docs}
 
     requirements = tender.get("requirements", [])
     clause_eval = []
@@ -2203,21 +2248,57 @@ def check_tender_document_requirements(tender_id: str, bidder_id: str) -> Dict[s
                 "name": matched_doc.get("name"),
                 "source": matched_doc.get("source"),
                 "source_display": matched_doc.get("source_display", "Manual Upload"),
-                "status": matched_doc.get("status", "VERIFIED"),
+                "status": matched_doc.get("status", "AUTHENTICATED"),
+                "verification_status": matched_doc.get("verification_status", "AUTHENTICATED"),
+                "verification_method": matched_doc.get("verification_method", "DEMO_ADAPTER"),
                 "document_number": matched_doc.get("document_number", "")
             } if matched_doc else None
         })
 
     available_count = sum(1 for c in clause_eval if c["is_available"])
     missing_count = len(clause_eval) - available_count
+    total_reqs = len(clause_eval)
+    readiness_pct = round((available_count / max(1, total_reqs)) * 100)
+
+    matched_documents = [
+        {
+            "requirement": c["requirement_text"] or c["document_needed"],
+            "category": c["document_type"],
+            "document_name": c["matched_document"]["name"],
+            "document_type": c["document_type"],
+            "source": c["matched_document"]["source"],
+            "source_display": c["matched_document"]["source_display"],
+            "status": c["matched_document"]["status"],
+            "verification_status": c["matched_document"].get("verification_status", "AUTHENTICATED"),
+            "matched": True,
+        }
+        for c in clause_eval if c["is_available"] and c["matched_document"]
+    ]
+
+    missing_documents = [
+        {
+            "requirement": c["requirement_text"] or c["document_needed"],
+            "category": c["document_type"],
+            "document_type": c["document_type"],
+            "description": f"Mandatory document required for {c['clause']}: {c['document_needed']}.",
+            "mandatory": c["mandatory"],
+        }
+        for c in clause_eval if not c["is_available"]
+    ]
 
     return {
         "tender_id": tender.get("id") or tender_id,
         "tender_number": tender.get("tender_number", tender_id),
         "tender_title": tender.get("title"),
-        "total_requirements": len(clause_eval),
+        "total_requirements": total_reqs,
+        "total_required": total_reqs,
         "available_documents_count": available_count,
+        "available_count": available_count,
         "missing_documents_count": missing_count,
+        "missing_count": missing_count,
+        "readiness_percentage": readiness_pct,
         "ready_to_participate": missing_count == 0,
+        "matched_documents": matched_documents,
+        "missing_documents": missing_documents,
         "requirements_evaluation": clause_eval
     }

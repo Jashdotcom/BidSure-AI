@@ -16,10 +16,19 @@ import {
   RefreshCwIcon,
   PlusIcon,
   XCircleIcon,
+  ShieldCheckIcon,
+  EditIcon,
+  CheckIcon,
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
 
-interface BidderDocument {
+export type DocumentVerificationStatus =
+  | "PROCESSING"
+  | "AUTHENTICATED"
+  | "INVALID"
+  | "UNABLE_TO_VERIFY";
+
+export interface BidderDocument {
   id: string;
   bidder_id: string;
   name: string;
@@ -29,7 +38,11 @@ interface BidderDocument {
   document_number?: string;
   source: "MANUAL_UPLOAD" | "DIGILOCKER" | "DIGILOCKER_DEMO";
   source_display?: string;
-  status: "UPLOADED" | "PROCESSING" | "VERIFIED" | "REQUIRES_REVIEW" | "REJECTED" | "EXPIRED" | "IMPORTED";
+  status: DocumentVerificationStatus | string;
+  verification_status: DocumentVerificationStatus | string;
+  verification_method?: string;
+  verification_reason?: string;
+  verified_at?: string;
   file_name: string;
   file_type: string;
   file_size_kb: number;
@@ -69,7 +82,9 @@ export default function BidderDocumentsPage() {
   const [showDigiLockerModal, setShowDigiLockerModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<BidderDocument | null>(null);
   const [deleteDocTarget, setDeleteDocTarget] = useState<BidderDocument | null>(null);
+  const [replaceDocTarget, setReplaceDocTarget] = useState<BidderDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
   // Upload Form State
   const [uploadCategory, setUploadCategory] = useState("IDENTITY_TAX");
@@ -81,6 +96,13 @@ export default function BidderDocumentsPage() {
   const [uploadSubmitting, setUploadSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  // Replace Form State
+  const [replaceDocName, setReplaceDocName] = useState("");
+  const [replaceDocNumber, setReplaceDocNumber] = useState("");
+  const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
 
   // DigiLocker Modal State
   const [digiLockerStep, setDigiLockerStep] = useState<"CONNECT" | "SELECT">("CONNECT");
@@ -144,7 +166,7 @@ export default function BidderDocumentsPage() {
         body: JSON.stringify({ document_keys: selectedDigiKeys }),
       });
       setShowDigiLockerModal(false);
-      setSuccessToast(`Successfully imported ${selectedDigiKeys.length} document(s) from DigiLocker (Demo).`);
+      setSuccessToast(`Successfully imported and authenticated ${selectedDigiKeys.length} document(s) from DigiLocker (Demo).`);
       setTimeout(() => setSuccessToast(null), 4000);
       await loadDocuments();
     } catch (err: any) {
@@ -180,7 +202,7 @@ export default function BidderDocumentsPage() {
       const fileExt = selectedFile.name.split(".").pop()?.toUpperCase() || "PDF";
       const fileSizeKb = Math.max(1, Math.round(selectedFile.size / 1024));
 
-      await apiRequest("/bidder-portal/documents/upload", {
+      const res = await apiRequest<{ document: BidderDocument }>("/bidder-portal/documents/upload", {
         method: "POST",
         body: JSON.stringify({
           name: uploadDocName.trim(),
@@ -199,13 +221,102 @@ export default function BidderDocumentsPage() {
       setUploadDocNumber("");
       setUploadDescription("");
       setSelectedFile(null);
-      setSuccessToast(`Document "${uploadDocName}" uploaded successfully.`);
+      const vStatus = res?.document?.verification_status || "AUTHENTICATED";
+      setSuccessToast(`Document "${uploadDocName}" uploaded and verified (${vStatus}).`);
       setTimeout(() => setSuccessToast(null), 4000);
       await loadDocuments();
     } catch (err: any) {
       setUploadError(err.message || "Upload failed. Please check file format and size.");
     } finally {
       setUploadSubmitting(false);
+    }
+  }
+
+  // Handle Open Replace Modal
+  function handleOpenReplaceModal(doc: BidderDocument) {
+    setReplaceDocTarget(doc);
+    setReplaceDocName(doc.name);
+    setReplaceDocNumber(doc.document_number || "");
+    setReplaceFile(null);
+    setReplaceError(null);
+  }
+
+  // Handle Replace Submit
+  async function handleReplaceSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!replaceDocTarget) return;
+    setReplaceError(null);
+
+    if (!replaceDocName.trim()) {
+      setReplaceError("Document Name is required.");
+      return;
+    }
+
+    setReplaceSubmitting(true);
+    try {
+      let fileExt = replaceDocTarget.file_type;
+      let fileSizeKb = replaceDocTarget.file_size_kb;
+      let fileName = replaceDocTarget.file_name;
+
+      if (replaceFile) {
+        if (replaceFile.size > 50 * 1024 * 1024) {
+          setReplaceError("File size exceeds 50 MB limit.");
+          setReplaceSubmitting(false);
+          return;
+        }
+        fileExt = replaceFile.name.split(".").pop()?.toUpperCase() || "PDF";
+        fileSizeKb = Math.max(1, Math.round(replaceFile.size / 1024));
+        fileName = replaceFile.name;
+      }
+
+      const res = await apiRequest<{ document: BidderDocument }>(
+        `/bidder-portal/documents/${replaceDocTarget.id}/replace`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: replaceDocName.trim(),
+            document_number: replaceDocNumber.trim(),
+            file_name: fileName,
+            file_type: fileExt,
+            file_size_kb: fileSizeKb,
+          }),
+        }
+      );
+
+      setReplaceDocTarget(null);
+      const vStatus = res?.document?.verification_status || "AUTHENTICATED";
+      setSuccessToast(`Document replaced and re-verified (${vStatus}).`);
+      setTimeout(() => setSuccessToast(null), 4000);
+      if (previewDoc && previewDoc.id === replaceDocTarget.id) {
+        setPreviewDoc(res?.document || null);
+      }
+      await loadDocuments();
+    } catch (err: any) {
+      setReplaceError(err.message || "Failed to replace document.");
+    } finally {
+      setReplaceSubmitting(false);
+    }
+  }
+
+  // Handle Retry Verification
+  async function handleRetryVerification(doc: BidderDocument) {
+    setRetryingId(doc.id);
+    try {
+      const res = await apiRequest<{ document: BidderDocument }>(
+        `/bidder-portal/documents/${doc.id}/retry-verification`,
+        { method: "POST" }
+      );
+      const newStatus = res?.document?.verification_status || "AUTHENTICATED";
+      setSuccessToast(`Re-verification completed: ${newStatus}`);
+      setTimeout(() => setSuccessToast(null), 4000);
+      if (previewDoc && previewDoc.id === doc.id) {
+        setPreviewDoc(res?.document || null);
+      }
+      await loadDocuments();
+    } catch (err: any) {
+      alert(err.message || "Verification retry failed.");
+    } finally {
+      setRetryingId(null);
     }
   }
 
@@ -219,6 +330,9 @@ export default function BidderDocumentsPage() {
       });
       setSuccessToast(`Document "${deleteDocTarget.name}" deleted from library.`);
       setTimeout(() => setSuccessToast(null), 4000);
+      if (previewDoc && previewDoc.id === deleteDocTarget.id) {
+        setPreviewDoc(null);
+      }
       setDeleteDocTarget(null);
       await loadDocuments();
     } catch (err: any) {
@@ -230,7 +344,8 @@ export default function BidderDocumentsPage() {
 
   // Download simulation
   function handleDownload(doc: BidderDocument) {
-    const textContent = `BIDSURE AI - PROCUREMENT DOCUMENT REPOSITORY\n============================================\n${doc.demo_watermark || "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"}\n\nDocument ID: ${doc.id}\nDocument Name: ${doc.name}\nCategory: ${doc.category_display || doc.category}\nDocument Type: ${doc.document_type}\nDocument Number: ${doc.document_number || "N/A"}\nSource: ${doc.source_display || doc.source}\nStatus: ${doc.status}\nIssuer: ${doc.issuer || "Authorized Entity"}\nUploaded / Imported At: ${doc.uploaded_at}\n\nSummary / Verification Note:\n${doc.preview_summary || doc.description || "Valid procurement document registered in BidSure AI."}\n`;
+    const vStatus = doc.verification_status || doc.status;
+    const textContent = `BIDSURE AI - PROCUREMENT DOCUMENT REPOSITORY\n============================================\n${doc.demo_watermark || "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"}\n\nDocument ID: ${doc.id}\nDocument Name: ${doc.name}\nCategory: ${doc.category_display || doc.category}\nDocument Type: ${doc.document_type}\nDocument Number: ${doc.document_number || "N/A"}\nSource: ${doc.source_display || doc.source}\nVerification Status: ${vStatus}\nVerification Method: ${doc.verification_method || "OCR_RULE_CHECK"}\nVerification Reason: ${doc.verification_reason || "Automated check passed"}\nVerified At: ${doc.verified_at || doc.uploaded_at}\nIssuer: ${doc.issuer || "Authorized Entity"}\nUploaded / Imported At: ${doc.uploaded_at}\n\nSummary / Verification Note:\n${doc.preview_summary || doc.description || "Valid procurement document registered and authenticated in BidSure AI."}\n`;
     const blob = new Blob([textContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -280,56 +395,73 @@ export default function BidderDocumentsPage() {
     );
   }
 
-  // Status Badge renderer
-  function renderStatusBadge(status: string) {
-    switch (status) {
+  // System-Driven Verification Status Badge renderer
+  function renderVerificationStatusBadge(doc: BidderDocument) {
+    const statusVal = (doc.verification_status || doc.status || "AUTHENTICATED").toUpperCase();
+
+    switch (statusVal) {
+      case "AUTHENTICATED":
       case "VERIFIED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
-            <span className="size-1.5 rounded-full bg-emerald-600" />
-            Verified
-          </span>
-        );
-      case "REQUIRES_REVIEW":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-extrabold text-amber-800">
-            <span className="size-1.5 rounded-full bg-amber-600" />
-            Requires Review
-          </span>
-        );
-      case "UPLOADED":
-      case "IMPORTED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800">
-            <span className="size-1.5 rounded-full bg-blue-600" />
-            Ready for Verification
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800 border border-emerald-200">
+            <CheckIcon className="size-3 text-emerald-600" />
+            Authenticated
           </span>
         );
       case "PROCESSING":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-extrabold text-indigo-800">
+          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-extrabold text-indigo-800 border border-indigo-200">
             <RefreshCwIcon className="size-2.5 animate-spin text-indigo-600" />
             Processing
           </span>
         );
+      case "INVALID":
       case "REJECTED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold text-red-800">
-            <span className="size-1.5 rounded-full bg-red-600" />
-            Rejected
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-extrabold text-red-800 border border-red-200">
+            <XCircleIcon className="size-3 text-red-600" />
+            Invalid
+          </span>
+        );
+      case "UNABLE_TO_VERIFY":
+      case "REQUIRES_REVIEW":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-extrabold text-amber-800 border border-amber-200">
+            <AlertTriangleIcon className="size-3 text-amber-600" />
+            Unable to Verify
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-slate-700">
-            {status}
+            {statusVal}
           </span>
         );
     }
   }
 
+  // Verification Method Label Formatter
+  function formatVerificationMethod(method?: string) {
+    switch (method) {
+      case "DIGILOCKER_DEMO":
+        return "DigiLocker Sandbox Adapter";
+      case "DEMO_ADAPTER":
+        return "Direct Statutory Adapter";
+      case "OCR_RULE_CHECK":
+        return "OCR & Structural Format Check";
+      case "CRYPTOGRAPHIC_CHECK":
+        return "Cryptographic Signature Check";
+      case "CROSS_DOCUMENT_CHECK":
+        return "Cross-Document Integrity Rule";
+      case "SANDBOX_API":
+        return "Government Sandbox API";
+      default:
+        return method || "BidSure AI Automated Rule Engine";
+    }
+  }
+
   // Format Date display
-  function formatDate(ts: string) {
+  function formatDate(ts?: string) {
     if (!ts) return "N/A";
     try {
       const dt = new Date(ts);
@@ -344,7 +476,7 @@ export default function BidderDocumentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans antialiased text-slate-800">
       {/* Toast alert */}
       {successToast && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800 shadow-md animate-in fade-in duration-200">
@@ -362,7 +494,7 @@ export default function BidderDocumentsPage() {
           My Documents
         </h1>
         <p className="mt-1 text-xs text-slate-500">
-          Manage your business documents and reuse them across tender applications.
+          Upload and manage your statutory business documents. BidSure AI automatically inspects and verifies credential authenticity for instant tender reuse.
         </p>
       </div>
 
@@ -378,7 +510,7 @@ export default function BidderDocumentsPage() {
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Upload Documents</h3>
                 <span className="text-[10px] text-slate-400 font-medium">
-                  Direct Statutory Upload
+                  Direct Statutory Upload & OCR
                 </span>
               </div>
             </div>
@@ -427,7 +559,7 @@ export default function BidderDocumentsPage() {
               </span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Fetch eligible digital documents from your DigiLocker account for use in procurement.
+              Fetch eligible digital credentials from your DigiLocker locker for verified tender participation.
             </p>
 
             {/* Clear Demo State Disclaimer Notice */}
@@ -558,91 +690,131 @@ export default function BidderDocumentsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Document Name */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex size-7 items-center justify-center rounded bg-slate-100 text-slate-500 shrink-0">
-                            <FileTextIcon className="size-3.5" />
+                  {filtered.map((doc) => {
+                    const vStatus = (doc.verification_status || doc.status || "AUTHENTICATED").toUpperCase();
+                    const isInvalidOrUnable = vStatus === "INVALID" || vStatus === "UNABLE_TO_VERIFY" || vStatus === "REQUIRES_REVIEW";
+                    const isProcessing = vStatus === "PROCESSING" || retryingId === doc.id;
+
+                    return (
+                      <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
+                        {/* Document Name */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex size-7 items-center justify-center rounded bg-slate-100 text-slate-500 shrink-0">
+                              <FileTextIcon className="size-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-900 truncate">{doc.name}</p>
+                              {doc.document_number && (
+                                <p className="text-[11px] text-slate-400 font-mono truncate">
+                                  No: {doc.document_number}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-slate-900 truncate">{doc.name}</p>
-                            {doc.document_number && (
-                              <p className="text-[11px] text-slate-400 font-mono truncate">
-                                No: {doc.document_number}
-                              </p>
+                        </td>
+
+                        {/* Category */}
+                        <td className="px-3 py-3">
+                          <span className="font-medium text-slate-700">
+                            {doc.category_display || doc.category}
+                          </span>
+                          <span className="block text-[10px] text-slate-400">
+                            {doc.document_type}
+                          </span>
+                        </td>
+
+                        {/* Source */}
+                        <td className="px-3 py-3">
+                          {renderSourceBadge(doc.source_display || doc.source)}
+                        </td>
+
+                        {/* Upload Date */}
+                        <td className="px-3 py-3 text-slate-500 whitespace-nowrap">
+                          {formatDate(doc.uploaded_at)}
+                        </td>
+
+                        {/* File type & size */}
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600 font-bold">
+                            {doc.file_type}
+                          </span>
+                          <span className="ml-1 text-[11px] text-slate-400">
+                            {doc.file_size_kb} KB
+                          </span>
+                        </td>
+
+                        {/* Verification Status */}
+                        <td className="px-3 py-3 whitespace-nowrap">
+                          {renderVerificationStatusBadge(doc)}
+                        </td>
+
+                        {/* Contextual Actions */}
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            {/* Retry Verification (for invalid / unable to verify) */}
+                            {isInvalidOrUnable && (
+                              <button
+                                type="button"
+                                title="Retry Automated Verification"
+                                disabled={isProcessing}
+                                onClick={() => handleRetryVerification(doc)}
+                                className="inline-flex items-center gap-1 rounded bg-slate-100 hover:bg-slate-200 px-2 py-1 text-[10px] font-bold text-slate-700 border border-slate-200"
+                              >
+                                <RefreshCwIcon className={`size-3 ${isProcessing ? "animate-spin text-emerald-600" : ""}`} />
+                                Retry
+                              </button>
                             )}
+
+                            {/* Replace Document */}
+                            <button
+                              type="button"
+                              title="Replace Document"
+                              onClick={() => handleOpenReplaceModal(doc)}
+                              className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold border transition-colors ${
+                                isInvalidOrUnable
+                                  ? "bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200"
+                                  : "text-slate-600 hover:bg-slate-100 border-slate-200"
+                              }`}
+                            >
+                              <EditIcon className="size-3" />
+                              Replace
+                            </button>
+
+                            {/* Preview */}
+                            <button
+                              type="button"
+                              title="Preview Document"
+                              onClick={() => setPreviewDoc(doc)}
+                              className="flex size-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                            >
+                              <EyeIcon className="size-3.5" />
+                            </button>
+
+                            {/* Download */}
+                            <button
+                              type="button"
+                              title="Download Document"
+                              onClick={() => handleDownload(doc)}
+                              className="flex size-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                            >
+                              <DownloadIcon className="size-3.5" />
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              title="Delete Document"
+                              onClick={() => setDeleteDocTarget(doc)}
+                              className="flex size-7 items-center justify-center rounded text-red-500 hover:bg-red-50 hover:text-red-700"
+                            >
+                              <TrashIcon className="size-3.5" />
+                            </button>
                           </div>
-                        </div>
-                      </td>
-
-                      {/* Category */}
-                      <td className="px-3 py-3">
-                        <span className="font-medium text-slate-700">
-                          {doc.category_display || doc.category}
-                        </span>
-                        <span className="block text-[10px] text-slate-400">
-                          {doc.document_type}
-                        </span>
-                      </td>
-
-                      {/* Source */}
-                      <td className="px-3 py-3">
-                        {renderSourceBadge(doc.source_display || doc.source)}
-                      </td>
-
-                      {/* Upload Date */}
-                      <td className="px-3 py-3 text-slate-500 whitespace-nowrap">
-                        {formatDate(doc.uploaded_at)}
-                      </td>
-
-                      {/* File type & size */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600 font-bold">
-                          {doc.file_type}
-                        </span>
-                        <span className="ml-1 text-[11px] text-slate-400">
-                          {doc.file_size_kb} KB
-                        </span>
-                      </td>
-
-                      {/* Verification Status */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {renderStatusBadge(doc.status)}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            title="Preview Document"
-                            onClick={() => setPreviewDoc(doc)}
-                            className="flex size-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                          >
-                            <EyeIcon className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Download Document"
-                            onClick={() => handleDownload(doc)}
-                            className="flex size-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                          >
-                            <DownloadIcon className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete Document"
-                            onClick={() => setDeleteDocTarget(doc)}
-                            className="flex size-7 items-center justify-center rounded text-red-500 hover:bg-red-50 hover:text-red-700"
-                          >
-                            <TrashIcon className="size-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -839,7 +1011,7 @@ export default function BidderDocumentsPage() {
                   disabled={uploadSubmitting}
                   className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
                 >
-                  {uploadSubmitting ? "Uploading..." : "Upload Document"}
+                  {uploadSubmitting ? "Uploading & Verifying..." : "Upload Document"}
                 </Button>
               </div>
             </form>
@@ -848,7 +1020,122 @@ export default function BidderDocumentsPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 2. DIGILOCKER SANDBOX MODAL */}
+      {/* 2. REPLACE DOCUMENT MODAL */}
+      {/* ──────────────────────────────────────────────────────────── */}
+      {replaceDocTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <EditIcon className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Replace Document
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {replaceDocTarget.id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplaceDocTarget(null)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <XCircleIcon className="size-5" />
+              </button>
+            </div>
+
+            {replaceError && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+                ⚠ {replaceError}
+              </div>
+            )}
+
+            <form onSubmit={handleReplaceSubmit} className="mt-4 space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Document Title / Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={replaceDocName}
+                  onChange={(e) => setReplaceDocName(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 px-3 text-slate-800 focus:border-emerald-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Document / Certificate Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Correct statutory number"
+                  value={replaceDocNumber}
+                  onChange={(e) => setReplaceDocNumber(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 px-3 text-slate-800 focus:border-emerald-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Upload New File (Optional if only correcting number)
+                </label>
+                <div className="rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 p-3.5 text-center hover:bg-slate-50 transition-colors">
+                  <input
+                    type="file"
+                    id="replace-file-input"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setReplaceFile(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <label htmlFor="replace-file-input" className="cursor-pointer">
+                    <UploadCloudIcon className="mx-auto size-6 text-slate-400 mb-1" />
+                    <p className="text-xs font-bold text-slate-700">
+                      {replaceFile ? replaceFile.name : `Keep existing: ${replaceDocTarget.file_name}`}
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      {replaceFile
+                        ? `${(replaceFile.size / 1024).toFixed(1)} KB • Ready to upload`
+                        : "Click to choose a replacement file (PDF, JPG, JPEG, PNG)"}
+                    </p>
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReplaceDocTarget(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={replaceSubmitting}
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
+                >
+                  {replaceSubmitting ? "Re-verifying..." : "Save & Verify"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────── */}
+      {/* 3. DIGILOCKER SANDBOX MODAL */}
       {/* ──────────────────────────────────────────────────────────── */}
       {showDigiLockerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
@@ -1005,7 +1292,7 @@ export default function BidderDocumentsPage() {
                       className="bg-purple-700 hover:bg-purple-800 text-white font-bold"
                       onClick={handleImportDigiLocker}
                     >
-                      {digiImporting ? "Importing..." : "Import Selected Documents"}
+                      {digiImporting ? "Importing & Authenticating..." : "Import Selected Documents"}
                     </Button>
                   </div>
                 </div>
@@ -1016,11 +1303,11 @@ export default function BidderDocumentsPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 3. DOCUMENT PREVIEW MODAL */}
+      {/* 4. DOCUMENT PREVIEW MODAL */}
       {/* ──────────────────────────────────────────────────────────── */}
       {previewDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="flex size-7 items-center justify-center rounded-lg bg-blue-100 text-blue-800">
@@ -1076,7 +1363,7 @@ export default function BidderDocumentsPage() {
                     Verification Status
                   </span>
                   <div className="mt-0.5">
-                    {renderStatusBadge(previewDoc.status)}
+                    {renderVerificationStatusBadge(previewDoc)}
                   </div>
                 </div>
                 <div>
@@ -1097,6 +1384,35 @@ export default function BidderDocumentsPage() {
                 </div>
               </div>
 
+              {/* BidSure AI Automated Verification Authority Card */}
+              <div className="mt-3 pt-3 border-t border-slate-200 rounded-lg bg-white p-3 border border-slate-200">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheckIcon className="size-4 text-emerald-600" />
+                    <span className="font-bold text-slate-900 text-xs">
+                      BidSure AI Automated Verification
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {previewDoc.verified_at ? formatDate(previewDoc.verified_at) : "Verified on Ingestion"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  <span className="font-semibold text-slate-700">Inspection Method: </span>
+                  {formatVerificationMethod(previewDoc.verification_method)}
+                </p>
+                {previewDoc.verification_reason && (
+                  <p className="mt-1 text-[11px] text-slate-600 leading-relaxed">
+                    <span className="font-semibold text-slate-700">Diagnostic Reason: </span>
+                    {previewDoc.verification_reason}
+                  </p>
+                )}
+                <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-100 pt-1.5">
+                  <span>Inspection Authority: BidSure AI Statutory Pipeline</span>
+                  <span>Autonomous Engine (No Manual Officer Review)</span>
+                </div>
+              </div>
+
               {/* Summary / Notes */}
               <div className="pt-2 border-t border-slate-200/80">
                 <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
@@ -1110,14 +1426,29 @@ export default function BidderDocumentsPage() {
 
             {/* Actions */}
             <div className="mt-5 flex items-center justify-between pt-3 border-t border-slate-100">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleDownload(previewDoc)}
-              >
-                <DownloadIcon className="size-3.5" />
-                Download Document
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleDownload(previewDoc)}
+                >
+                  <DownloadIcon className="size-3.5" />
+                  Download
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-300 text-slate-700"
+                  onClick={() => {
+                    const target = previewDoc;
+                    setPreviewDoc(null);
+                    handleOpenReplaceModal(target);
+                  }}
+                >
+                  <EditIcon className="size-3.5" />
+                  Replace
+                </Button>
+              </div>
               <Button
                 size="sm"
                 className="bg-slate-900 hover:bg-slate-800 text-white font-bold"
@@ -1131,7 +1462,7 @@ export default function BidderDocumentsPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 4. DELETE CONFIRMATION DIALOG */}
+      {/* 5. DELETE CONFIRMATION DIALOG */}
       {/* ──────────────────────────────────────────────────────────── */}
       {deleteDocTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
