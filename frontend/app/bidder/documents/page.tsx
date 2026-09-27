@@ -14,10 +14,8 @@ import {
   SparklesIcon,
   AlertTriangleIcon,
   RefreshCwIcon,
-  PlusIcon,
   XCircleIcon,
   ShieldCheckIcon,
-  EditIcon,
   CheckIcon,
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
@@ -82,7 +80,6 @@ export default function BidderDocumentsPage() {
   const [showDigiLockerModal, setShowDigiLockerModal] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<BidderDocument | null>(null);
   const [deleteDocTarget, setDeleteDocTarget] = useState<BidderDocument | null>(null);
-  const [replaceDocTarget, setReplaceDocTarget] = useState<BidderDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
 
@@ -96,13 +93,6 @@ export default function BidderDocumentsPage() {
   const [uploadSubmitting, setUploadSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
-
-  // Replace Form State
-  const [replaceDocName, setReplaceDocName] = useState("");
-  const [replaceDocNumber, setReplaceDocNumber] = useState("");
-  const [replaceFile, setReplaceFile] = useState<File | null>(null);
-  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
-  const [replaceError, setReplaceError] = useState<string | null>(null);
 
   // DigiLocker Modal State
   const [digiLockerStep, setDigiLockerStep] = useState<"CONNECT" | "SELECT">("CONNECT");
@@ -229,72 +219,6 @@ export default function BidderDocumentsPage() {
       setUploadError(err.message || "Upload failed. Please check file format and size.");
     } finally {
       setUploadSubmitting(false);
-    }
-  }
-
-  // Handle Open Replace Modal
-  function handleOpenReplaceModal(doc: BidderDocument) {
-    setReplaceDocTarget(doc);
-    setReplaceDocName(doc.name);
-    setReplaceDocNumber(doc.document_number || "");
-    setReplaceFile(null);
-    setReplaceError(null);
-  }
-
-  // Handle Replace Submit
-  async function handleReplaceSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!replaceDocTarget) return;
-    setReplaceError(null);
-
-    if (!replaceDocName.trim()) {
-      setReplaceError("Document Name is required.");
-      return;
-    }
-
-    setReplaceSubmitting(true);
-    try {
-      let fileExt = replaceDocTarget.file_type;
-      let fileSizeKb = replaceDocTarget.file_size_kb;
-      let fileName = replaceDocTarget.file_name;
-
-      if (replaceFile) {
-        if (replaceFile.size > 50 * 1024 * 1024) {
-          setReplaceError("File size exceeds 50 MB limit.");
-          setReplaceSubmitting(false);
-          return;
-        }
-        fileExt = replaceFile.name.split(".").pop()?.toUpperCase() || "PDF";
-        fileSizeKb = Math.max(1, Math.round(replaceFile.size / 1024));
-        fileName = replaceFile.name;
-      }
-
-      const res = await apiRequest<{ document: BidderDocument }>(
-        `/bidder-portal/documents/${replaceDocTarget.id}/replace`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: replaceDocName.trim(),
-            document_number: replaceDocNumber.trim(),
-            file_name: fileName,
-            file_type: fileExt,
-            file_size_kb: fileSizeKb,
-          }),
-        }
-      );
-
-      setReplaceDocTarget(null);
-      const vStatus = res?.document?.verification_status || "AUTHENTICATED";
-      setSuccessToast(`Document replaced and re-verified (${vStatus}).`);
-      setTimeout(() => setSuccessToast(null), 4000);
-      if (previewDoc && previewDoc.id === replaceDocTarget.id) {
-        setPreviewDoc(res?.document || null);
-      }
-      await loadDocuments();
-    } catch (err: any) {
-      setReplaceError(err.message || "Failed to replace document.");
-    } finally {
-      setReplaceSubmitting(false);
     }
   }
 
@@ -766,22 +690,7 @@ export default function BidderDocumentsPage() {
                               </button>
                             )}
 
-                            {/* Replace Document */}
-                            <button
-                              type="button"
-                              title="Replace Document"
-                              onClick={() => handleOpenReplaceModal(doc)}
-                              className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[10px] font-bold border transition-colors ${
-                                isInvalidOrUnable
-                                  ? "bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200"
-                                  : "text-slate-600 hover:bg-slate-100 border-slate-200"
-                              }`}
-                            >
-                              <EditIcon className="size-3" />
-                              Replace
-                            </button>
-
-                            {/* Preview */}
+                            {/* View / Preview */}
                             <button
                               type="button"
                               title="Preview Document"
@@ -1020,122 +929,7 @@ export default function BidderDocumentsPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 2. REPLACE DOCUMENT MODAL */}
-      {/* ──────────────────────────────────────────────────────────── */}
-      {replaceDocTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
-                  <EditIcon className="size-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    Replace Document
-                  </h3>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    {replaceDocTarget.id}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReplaceDocTarget(null)}
-                className="text-slate-400 hover:text-slate-700"
-              >
-                <XCircleIcon className="size-5" />
-              </button>
-            </div>
-
-            {replaceError && (
-              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
-                ⚠ {replaceError}
-              </div>
-            )}
-
-            <form onSubmit={handleReplaceSubmit} className="mt-4 space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Document Title / Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={replaceDocName}
-                  onChange={(e) => setReplaceDocName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2 px-3 text-slate-800 focus:border-emerald-600 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Document / Certificate Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Correct statutory number"
-                  value={replaceDocNumber}
-                  onChange={(e) => setReplaceDocNumber(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 bg-white py-2 px-3 text-slate-800 focus:border-emerald-600 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Upload New File (Optional if only correcting number)
-                </label>
-                <div className="rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 p-3.5 text-center hover:bg-slate-50 transition-colors">
-                  <input
-                    type="file"
-                    id="replace-file-input"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setReplaceFile(e.target.files[0]);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                  <label htmlFor="replace-file-input" className="cursor-pointer">
-                    <UploadCloudIcon className="mx-auto size-6 text-slate-400 mb-1" />
-                    <p className="text-xs font-bold text-slate-700">
-                      {replaceFile ? replaceFile.name : `Keep existing: ${replaceDocTarget.file_name}`}
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      {replaceFile
-                        ? `${(replaceFile.size / 1024).toFixed(1)} KB • Ready to upload`
-                        : "Click to choose a replacement file (PDF, JPG, JPEG, PNG)"}
-                    </p>
-                  </label>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setReplaceDocTarget(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={replaceSubmitting}
-                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold"
-                >
-                  {replaceSubmitting ? "Re-verifying..." : "Save & Verify"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ──────────────────────────────────────────────────────────── */}
-      {/* 3. DIGILOCKER SANDBOX MODAL */}
+      {/* 2. DIGILOCKER SANDBOX MODAL */}
       {/* ──────────────────────────────────────────────────────────── */}
       {showDigiLockerModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
@@ -1303,7 +1097,7 @@ export default function BidderDocumentsPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 4. DOCUMENT PREVIEW MODAL */}
+      {/* 3. DOCUMENT PREVIEW MODAL */}
       {/* ──────────────────────────────────────────────────────────── */}
       {previewDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
@@ -1426,29 +1220,14 @@ export default function BidderDocumentsPage() {
 
             {/* Actions */}
             <div className="mt-5 flex items-center justify-between pt-3 border-t border-slate-100">
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownload(previewDoc)}
-                >
-                  <DownloadIcon className="size-3.5" />
-                  Download
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-slate-300 text-slate-700"
-                  onClick={() => {
-                    const target = previewDoc;
-                    setPreviewDoc(null);
-                    handleOpenReplaceModal(target);
-                  }}
-                >
-                  <EditIcon className="size-3.5" />
-                  Replace
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleDownload(previewDoc)}
+              >
+                <DownloadIcon className="size-3.5" />
+                Download Document
+              </Button>
               <Button
                 size="sm"
                 className="bg-slate-900 hover:bg-slate-800 text-white font-bold"
@@ -1462,7 +1241,7 @@ export default function BidderDocumentsPage() {
       )}
 
       {/* ──────────────────────────────────────────────────────────── */}
-      {/* 5. DELETE CONFIRMATION DIALOG */}
+      {/* 4. DELETE CONFIRMATION DIALOG */}
       {/* ──────────────────────────────────────────────────────────── */}
       {deleteDocTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
