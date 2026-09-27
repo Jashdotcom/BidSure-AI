@@ -75,14 +75,21 @@ interface PreCheckResult {
   satisfied_count: number;
   missing_count: number;
   fail_count: number;
+  unable_to_verify_count?: number;
+  compliance_score: number;
   readiness_percentage: number;
   requirements_breakdown: {
     name: string;
     clause: string;
     mandatory: boolean;
-    status: "PASS" | "MISSING" | "FAIL" | "ACTION REQUIRED" | "NOT CHECKED";
+    status: "PASS" | "MISSING DOCUMENT" | "FAIL" | "UNABLE TO VERIFY" | "NOT CHECKED" | "MISSING" | "ACTION REQUIRED";
+    required_document?: string;
+    document_name?: string;
+    source?: string;
+    verification_status?: string;
     detail: string;
     bidder_evidence?: string;
+    reason?: string;
   }[];
   recommendations?: string[];
 }
@@ -263,80 +270,30 @@ export default function BidderTendersPage() {
 
       if (res && res.pre_check_evaluation) {
         const ev = res.pre_check_evaluation;
-        const total = ev.total_rules || 5;
-        const passed = ev.passed_rules || 4;
-        const failed = total - passed;
-        const percentage = ev.compliance_score || 90;
-
-        let readiness: "READY TO APPLY" | "PARTIALLY READY" | "NOT READY" = "READY TO APPLY";
-        if (percentage < 70) readiness = "NOT READY";
-        else if (percentage < 95) readiness = "PARTIALLY READY";
-
-        const breakdown = Array.isArray(ev.clauses_evaluated) && ev.clauses_evaluated.length > 0
-          ? ev.clauses_evaluated.map((c: any) => ({
-              name: c.name || c.requirement_text || "Requirement",
-              clause: c.clause || "Clause 4.1",
-              mandatory: true,
-              status: c.status === "PASS" ? "PASS" : c.status === "FAIL" ? "FAIL" : "ACTION REQUIRED",
-              detail: c.detail || c.message || "Verified against bidder profile and documents.",
-              bidder_evidence: c.bidder_evidence || "Verified in My Documents"
-            }))
-          : [
-              {
-                name: "Statutory GSTIN & PAN",
-                clause: "Clause 2.1",
-                mandatory: true,
-                status: "PASS",
-                detail: "GSTIN and PAN verified active with Goods & Services Tax Network and NSDL.",
-                bidder_evidence: "Available in My Documents (Authenticated)"
-              },
-              {
-                name: "Financial Turnover (₹ 10 Cr+)",
-                clause: "Clause 5.1",
-                mandatory: true,
-                status: "PASS",
-                detail: "Annual turnover certified at ₹ 12.5 Cr with UDIN validated balance sheet.",
-                bidder_evidence: "Verified Balance Sheet FY 2025-26"
-              },
-              {
-                name: "OEM Authorization & MAF",
-                clause: "Clause 4.2",
-                mandatory: true,
-                status: "PASS",
-                detail: "Direct OEM authorization letter verified and matched with manufacturer records.",
-                bidder_evidence: "OEM Authorization Certificate"
-              },
-              {
-                name: "Past Experience (Similar Works)",
-                clause: "Clause 6.3",
-                mandatory: true,
-                status: "PASS",
-                detail: "Successfully verified past high-security network deployment project worth ₹ 1.45 Cr.",
-                bidder_evidence: "Completion Certificate Verified"
-              },
-              {
-                name: "Make in India (Class-I Local Content)",
-                clause: "Clause 8.1",
-                mandatory: true,
-                status: "PASS",
-                detail: "Declared local content of 65.0% validated as Class-I local supplier.",
-                bidder_evidence: "Local Content Self-Declaration"
-              }
-            ];
-
         setPreCheckResult({
           status: "SUCCESS",
-          readiness,
-          total_required: total,
-          satisfied_count: passed,
-          missing_count: 0,
-          fail_count: failed,
-          readiness_percentage: percentage,
-          requirements_breakdown: breakdown,
-          recommendations: res.recommendations || [
-            "Ensure latest statutory balance sheet with UDIN is attached.",
-            "Verify that OEM Authorization letter explicitly references CPCL tender number."
-          ]
+          readiness: ev.readiness || "PARTIALLY READY",
+          total_required: ev.total_requirements || 5,
+          satisfied_count: ev.passed_count || 0,
+          missing_count: ev.missing_count || 0,
+          fail_count: ev.fail_count || 0,
+          unable_to_verify_count: ev.unable_to_verify_count || 0,
+          compliance_score: ev.compliance_score || 0,
+          readiness_percentage: ev.compliance_score || 0,
+          requirements_breakdown: (ev.clauses_evaluated || []).map((c: any) => ({
+            name: c.name || "Requirement",
+            clause: c.clause || "Clause",
+            mandatory: c.mandatory !== false,
+            status: c.status,
+            required_document: c.required_document,
+            document_name: c.document_name,
+            source: c.source,
+            verification_status: c.verification_status,
+            detail: c.detail,
+            bidder_evidence: c.bidder_evidence,
+            reason: c.reason
+          })),
+          recommendations: res.recommendations || []
         });
       } else {
         // Fallback pre-check result
@@ -888,41 +845,176 @@ export default function BidderTendersPage() {
                       {preCheckResult.satisfied_count} / {preCheckResult.total_required} Requirements Satisfied
                     </span>
                     <span className="text-[11px] opacity-80 font-mono">
-                      {preCheckResult.readiness_percentage}% Compliance Score
+                      {preCheckResult.compliance_score}% Compliance Score
                     </span>
                   </div>
                 </div>
+
+                {/* Dynamic Summary Notice */}
+                {(preCheckResult.missing_count > 0 || preCheckResult.fail_count > 0 || (preCheckResult.unable_to_verify_count || 0) > 0) && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 flex items-center gap-2">
+                    <AlertTriangleIcon className="size-4 text-amber-600 shrink-0" />
+                    <div>
+                      <span className="font-bold">
+                        {preCheckResult.missing_count + preCheckResult.fail_count + (preCheckResult.unable_to_verify_count || 0)} requirement(s) need attention.
+                      </span>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        {preCheckResult.missing_count > 0 ? "Missing required documents in My Documents library." : "Review requirements below before submitting."}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Important Disclaimer */}
                 <div className="rounded-lg bg-slate-100 p-3 text-[11px] text-slate-600 border border-slate-200 leading-relaxed">
                   <strong className="font-bold text-slate-800">Notice:</strong> Pre-check is an indicative readiness assessment based on the information and documents currently available in your profile. Final tender evaluation is performed according to the tender's official terms.
                 </div>
 
+                {/* Dedicated Missing Documents Section */}
+                {preCheckResult.missing_count > 0 && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangleIcon className="size-4 text-amber-600" />
+                      <h4 className="font-bold text-amber-900 text-xs uppercase tracking-wider">
+                        Missing Documents ({preCheckResult.missing_count})
+                      </h4>
+                    </div>
+                    <div className="space-y-2">
+                      {preCheckResult.requirements_breakdown
+                        .filter(r => r.status === "MISSING DOCUMENT" || r.status === "MISSING")
+                        .map((req, idx) => (
+                          <div key={idx} className="rounded-lg bg-white border border-amber-200 p-3 flex items-center justify-between gap-3 text-xs">
+                            <div>
+                              <span className="font-bold text-slate-900 block">{req.required_document || req.name}</span>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                Required for: <strong className="text-slate-700">{req.name}</strong> ({req.clause})
+                              </p>
+                              <span className="inline-block mt-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                                Status: Not found in My Documents
+                              </span>
+                            </div>
+                            <Link href="/bidder/documents">
+                              <Button size="sm" className="bg-amber-700 hover:bg-amber-800 text-white font-bold text-[11px]">
+                                Upload Document
+                              </Button>
+                            </Link>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Requirements Breakdown */}
                 <div>
                   <h4 className="font-bold text-slate-900 uppercase tracking-wider mb-2">
-                    Requirement-by-Requirement Breakdown
+                    Requirement-by-Requirement Breakdown ({preCheckResult.requirements_breakdown.length})
                   </h4>
-                  <div className="space-y-2">
-                    {preCheckResult.requirements_breakdown.map((req, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-lg border border-slate-200 bg-white p-3 flex items-start justify-between gap-3"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900">{req.name}</span>
-                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">
-                              {req.clause}
-                            </span>
+                  <div className="space-y-2.5">
+                    {preCheckResult.requirements_breakdown.map((req, idx) => {
+                      const st = req.status;
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-lg border p-3.5 space-y-1.5 ${
+                            st === "PASS"
+                              ? "border-emerald-200 bg-emerald-50/30"
+                              : st === "MISSING DOCUMENT" || st === "MISSING"
+                              ? "border-amber-200 bg-amber-50/30"
+                              : st === "FAIL"
+                              ? "border-red-200 bg-red-50/30"
+                              : "border-blue-200 bg-blue-50/30"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900">{req.name}</span>
+                                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600 font-bold">
+                                  {req.clause}
+                                </span>
+                              </div>
+                              <p className="text-slate-600 text-[11px]">{req.detail || req.reason}</p>
+                            </div>
+                            <div>
+                              {st === "PASS" && (
+                                <span className="rounded bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800 border border-emerald-200">
+                                  PASS
+                                </span>
+                              )}
+                              {(st === "MISSING DOCUMENT" || st === "MISSING") && (
+                                <span className="rounded bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 border border-amber-200">
+                                  MISSING DOCUMENT
+                                </span>
+                              )}
+                              {st === "FAIL" && (
+                                <span className="rounded bg-red-100 px-2.5 py-1 text-[10px] font-bold text-red-800 border border-red-200">
+                                  FAIL
+                                </span>
+                              )}
+                              {st === "UNABLE TO VERIFY" && (
+                                <span className="rounded bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800 border border-amber-200">
+                                  UNABLE TO VERIFY
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <p className="text-slate-600 text-[11px]">{req.detail}</p>
-                          {req.bidder_evidence && (
-                            <p className="text-emerald-700 font-semibold text-[10px]">
-                              Evidence: {req.bidder_evidence}
-                            </p>
-                          )}
+
+                          {/* Specific metadata per status */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 text-[11px]">
+                            {(st === "MISSING DOCUMENT" || st === "MISSING") && (
+                              <>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Required Document:</span>
+                                  <span className="font-bold text-amber-900">{req.required_document || req.name}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Your Documents:</span>
+                                  <span className="font-bold text-red-700">Not found in My Documents</span>
+                                </div>
+                              </>
+                            )}
+                            {st === "FAIL" && (
+                              <>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Required / Threshold:</span>
+                                  <span className="font-bold text-slate-800">{req.required_document || "Specified Threshold"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Your Evidence:</span>
+                                  <span className="font-bold text-red-700">{req.bidder_evidence || "Did not satisfy condition"}</span>
+                                </div>
+                              </>
+                            )}
+                            {st === "UNABLE TO VERIFY" && (
+                              <>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Document:</span>
+                                  <span className="font-bold text-slate-800">{req.document_name || "Supporting File"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Verification Reason:</span>
+                                  <span className="font-bold text-amber-800">{req.reason || "Authenticity could not be established."}</span>
+                                </div>
+                              </>
+                            )}
+                            {st === "PASS" && (
+                              <>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Matched Document:</span>
+                                  <span className="font-bold text-slate-800">{req.document_name || req.bidder_evidence || "Verified Record"}</span>
+                                </div>
+                                <div>
+                                  <span className="text-slate-400 font-semibold block">Verification Status:</span>
+                                  <span className="font-bold text-emerald-700">Authenticated ({req.source || "Government / Verified"})</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
+                      );
+                    })}
+                  </div>
+                </div>
                         <div>
                           {req.status === "PASS" && (
                             <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
