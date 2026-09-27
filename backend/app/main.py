@@ -19,6 +19,7 @@ from app.api import (
     reports_router,
     audit_router,
     bidder_portal_router,
+    officer_portal_router,
     dashboard_router
 )
 from app.data.sample_data import is_demo_mode
@@ -55,6 +56,7 @@ app.include_router(compliance_router)
 app.include_router(reports_router)
 app.include_router(audit_router)
 app.include_router(bidder_portal_router)
+app.include_router(officer_portal_router)
 app.include_router(dashboard_router)
 
 # Include API Routers with /api prefix for proxy compatibility
@@ -65,6 +67,7 @@ app.include_router(compliance_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")
 app.include_router(bidder_portal_router, prefix="/api")
+app.include_router(officer_portal_router, prefix="/api")
 app.include_router(dashboard_router, prefix="/api")
 
 @app.on_event("startup")

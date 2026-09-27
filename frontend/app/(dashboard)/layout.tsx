@@ -3,6 +3,7 @@ import { GovTopBar } from "@/components/gov-top-bar";
 import { Sidebar } from "@/components/sidebar";
 import { Navbar } from "@/components/navbar";
 import { OfficerRouteGuard } from "@/components/officer-route-guard";
+import { AIAssistant } from "@/components/ai-assistant";
 
 export default function DashboardLayout({
   children,
@@ -18,6 +19,7 @@ export default function DashboardLayout({
           <Navbar />
           <main className="p-6 sm:p-8 max-w-[1440px] mx-auto">{children}</main>
         </div>
+        <AIAssistant portal="officer" title="BidSure AI Assistant" />
       </div>
     </OfficerRouteGuard>
   );
