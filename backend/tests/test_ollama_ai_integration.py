@@ -571,3 +571,58 @@ def test_bidder_assistant_chat_api_endpoint_handles_timeout_gracefully():
             assert "too long" in data["reply"]
             assert data["is_fallback"] is True
 
+
+def test_bidder_assistant_chat_intent_routing_optimizations():
+    """Verifies intent-based context routing selects focused system prompts and options."""
+    token = get_bidder_token()
+    captured_payloads = []
+
+    def mock_urlopen_capture(req, timeout=None):
+        m = MagicMock()
+        if "tags" in req.full_url:
+            m.read.return_value = json.dumps({"models": [{"name": "gemma3:4b"}]}).encode("utf-8")
+        else:
+            req_body = json.loads(req.data.decode("utf-8")) if req.data else {}
+            captured_payloads.append(req_body)
+            m.read.return_value = json.dumps({
+                "model": "gemma3:4b",
+                "message": {"role": "assistant", "content": "Sample grounded response"}
+            }).encode("utf-8")
+        m.__enter__.return_value = m
+        return m
+
+    with patch.dict(os.environ, {"AI_PROVIDER": "ollama"}):
+        with patch("urllib.request.urlopen", side_effect=mock_urlopen_capture):
+            # 1. Greeting
+            client.post("/bidder-portal/assistant/chat", json={"message": "hello"}, headers={"Authorization": f"Bearer {token}"})
+            # 2. Document query
+            client.post("/bidder-portal/assistant/chat", json={"message": "What documents do I have?"}, headers={"Authorization": f"Bearer {token}"})
+            # 3. Bid query
+            client.post("/bidder-portal/assistant/chat", json={"message": "What is my bid status?"}, headers={"Authorization": f"Bearer {token}"})
+            # 4. Readiness query
+            client.post("/bidder-portal/assistant/chat", json={"message": "Am I ready to apply for the IITG tender?"}, headers={"Authorization": f"Bearer {token}"})
+
+    assert len(captured_payloads) == 4
+
+    # 1. Greeting should use num_predict: 128
+    assert captured_payloads[0]["options"]["num_predict"] == 128
+    greeting_sys = captured_payloads[0]["messages"][0]["content"]
+    assert "active tenders" in greeting_sys
+    assert "MY SUBMITTED BIDS" not in greeting_sys  # greeting does not load full bids context
+
+    # 2. Doc query should include document repository
+    assert captured_payloads[1]["options"]["num_predict"] == 384
+    doc_sys = captured_payloads[1]["messages"][0]["content"]
+    assert "VERIFIED DOCUMENTS" in doc_sys
+
+    # 3. Bid query should include submitted bids
+    assert captured_payloads[2]["options"]["num_predict"] == 256
+    bid_sys = captured_payloads[2]["messages"][0]["content"]
+    assert "MY SUBMITTED BIDS" in bid_sys
+
+    # 4. Readiness query should include pre-check
+    assert captured_payloads[3]["options"]["num_predict"] == 384
+    ready_sys = captured_payloads[3]["messages"][0]["content"]
+    assert "PRE-CHECK READINESS" in ready_sys
+
+

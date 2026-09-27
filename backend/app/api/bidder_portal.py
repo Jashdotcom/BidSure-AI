@@ -1569,37 +1569,119 @@ async def bidder_assistant_chat(
     if not messages:
         messages = [{"role": "user", "content": "Hello, what can you help me with?"}]
 
-    # Determine if message is a simple conversational greeting
+    # Determine intent from user message
     last_user_msg = ""
     for m in reversed(messages):
         if m.get("role") == "user":
-            last_user_msg = (m.get("content") or "").strip().lower()
+            last_user_msg = (m.get("content") or "").strip()
             break
 
-    # Strip common punctuation
-    clean_greeting = re.sub(r"[^\w\s]", "", last_user_msg).strip()
-    is_simple_greeting = clean_greeting in (
+    last_user_msg_lower = last_user_msg.lower()
+    clean_msg = re.sub(r"[^\w\s]", "", last_user_msg_lower).strip()
+
+    is_greeting = clean_msg in (
         "hi", "hello", "hey", "hii", "hi there", "hello there", "good morning",
         "good afternoon", "good evening", "greetings", "help", "who are you",
-        "what can you do", "intro"
-    )
+        "what can you do", "intro", "thanks", "thank you", "ok", "okay"
+    ) or any(clean_msg.startswith(g) for g in ["hi ", "hello ", "hey ", "good morning", "good evening"])
+
+    is_doc_query = any(k in last_user_msg_lower for k in [
+        "document", "documents", "upload", "missing", "verified", "verification",
+        "certificate", "pan", "gstin", "udyam", "epfo", "msme", "maf", "oem",
+        "datasheet", "warranty"
+    ])
+
+    is_tender_query = any(k in last_user_msg_lower for k in [
+        "tender", "iitg", "firewall", "requirement", "requirements", "clause",
+        "deadline", "nit", "specification", "eligibility", "threshold", "emd"
+    ])
+
+    is_readiness_query = any(k in last_user_msg_lower for k in [
+        "ready", "readiness", "pre-check", "precheck", "can i apply", "eligible",
+        "qualification", "pass", "fail", "score", "ready to apply"
+    ])
+
+    is_bid_query = any(k in last_user_msg_lower for k in [
+        "my bid", "bid status", "bids", "submitted", "submission", "evaluated",
+        "review status", "progress"
+    ])
 
     org_name = bidder_profile.get("company_name") or bidder_profile.get("legal_name") or current_user.get("organization") or "ABC Safety Solutions Pvt. Ltd."
     contact_name = bidder_profile.get("name") or current_user.get("name") or "Suresh Patel"
 
-    if is_simple_greeting:
+    if is_greeting:
+        chat_options = {"num_predict": 128, "temperature": 0.1}
         system_prompt = f"""You are the BidSure AI Assistant inside the Bidder Portal for {org_name} (Representative: {contact_name}).
 You assist authorized vendor representatives with tender requirement analysis, pre-check readiness, document verification, and bid status tracking.
 
 STRICT INSTRUCTIONS:
-1. Respond warmly and concisely in 1-2 short paragraphs or bullet points.
+1. Respond warmly and concisely in 1-2 short sentences or bullet points.
 2. Mention the specific assistance you provide:
    - Checking document compliance & missing documents for active tenders (e.g. IIT Guwahati Next-Gen Firewall).
    - Reviewing pre-check readiness before formal submission.
-   - Checking verification status of uploaded documents.
+   - Checking verification status of statutory credentials (PAN, GSTIN, MSME).
    - Tracking the status of your submitted bids.
-3. Keep the greeting direct, helpful, and concise. Do NOT output internal thoughts, <think> tags, or lengthy disclaimers."""
+3. Keep the greeting direct, helpful, and concise. Do NOT output internal thoughts or <think> tags."""
+
+    elif is_bid_query and not (is_doc_query or is_tender_query or is_readiness_query):
+        chat_options = {"num_predict": 256, "temperature": 0.1}
+        bidder_bids = get_bids_by_bidder_id(bidder_id)
+        bids_summary = []
+        for b in bidder_bids:
+            bids_summary.append(
+                f"- Bid ID: {b.get('id')} | Tender: {b.get('tender_number') or b.get('tender_id')} | Title: {b.get('tender_title') or 'Tender'} | Status: {b.get('status')} | Compliance Score: {b.get('compliance_score', 0)}% | Bid Amount: {b.get('bid_amount')} | Date: {b.get('submission_date')}"
+            )
+        bids_str = "\n".join(bids_summary) if bids_summary else "No submitted bids yet."
+        system_prompt = f"""You are the BidSure AI Assistant for {org_name} (Representative: {contact_name}).
+
+MY SUBMITTED BIDS & STATUS:
+{bids_str}
+
+STRICT INSTRUCTIONS:
+1. Cite the actual canonical bid status and compliance score from MY SUBMITTED BIDS above.
+2. Do not invent officer reviews, evaluation activity, decisions, or timestamps.
+3. Keep answers concise, factual, and formatted with bullet points.
+4. Do NOT output internal thoughts or <think> tags."""
+
+    elif is_doc_query and not (is_tender_query or is_readiness_query):
+        chat_options = {"num_predict": 384, "temperature": 0.1}
+        bidder_docs = get_documents_for_bidder(bidder_id)
+        docs_summary = []
+        for d in bidder_docs:
+            docs_summary.append(
+                f"- {d.get('name')} | Type: {d.get('document_type')} | Verification: {d.get('verification_status')} ({d.get('verification_method', 'AUTHENTICATED')}) | Source: {d.get('source_display') or d.get('source', 'Manual')}"
+            )
+        docs_str = "\n".join(docs_summary) if docs_summary else "No documents uploaded yet in My Documents."
+        pan_val = bidder_profile.get("pan") or "AABCA1234F"
+        gstin_val = bidder_profile.get("gstin") or "33AABCA1234F1Z5"
+        msme_num = bidder_profile.get("msme_number") or bidder_profile.get("udyam") or "UDYAM-TN-02-0012345"
+        epfo_code = bidder_profile.get("epfo_code") or "TN/MAS/0099881"
+
+        system_prompt = f"""You are the BidSure AI Assistant for {org_name} (Representative: {contact_name}).
+
+BIDDER STATUTORY CREDENTIALS:
+- PAN: {pan_val} (Status: VALID)
+- GSTIN: {gstin_val} (Status: VALID)
+- UDYAM/MSME: {msme_num} (Status: VALID)
+- EPFO Code: {epfo_code} (Status: VALID)
+
+VERIFIED DOCUMENTS IN REPOSITORY (My Documents):
+{docs_str}
+
+STRICT INSTRUCTIONS:
+1. Answer questions about uploaded and verified documents strictly from the repository list above.
+2. If the bidder asks what documents are missing for general qualification or active tenders, specify what is uploaded vs what may be needed (e.g. OEM MAF, 5-Yr Warranty Certificate, Technical Compliance Sheet).
+3. Advise them to upload missing documents under 'My Documents'.
+4. Do NOT output internal thoughts or <think> tags."""
+
     else:
+        # Full grounded procurement context (Tender requirements, Pre-check readiness, Documents, Tenders)
+        chat_options = {"num_predict": 384, "temperature": 0.1}
+        bidder_docs = get_documents_for_bidder(bidder_id)
+        bidder_bids = get_bids_by_bidder_id(bidder_id)
+        all_tenders = get_all_tenders()
+        published_tenders = [t for t in all_tenders if str(t.get("status", "")).upper() in ("PUBLISHED", "OPEN", "ACTIVE")]
+
         pan_val = bidder_profile.get("pan") or "AABCA1234F"
         gstin_val = bidder_profile.get("gstin") or "33AABCA1234F1Z5"
         msme_num = bidder_profile.get("msme_number") or bidder_profile.get("udyam") or "UDYAM-TN-02-0012345"
@@ -1610,14 +1692,14 @@ STRICT INSTRUCTIONS:
         docs_summary = []
         for d in bidder_docs:
             docs_summary.append(
-                f"- {d.get('name')} | Type: {d.get('document_type')} | Verification: {d.get('verification_status')} ({d.get('verification_method', 'AUTHENTICATED')}) | Source: {d.get('source_display') or d.get('source', 'Manual')}"
+                f"- {d.get('name')} | Type: {d.get('document_type')} | Verification: {d.get('verification_status')} ({d.get('verification_method', 'AUTHENTICATED')})"
             )
         docs_str = "\n".join(docs_summary) if docs_summary else "No documents uploaded yet in My Documents."
 
         tenders_summary = []
-        for t in published_tenders[:4]:
+        for t in published_tenders[:3]:
             req_list = []
-            for r in t.get("requirements", []):
+            for r in t.get("requirements", [])[:6]:
                 mand = "Mandatory" if r.get("mandatory", True) else "Optional"
                 clause = r.get("clause") or r.get("clause_reference") or "Clause"
                 r_text = r.get("text") or r.get("description") or r.get("name") or "Requirement"
@@ -1628,9 +1710,8 @@ STRICT INSTRUCTIONS:
                 f"- Tender: {t.get('id')} ({t.get('tender_number')})\n"
                 f"  Title: {t.get('title')}\n"
                 f"  Organisation: {t.get('organisation') or t.get('organization')}\n"
-                f"  Category: {t.get('category')} | Type: {t.get('tender_type')}\n"
                 f"  Deadline: {t.get('deadline') or t.get('closing_date')}\n"
-                f"  Extracted Requirements:\n{reqs_str}"
+                f"  Requirements:\n{reqs_str}"
             )
         tenders_str = "\n\n".join(tenders_summary) if tenders_summary else "No active published tenders."
 
@@ -1697,7 +1778,12 @@ STRICT INSTRUCTIONS:
 
     try:
         provider = get_ai_provider()
-        reply = await provider.generate_chat_response(messages=messages, system_prompt=system_prompt)
+        reply = await provider.generate_chat_response(
+            messages=messages,
+            system_prompt=system_prompt,
+            options=chat_options,
+            timeout=25
+        )
         duration = (datetime.now(timezone.utc) - t_start).total_seconds()
         logger.info(
             "Bidder chat generated in %.2fs [provider=%s, model=%s]",

@@ -95,6 +95,8 @@ class OllamaAIProvider(AIProvider):
         self._model = model or os.getenv("AI_MODEL", "gemma3:4b")
         self._timeout = int(timeout or os.getenv("AI_TIMEOUT", "120"))
         self._resolved_base_url: Optional[str] = None
+        self._last_health: Optional[Dict[str, Any]] = None
+        self._last_health_ts: float = 0.0
 
     def provider_name(self) -> str:
         return "ollama"
@@ -125,14 +127,18 @@ class OllamaAIProvider(AIProvider):
     def _get_active_base_url(self) -> str:
         return self._resolved_base_url or self._base_url
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self, force: bool = False) -> Dict[str, Any]:
         """
         Checks Ollama connectivity and model availability.
-        1. GET /api/tags — verifies Ollama is running.
-        2. Checks if configured model is in the returned model list.
+        Caches connected status for up to 30s to avoid redundant roundtrips per prompt.
         """
+        import time
         import urllib.request
         import urllib.error
+
+        now = time.time()
+        if not force and self._last_health and (now - self._last_health_ts < 30.0) and self._last_health.get("status") == "connected":
+            return self._last_health
 
         body = None
         last_error = None
@@ -202,13 +208,16 @@ class OllamaAIProvider(AIProvider):
                 ),
             }
 
-        return {
+        result = {
             "status": "connected",
             "provider": "ollama",
             "model": self._model,
             "base_url": working_url,
             "message": f"Ollama connected. Model '{self._model}' is available.",
         }
+        self._last_health = result
+        self._last_health_ts = time.time()
+        return result
 
     async def extract_requirements(
         self,
@@ -397,6 +406,8 @@ class OllamaAIProvider(AIProvider):
         self,
         messages: List[Dict[str, str]],
         system_prompt: Optional[str] = None,
+        options: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
     ) -> str:
         """
         Generate chat assistant response using Ollama /api/chat endpoint.
@@ -421,18 +432,24 @@ class OllamaAIProvider(AIProvider):
             if role in ("user", "assistant", "system") and content:
                 formatted_messages.append({"role": role, "content": content})
 
-        # Options tuned for responsive, bounded conversational generation
+        # Base options tuned for fast, deterministic, and bounded conversational generation
+        gen_options: Dict[str, Any] = {
+            "temperature": 0.1,
+            "num_predict": 384,
+            "top_k": 40,
+            "top_p": 0.9,
+        }
+        if options:
+            gen_options.update(options)
+
         payload = {
             "model": self._model,
             "messages": formatted_messages,
             "stream": False,
-            "options": {
-                "temperature": 0.2,
-                "num_predict": 512,
-            },
+            "options": gen_options,
         }
 
-        chat_timeout = min(self._timeout, 60)
+        chat_timeout = timeout or min(self._timeout, 30)
 
         try:
             req_data = json.dumps(payload).encode("utf-8")

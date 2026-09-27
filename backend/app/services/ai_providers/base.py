@@ -83,6 +83,8 @@ class AIProvider(ABC):
         self,
         messages: List[Dict[str, str]],
         system_prompt: Optional[str] = None,
+        options: Optional[Dict[str, Any]] = None,
+        timeout: Optional[int] = None,
     ) -> str:
         """
         Generate chat assistant response from conversation messages and system prompt.
