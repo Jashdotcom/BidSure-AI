@@ -1581,15 +1581,14 @@ async def bidder_assistant_chat(
 
     # 3. Intent Classification: Check for domain/procurement keywords vs simple conversation
     procurement_keywords = [
-        "document", "documents", "doc", "docs", "upload", "missing", "verified",
-        "verification", "certificate", "pan", "gstin", "udyam", "epfo", "msme",
-        "maf", "oem", "datasheet", "warranty", "tender", "tenders", "iitg",
-        "firewall", "cpcl", "requirement", "requirements", "clause", "deadline",
-        "nit", "specification", "eligibility", "threshold", "emd", "ready",
-        "readiness", "pre-check", "precheck", "can i apply", "eligible",
-        "qualification", "pass", "fail", "score", "my bid", "bid status", "bids",
-        "submitted", "submission", "evaluated", "review status", "progress",
-        "turnover", "annual turnover"
+        "tender", "tenders", "bid", "bids", "document", "documents", "doc", "docs",
+        "requirement", "requirements", "compliance", "pre-check", "precheck", "pre check",
+        "eligible", "eligibility", "apply", "submission", "submit", "verification", "verify",
+        "verified", "gst", "gstin", "pan", "udyam", "msme", "epfo", "esic", "oem", "maf",
+        "experience", "turnover", "local content", "mii", "status", "deadline", "corrigendum",
+        "nit", "iitg", "cpcl", "firewall", "specification", "spec", "specs", "threshold",
+        "emd", "security deposit", "clause", "clauses", "score", "pass", "fail", "missing",
+        "upload", "uploaded", "evaluate", "evaluated", "evaluation", "disqualified", "qualified"
     ]
     has_procurement_keywords = any(k in last_user_msg_lower for k in procurement_keywords)
 
@@ -1604,14 +1603,14 @@ async def bidder_assistant_chat(
 
     pleasantry_words = {
         "thanks", "thank you", "thx", "ok", "okay", "great", "cool", "awesome",
-        "perfect", "got it", "bye", "goodbye"
+        "perfect", "got it", "bye", "goodbye", "sounds good", "alright"
     }
     is_pleasantry = clean_msg in pleasantry_words
 
     help_phrases = {
         "who are you", "who are you?", "what can you do", "what can you do?",
         "what is your name", "help", "help me", "intro", "introduce yourself",
-        "about yourself"
+        "about yourself", "capabilities", "what are your features"
     }
     is_help = clean_msg in help_phrases
 
@@ -1619,8 +1618,35 @@ async def bidder_assistant_chat(
     # FAST PATH FOR SIMPLE CONVERSATION (Zero DB/LLM overhead, <10ms response)
     # =========================================================================
     if not has_procurement_keywords:
+        duration = (datetime.now(timezone.utc) - t_start).total_seconds()
+
+        # A1. Name / Company / Intro mention (e.g. "my name is suresh", "I am Suresh")
+        name_match = re.search(r'\b(?:my name is|i am|i\'m|im|call me|this is)\s+([a-zA-Z]+)', last_user_msg, re.IGNORECASE)
+        company_match = re.search(r'\b(?:my company is|our company is|we are|company:)\s+([a-zA-Z0-9\s.,]+)', last_user_msg, re.IGNORECASE)
+        is_intro = bool(name_match or company_match or "nice to meet you" in last_user_msg_lower or "pleasure to meet you" in last_user_msg_lower)
+
+        if is_intro:
+            extracted_name = name_match.group(1).strip().capitalize() if name_match else contact_name
+            reply = (
+                f"Nice to meet you, {extracted_name}! I am your BidSure AI Assistant for **{org_name}**.\n\n"
+                "I can assist you with:\n"
+                "• **Tender Requirements & Missing Documents**: Check required clauses and missing files for active tenders (e.g., IIT Guwahati Next-Gen Firewall).\n"
+                "• **Pre-Check Readiness**: Assess your compliance readiness and qualification scores before formal bidding.\n"
+                "• **Document Verification**: Review your verified statutory credentials (PAN, GSTIN, MSME, EPFO).\n"
+                "• **Bid Progression**: Track the status and compliance scores of your submitted bids.\n\n"
+                "How can I help you today?"
+            )
+            return {
+                "status": "SUCCESS",
+                "reply": reply,
+                "provider": "ollama",
+                "model": settings.AI_MODEL,
+                "duration_seconds": round(duration, 3),
+                "is_fallback": False
+            }
+
+        # A2. Pure Greetings (e.g. "hey", "hello", "hi", "good morning")
         if is_pure_greeting:
-            duration = (datetime.now(timezone.utc) - t_start).total_seconds()
             reply = (
                 f"Hello {contact_name}! I am your BidSure AI Assistant for **{org_name}**.\n\n"
                 "I can assist you with:\n"
@@ -1639,8 +1665,8 @@ async def bidder_assistant_chat(
                 "is_fallback": False
             }
 
+        # A3. Pleasantries / Acknowledgments (e.g. "thanks", "ok", "great")
         if is_pleasantry:
-            duration = (datetime.now(timezone.utc) - t_start).total_seconds()
             reply = "You're very welcome! Let me know whenever you need assistance reviewing tender requirements, checking pre-check readiness, or verifying compliance documents."
             return {
                 "status": "SUCCESS",
@@ -1651,8 +1677,8 @@ async def bidder_assistant_chat(
                 "is_fallback": False
             }
 
+        # A4. Capabilities / Help (e.g. "who are you", "what can you do?")
         if is_help:
-            duration = (datetime.now(timezone.utc) - t_start).total_seconds()
             reply = (
                 f"I am the BidSure AI Assistant for **{org_name}** (Representative: {contact_name}).\n\n"
                 "My capabilities include:\n"
@@ -1669,6 +1695,24 @@ async def bidder_assistant_chat(
                 "duration_seconds": round(duration, 3),
                 "is_fallback": False
             }
+
+        # A5. General non-procurement conversational message
+        reply = (
+            f"Hello! I am your BidSure AI Assistant for **{org_name}**.\n\n"
+            "I specialize in tender compliance, pre-check readiness, missing document detection, and bid status tracking.\n\n"
+            "Feel free to ask a question like:\n"
+            "• *\"What documents am I missing for the IITG firewall tender?\"*\n"
+            "• *\"Am I ready to apply for the IITG tender?\"*\n"
+            "• *\"What is my bid status?\"*"
+        )
+        return {
+            "status": "SUCCESS",
+            "reply": reply,
+            "provider": "ollama",
+            "model": settings.AI_MODEL,
+            "duration_seconds": round(duration, 3),
+            "is_fallback": False
+        }
 
     # =========================================================================
     # REAL PROCUREMENT QUERIES (Handled by Ollama Gemma3:4B with focused context)

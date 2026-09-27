@@ -517,6 +517,7 @@ def test_bidder_assistant_chat_api_endpoint_greeting_fast_path():
     token = get_bidder_token()
 
     with patch.dict(os.environ, {"AI_PROVIDER": "ollama"}):
+        # TEST 1: "hey"
         resp = client.post(
             "/bidder-portal/assistant/chat",
             json={"message": "hey"},
@@ -526,8 +527,32 @@ def test_bidder_assistant_chat_api_endpoint_greeting_fast_path():
         data = resp.json()
         assert data["status"] == "SUCCESS"
         assert "BidSure AI Assistant" in data["reply"]
-        assert data["duration_seconds"] < 0.2  # Instant response (<200ms)
+        assert data["duration_seconds"] < 0.2
         assert data["is_fallback"] is False
+
+        # TEST 2: "my name is suresh"
+        resp_name = client.post(
+            "/bidder-portal/assistant/chat",
+            json={"message": "my name is suresh"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert resp_name.status_code == 200
+        data_name = resp_name.json()
+        assert data_name["status"] == "SUCCESS"
+        assert "Suresh" in data_name["reply"]
+        assert data_name["duration_seconds"] < 0.2
+
+        # TEST 3: "what can you do?"
+        resp_help = client.post(
+            "/bidder-portal/assistant/chat",
+            json={"message": "what can you do?"},
+            headers={"Authorization": f"Bearer {token}"}
+        )
+        assert resp_help.status_code == 200
+        data_help = resp_help.json()
+        assert data_help["status"] == "SUCCESS"
+        assert "Tender Requirement Analysis" in data_help["reply"]
+        assert data_help["duration_seconds"] < 0.2
 
 
 def test_bidder_assistant_chat_api_endpoint_handles_timeout_gracefully():
@@ -577,44 +602,44 @@ def test_bidder_assistant_chat_intent_routing_optimizations():
 
     with patch.dict(os.environ, {"AI_PROVIDER": "ollama"}):
         with patch("urllib.request.urlopen", side_effect=mock_urlopen_capture):
-            # 1. Simple greeting (hits fast path, zero Ollama calls)
-            resp_greet = client.post("/bidder-portal/assistant/chat", json={"message": "hello"}, headers={"Authorization": f"Bearer {token}"})
-            assert resp_greet.status_code == 200
-            assert "BidSure AI Assistant" in resp_greet.json()["reply"]
+            # Fast-path tests (zero Ollama LLM requests)
+            client.post("/bidder-portal/assistant/chat", json={"message": "hey"}, headers={"Authorization": f"Bearer {token}"})
+            client.post("/bidder-portal/assistant/chat", json={"message": "my name is suresh"}, headers={"Authorization": f"Bearer {token}"})
+            client.post("/bidder-portal/assistant/chat", json={"message": "what can you do?"}, headers={"Authorization": f"Bearer {token}"})
 
-            # 2. Document query (hits Ollama with verified docs context)
-            client.post("/bidder-portal/assistant/chat", json={"message": "What documents do I have?"}, headers={"Authorization": f"Bearer {token}"})
-
-            # 3. Bid query (hits Ollama with submitted bids context)
-            client.post("/bidder-portal/assistant/chat", json={"message": "What is my bid status?"}, headers={"Authorization": f"Bearer {token}"})
-
-            # 4. Readiness query (hits Ollama with pre-check context)
-            client.post("/bidder-portal/assistant/chat", json={"message": "Am I ready to apply for the IITG tender?"}, headers={"Authorization": f"Bearer {token}"})
-
-            # 5. Missing docs for tender query (hits Ollama with tender gap context)
+            # TEST 4: "What documents am I missing for the IITG firewall tender?" (Ollama)
             client.post("/bidder-portal/assistant/chat", json={"message": "What documents am I missing for the IITG firewall tender?"}, headers={"Authorization": f"Bearer {token}"})
 
-    # Total 4 procurement queries hit Ollama (greeting was handled by fast path)
+            # TEST 5: "Am I ready to apply for the IITG firewall tender?" (Ollama)
+            client.post("/bidder-portal/assistant/chat", json={"message": "Am I ready to apply for the IITG firewall tender?"}, headers={"Authorization": f"Bearer {token}"})
+
+            # TEST 6: "What is my bid status?" (Ollama)
+            client.post("/bidder-portal/assistant/chat", json={"message": "What is my bid status?"}, headers={"Authorization": f"Bearer {token}"})
+
+            # Document repository query (Ollama)
+            client.post("/bidder-portal/assistant/chat", json={"message": "What documents do I have?"}, headers={"Authorization": f"Bearer {token}"})
+
+    # Total 4 procurement queries hit Ollama
     assert len(captured_payloads) == 4
 
-    # 2. Doc query should include document repository
-    assert captured_payloads[0]["options"]["num_predict"] == 256
-    doc_sys = captured_payloads[0]["messages"][0]["content"]
-    assert "VERIFIED DOCUMENTS" in doc_sys
+    # TEST 4 payload checks: Missing docs for IITG tender
+    assert captured_payloads[0]["options"]["num_predict"] == 300
+    missing_sys = captured_payloads[0]["messages"][0]["content"]
+    assert "PRE-CHECK READINESS" in missing_sys
 
-    # 3. Bid query should include submitted bids
-    assert captured_payloads[1]["options"]["num_predict"] == 200
-    bid_sys = captured_payloads[1]["messages"][0]["content"]
-    assert "MY SUBMITTED BIDS" in bid_sys
-
-    # 4. Readiness query should include pre-check
-    assert captured_payloads[2]["options"]["num_predict"] == 300
-    ready_sys = captured_payloads[2]["messages"][0]["content"]
+    # TEST 5 payload checks: Readiness query
+    assert captured_payloads[1]["options"]["num_predict"] == 300
+    ready_sys = captured_payloads[1]["messages"][0]["content"]
     assert "PRE-CHECK READINESS" in ready_sys
 
-    # 5. Missing docs query should include target tender and pre-check
-    assert captured_payloads[3]["options"]["num_predict"] == 300
-    missing_sys = captured_payloads[3]["messages"][0]["content"]
-    assert "PRE-CHECK READINESS" in missing_sys
+    # TEST 6 payload checks: Bid status query
+    assert captured_payloads[2]["options"]["num_predict"] == 200
+    bid_sys = captured_payloads[2]["messages"][0]["content"]
+    assert "MY SUBMITTED BIDS" in bid_sys
+
+    # Document repository query
+    assert captured_payloads[3]["options"]["num_predict"] == 256
+    doc_sys = captured_payloads[3]["messages"][0]["content"]
+    assert "VERIFIED DOCUMENTS" in doc_sys
 
 
