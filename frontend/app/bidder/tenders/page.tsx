@@ -1015,32 +1015,6 @@ export default function BidderTendersPage() {
                     })}
                   </div>
                 </div>
-                        <div>
-                          {req.status === "PASS" && (
-                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200">
-                              PASS
-                            </span>
-                          )}
-                          {req.status === "MISSING" && (
-                            <span className="rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 border border-amber-200">
-                              MISSING
-                            </span>
-                          )}
-                          {req.status === "FAIL" && (
-                            <span className="rounded bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-800 border border-red-200">
-                              FAIL
-                            </span>
-                          )}
-                          {req.status === "ACTION REQUIRED" && (
-                            <span className="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800 border border-blue-200">
-                              REVIEW
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Footer Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100">
