@@ -34,6 +34,7 @@ from app.data.sample_data import (
     SAMPLE_BIDDERS,
     SAMPLE_BIDDER_BIDS
 )
+from app.config import settings
 from app.services.rules_engine import RulesEngine
 from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
 from app.services.ai_providers import get_ai_provider
@@ -1768,5 +1769,4 @@ async def get_assistant_status(
             "provider": "unknown",
             "model": None,
             "health": {"status": "unavailable", "message": str(e)}
-        }
         }
