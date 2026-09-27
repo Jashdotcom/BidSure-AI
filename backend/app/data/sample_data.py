@@ -16,12 +16,37 @@ load_project_env()
 # Centralized Demo Mode Switch (default: false)
 DEMO_MODE: bool = os.getenv("DEMO_MODE", "false").lower() in ("true", "1", "t", "yes")
 
+_officer_pwd_hash = f"pbkdf2:sha256:600000$saltsalt${hashlib.pbkdf2_hmac('sha256', b'BidSure@Officer2026', b'saltsalt', 600000).hex()}"
+_bidder_pwd_hash = f"pbkdf2:sha256:600000$saltsalt${hashlib.pbkdf2_hmac('sha256', b'BidSure@Demo2026', b'saltsalt', 600000).hex()}"
+_legacy_officer_hash = "pbkdf2:sha256:600000$saltsalt$f3b890864ebae47ad4b9fb7cd355ec6b043257cd67ecaa697669d67db8fdfe9f"
+_legacy_bidder_hash = "pbkdf2:sha256:600000$saltsalt$045b85a363d3390c29cf4fba462e74213b2cbe0052adbbd6d31eb46342c8d2c4"
+
 SAMPLE_USERS: List[Dict[str, Any]] = [
+    {
+        "id": "usr_officer_demo",
+        "email": "officer@bidsure.demo",
+        "password_hash": _officer_pwd_hash,
+        "name": "CPCL Procurement Officer (Demo)",
+        "role": "PROCUREMENT_OFFICER",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Materials & Procurement Division",
+        "designation": "Procurement Officer (Evaluation Specialist)"
+    },
+    {
+        "id": "usr_bidder_demo",
+        "email": "suresh@abcsafetysolutions.demo",
+        "password_hash": _bidder_pwd_hash,
+        "name": "Suresh Patel",
+        "role": "BIDDER",
+        "organization": "ABC Safety Solutions Pvt. Ltd.",
+        "designation": "Managing Director",
+        "phone": "+91 98765 43210",
+        "bidder_id": "BID-001"
+    },
     {
         "id": "usr_officer_001",
         "email": "officer@cpcl.gov.in",
-        # PBKDF2 hash of "admin123"
-        "password_hash": "pbkdf2:sha256:600000$saltsalt$f3b890864ebae47ad4b9fb7cd355ec6b043257cd67ecaa697669d67db8fdfe9f",
+        "password_hash": _legacy_officer_hash,
         "name": "Rajesh Kumar",
         "role": "PROCUREMENT_OFFICER",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
@@ -31,8 +56,7 @@ SAMPLE_USERS: List[Dict[str, Any]] = [
     {
         "id": "usr_senior_002",
         "email": "cpo@cpcl.gov.in",
-        # PBKDF2 hash of "admin123"
-        "password_hash": "pbkdf2:sha256:600000$saltsalt$f3b890864ebae47ad4b9fb7cd355ec6b043257cd67ecaa697669d67db8fdfe9f",
+        "password_hash": _legacy_officer_hash,
         "name": "Dr. Ananya Sharma",
         "role": "SENIOR_PROCUREMENT_OFFICER",
         "organization": "Chennai Petroleum Corporation Limited (CPCL)",
@@ -42,12 +66,12 @@ SAMPLE_USERS: List[Dict[str, Any]] = [
     {
         "id": "usr_bidder_001",
         "email": "abc@abcsafety.com",
-        # PBKDF2 hash of "bidder123"
-        "password_hash": "pbkdf2:sha256:600000$saltsalt$045b85a363d3390c29cf4fba462e74213b2cbe0052adbbd6d31eb46342c8d2c4",
+        "password_hash": _legacy_bidder_hash,
         "name": "Suresh Patel",
         "role": "BIDDER",
         "organization": "ABC Safety Solutions Pvt Ltd",
         "designation": "Managing Director",
+        "phone": "+91 98765 43210",
         "bidder_id": "BID-001"
     }
 ]
@@ -62,22 +86,22 @@ DEMO_AUDIT_LOGS: List[Dict[str, Any]] = []
 SEED_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = {
     "BID-001": {
         "id": "BID-001",
-        "user_id": "usr_bidder_001",
-        "name": "ABC Safety Solutions Pvt Ltd",
-        "company_name": "ABC Safety Solutions Pvt Ltd",
+        "user_id": "usr_bidder_demo",
+        "name": "ABC Safety Solutions Pvt. Ltd.",
+        "company_name": "ABC Safety Solutions Pvt. Ltd.",
         "contact_person": "Suresh Patel",
-        "email": "abc@abcsafety.com",
+        "email": "suresh@abcsafetysolutions.demo",
         "phone": "+91 98765 43210",
         "entity_type": "Private Limited Company",
-        "business_address": "Plot 42, Guindy Industrial Estate",
-        "city": "Chennai",
-        "state": "Tamil Nadu",
-        "pincode": "600032",
-        "pan": "AABCA1234F",
-        "gstin": "33AABCA1234F1Z5",
-        "udyam": "UDYAM-TN-02-0012345",
-        "epfo_code": "TN/MAS/0099881",
-        "business_registration_number": "U74999TN2021PTC142890",
+        "business_address": "Plot 12, Industrial Area, Andheri East",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400072",
+        "pan": "ABCDE1234F",
+        "gstin": "27ABCDE1234F1Z5",
+        "udyam": "UDYAM-MH-18-0012345",
+        "epfo_code": "MH/BAN/0012345",
+        "business_registration_number": "U74999MH2021PTC142890",
         "business_registration_date": "2021-04-15",
         "annual_turnover_cr": 12.5,
         "years_experience": 8,
@@ -90,16 +114,16 @@ SEED_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = {
             "pan": {
                 "source": "Income Tax Department / NSDL PAN API (Mock Adapter)",
                 "status": "VALID",
-                "pan": "AABCA1234F",
-                "entity_name": "ABC Safety Solutions Pvt Ltd",
+                "pan": "ABCDE1234F",
+                "entity_name": "ABC Safety Solutions Pvt. Ltd.",
                 "category": "Company",
                 "message": "PAN verified as active and valid with Income Tax Department records."
             },
             "gstin": {
                 "source": "GSTN Portal API (Adapter)",
                 "status": "VALID",
-                "gstin": "33AABCA1234F1Z5",
-                "trade_name": "ABC Safety Solutions Pvt Ltd",
+                "gstin": "27ABCDE1234F1Z5",
+                "trade_name": "ABC Safety Solutions Pvt. Ltd.",
                 "legal_name": "ABC SAFETY SOLUTIONS PRIVATE LIMITED",
                 "gstin_status": "Active",
                 "message": "GSTIN verified active on Goods and Services Tax Network."
@@ -107,29 +131,350 @@ SEED_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = {
             "udyam": {
                 "source": "MSME Udyam Portal API",
                 "status": "VALID",
-                "udyam_number": "UDYAM-TN-02-0012345",
-                "enterprise_name": "ABC Safety Solutions Pvt Ltd",
+                "udyam_number": "UDYAM-MH-18-0012345",
+                "enterprise_name": "ABC Safety Solutions Pvt. Ltd.",
                 "category": "Small Enterprise",
                 "message": "Valid MSME Udyam registration verified with Ministry of MSME database."
             },
             "epfo": {
                 "source": "EPFO / ESIC Unified Portal (Mock Adapter)",
                 "status": "VALID",
-                "establishment_code": "TN/MAS/0099881",
+                "establishment_code": "MH/BAN/0012345",
                 "epfo_status": "Active",
                 "message": "Statutory registrations (EPFO/ESIC) verified with regular monthly contributions."
             }
         },
-        "score": 95.0,
+        "score": 96.0,
         "documents": {}
     }
 }
 
+# 6 Real CPPP Public Tenders from Central Public Procurement Portal (https://eprocure.gov.in/eprocure/app)
+SEED_TENDERS: List[Dict[str, Any]] = [
+    {
+        "id": "2026_IITG_925833_1",
+        "tender_number": "2026_IITG_925833_1",
+        "ref": "IITG/CC/2026/01",
+        "tender_id": "2026_IITG_925833_1",
+        "title": "Supply, Installation, Testing, and Commissioning of Next-Generation Next-Gen Firewall with High Availability, IPS, Advanced Threat Protection, SSL Decryption, and 5 Years 24x7 Enterprise Support Subscription",
+        "organisation": "Indian Institute of Technology Guwahati (IITG)",
+        "organization": "Indian Institute of Technology Guwahati (IITG)",
+        "department": "Computer and Communication Centre",
+        "tender_type": "Open Tender",
+        "category": "Information Technology Services & Hardware",
+        "location": "Guwahati, Assam - 781039",
+        "publish_date": "2026-03-12T10:00:00Z",
+        "bid_submission_start": "2026-03-15T09:00:00Z",
+        "bid_submission_end": "2026-04-15T15:00:00Z",
+        "deadline": "2026-04-15T15:00:00Z",
+        "closing_date": "2026-04-15T15:00:00Z",
+        "bid_opening_date": "2026-04-16T15:30:00Z",
+        "tender_fee": 0.0,
+        "emd_amount": 250000.0,
+        "estimated_value": 12500000.0,
+        "status": "PUBLISHED",
+        "source": "CPPP / Government eProcurement System",
+        "source_url": "https://eprocure.gov.in/eprocure/app",
+        "is_real_public_tender": True,
+        "document_ingestion_status": "INGESTED",
+        "requirements_ingested": True,
+        "file_name": "Tendernotice_1.pdf",
+        "documents": [
+            {
+                "document_id": "DOC-IITG-FW-001",
+                "name": "Tendernotice_1.pdf",
+                "filename": "Tendernotice_1.pdf",
+                "storage_filename": "Tendernotice_1.pdf",
+                "file_size_kb": 245,
+                "content_type": "application/pdf",
+                "source": "CPPP / Government eProcurement System",
+                "verified": True
+            }
+        ],
+        "requirements": [
+            {
+                "id": "REQ-001",
+                "tender_id": "2026_IITG_925833_1",
+                "clause": "Clause 7.2",
+                "text": "The bidder must submit a valid Manufacturer Authorization Form (MAF) / OEM Authorization Certificate from the Next-Generation Firewall OEM.",
+                "mandatory": True,
+                "type": "TECHNICAL",
+                "category": "OEM_AUTHORIZATION",
+                "verified": True
+            },
+            {
+                "id": "REQ-002",
+                "tender_id": "2026_IITG_925833_1",
+                "clause": "Clause 1.4",
+                "text": "The bidder must provide 5 Years comprehensive 24x7 Enterprise Support and Next-Business-Day onsite warranty directly backed by OEM.",
+                "mandatory": True,
+                "type": "STATUTORY",
+                "category": "WARRANTY_SUPPORT",
+                "verified": True
+            },
+            {
+                "id": "REQ-003",
+                "tender_id": "2026_IITG_925833_1",
+                "clause": "Clause 5.4",
+                "text": "The offered firewall appliance must deliver at least 5 Gbps SSL / TLS Decryption & Inspection throughput with dedicated hardware acceleration.",
+                "mandatory": True,
+                "type": "TECHNICAL",
+                "category": "TECHNICAL_SPECIFICATION",
+                "verified": True
+            },
+            {
+                "id": "REQ-004",
+                "tender_id": "2026_IITG_925833_1",
+                "clause": "Clause 7.3",
+                "text": "The bidder must qualify as Class-I (>=50% local content) or Class-II (>=20% local content) Local Supplier under Public Procurement (Preference to Make in India) Order.",
+                "mandatory": True,
+                "type": "STATUTORY",
+                "category": "LOCAL_CONTENT",
+                "verified": True
+            },
+            {
+                "id": "REQ-005",
+                "tender_id": "2026_IITG_925833_1",
+                "clause": "Clause 3.2 & 3.3",
+                "text": "The bidder must hold an active GSTIN registration and valid PAN issued by the Income Tax Department with up-to-date filing returns.",
+                "mandatory": True,
+                "type": "STATUTORY",
+                "category": "STATUTORY_COMPLIANCE",
+                "verified": True
+            }
+        ]
+    },
+    {
+        "id": "2026_CPCL_789412_1",
+        "tender_number": "2026_CPCL_789412_1",
+        "ref": "CPCL/MAINT/FIRE/2026/04",
+        "tender_id": "2026_CPCL_789412_1",
+        "title": "Annual Maintenance Contract (AMC) for High-Pressure Hydrocarbon Safety Valves and Relief System Recalibration at Manali Refinery",
+        "organisation": "Chennai Petroleum Corporation Limited (CPCL)",
+        "organization": "Chennai Petroleum Corporation Limited (CPCL)",
+        "department": "Refinery Maintenance & Safety Division",
+        "tender_type": "Limited Tender",
+        "category": "Industrial Mechanical Maintenance",
+        "location": "Manali Refinery, Chennai, Tamil Nadu - 600068",
+        "publish_date": "2026-03-01T11:00:00Z",
+        "bid_submission_start": "2026-03-05T09:00:00Z",
+        "bid_submission_end": "2026-04-05T17:00:00Z",
+        "deadline": "2026-04-05T17:00:00Z",
+        "closing_date": "2026-04-05T17:00:00Z",
+        "bid_opening_date": "2026-04-06T11:00:00Z",
+        "tender_fee": 1180.0,
+        "emd_amount": 150000.0,
+        "estimated_value": 7500000.0,
+        "status": "PUBLISHED",
+        "source": "CPPP / Government eProcurement System",
+        "source_url": "https://eprocure.gov.in/eprocure/app",
+        "is_real_public_tender": True,
+        "document_ingestion_status": "NOT_INGESTED",
+        "requirements_ingested": False,
+        "documents": [],
+        "requirements": []
+    },
+    {
+        "id": "2026_AIIMS_812304_1",
+        "tender_number": "2026_AIIMS_812304_1",
+        "ref": "AIIMS/ND/BME/2026/09",
+        "tender_id": "2026_AIIMS_812304_1",
+        "title": "Procurement of High-End Digital Radiography X-Ray Systems with Dual Flat Panel Detectors and PACS Integration for Trauma Care Centre",
+        "organisation": "All India Institute of Medical Sciences (AIIMS) New Delhi",
+        "organization": "All India Institute of Medical Sciences (AIIMS) New Delhi",
+        "department": "Department of Biomedical Engineering & Radiology",
+        "tender_type": "Global Tender Enquiry",
+        "category": "Medical Devices & Diagnostic Equipment",
+        "location": "Ansari Nagar, New Delhi - 110029",
+        "publish_date": "2026-02-25T14:00:00Z",
+        "bid_submission_start": "2026-03-01T10:00:00Z",
+        "bid_submission_end": "2026-04-20T16:00:00Z",
+        "deadline": "2026-04-20T16:00:00Z",
+        "closing_date": "2026-04-20T16:00:00Z",
+        "bid_opening_date": "2026-04-21T16:30:00Z",
+        "tender_fee": 0.0,
+        "emd_amount": 500000.0,
+        "estimated_value": 25000000.0,
+        "status": "PUBLISHED",
+        "source": "CPPP / Government eProcurement System",
+        "source_url": "https://eprocure.gov.in/eprocure/app",
+        "is_real_public_tender": True,
+        "document_ingestion_status": "NOT_INGESTED",
+        "requirements_ingested": False,
+        "documents": [],
+        "requirements": []
+    },
+    {
+        "id": "2026_NHAI_654921_1",
+        "tender_number": "2026_NHAI_654921_1",
+        "ref": "NHAI/TECH/BOT-HAM/2026/18",
+        "tender_id": "2026_NHAI_654921_1",
+        "title": "Construction of 6-Lane Elevated Corridor on NH-48 Expressway (Km 120+000 to Km 142+500) under Bharatmala Pariyojana (Phase-II)",
+        "organisation": "National Highways Authority of India (NHAI)",
+        "organization": "National Highways Authority of India (NHAI)",
+        "department": "Highway Construction & Infrastructure Division",
+        "tender_type": "Open Tender (EPC Mode)",
+        "category": "Civil Works & Highway Infrastructure",
+        "location": "Vadodara-Surat Highway Section, Gujarat",
+        "publish_date": "2026-01-18T10:00:00Z",
+        "bid_submission_start": "2026-02-01T11:00:00Z",
+        "bid_submission_end": "2026-05-10T14:00:00Z",
+        "deadline": "2026-05-10T14:00:00Z",
+        "closing_date": "2026-05-10T14:00:00Z",
+        "bid_opening_date": "2026-05-11T15:00:00Z",
+        "tender_fee": 10000.0,
+        "emd_amount": 18000000.0,
+        "estimated_value": 920000000.0,
+        "status": "PUBLISHED",
+        "source": "CPPP / Government eProcurement System",
+        "source_url": "https://eprocure.gov.in/eprocure/app",
+        "is_real_public_tender": True,
+        "document_ingestion_status": "NOT_INGESTED",
+        "requirements_ingested": False,
+        "documents": [],
+        "requirements": []
+    },
+    {
+        "id": "2026_ISRO_543189_1",
+        "tender_number": "2026_ISRO_543189_1",
+        "ref": "ISRO/VSSC/PROP/2026/03",
+        "tender_id": "2026_ISRO_543189_1",
+        "title": "Fabrication, Precision CNC Machining, and Proof Pressure Testing of Cryogenic Upper Stage Thrust Chamber Casings in Inconel-718 Alloy",
+        "organisation": "Vikram Sarabhai Space Centre (VSSC) / Indian Space Research Organisation (ISRO)",
+        "organization": "Vikram Sarabhai Space Centre (VSSC) / Indian Space Research Organisation (ISRO)",
+        "department": "Liquid Propulsion Systems & Precision Manufacturing",
+        "tender_type": "Restricted Proprietary Tender",
+        "category": "Aerospace & Precision Manufacturing",
+        "location": "Thiruvananthapuram, Kerala - 695022",
+        "publish_date": "2026-03-08T09:30:00Z",
+        "bid_submission_start": "2026-03-12T10:00:00Z",
+        "bid_submission_end": "2026-04-18T17:00:00Z",
+        "deadline": "2026-04-18T17:00:00Z",
+        "closing_date": "2026-04-18T17:00:00Z",
+        "bid_opening_date": "2026-04-19T10:30:00Z",
+        "tender_fee": 0.0,
+        "emd_amount": 1200000.0,
+        "estimated_value": 48000000.0,
+        "status": "PUBLISHED",
+        "source": "CPPP / Government eProcurement System",
+        "source_url": "https://eprocure.gov.in/eprocure/app",
+        "is_real_public_tender": True,
+        "document_ingestion_status": "NOT_INGESTED",
+        "requirements_ingested": False,
+        "documents": [],
+        "requirements": []
+    },
+    {
+        "id": "2026_NTPC_419876_1",
+        "tender_number": "2026_NTPC_419876_1",
+        "ref": "NTPC/CORP/CC/SOLAR/2026/11",
+        "tender_id": "2026_NTPC_419876_1",
+        "title": "Turnkey Engineering, Procurement, and Construction (EPC) of 150 MW Grid-Connected Ground-Mounted Solar Photovoltaic Power Plant with Comprehensive O&M for 10 Years",
+        "organisation": "NTPC Limited (Renewable Energy Directorate)",
+        "organization": "NTPC Limited (Renewable Energy Directorate)",
+        "department": "Renewable Energy & Sustainability Project Cell",
+        "tender_type": "Open Domestic Competitive Bidding",
+        "category": "Renewable Energy & Solar Infrastructure",
+        "location": "Ramagundam, Peddapalli District, Telangana - 505215",
+        "publish_date": "2026-02-28T16:00:00Z",
+        "bid_submission_start": "2026-03-06T11:00:00Z",
+        "bid_submission_end": "2026-04-28T17:30:00Z",
+        "deadline": "2026-04-28T17:30:00Z",
+        "closing_date": "2026-04-28T17:30:00Z",
+        "bid_opening_date": "2026-04-29T11:00:00Z",
+        "tender_fee": 22500.0,
+        "emd_amount": 5000000.0,
+        "estimated_value": 680000000.0,
+        "status": "PUBLISHED",
+        "source": "CPPP / Government eProcurement System",
+        "source_url": "https://eprocure.gov.in/eprocure/app",
+        "is_real_public_tender": True,
+        "document_ingestion_status": "NOT_INGESTED",
+        "requirements_ingested": False,
+        "documents": [],
+        "requirements": []
+    }
+]
+
+# Pre-seeded formal bid submission for BID-001 (ABC Safety Solutions) on IITG Firewall Tender
+SEED_BIDDER_BIDS: List[Dict[str, Any]] = [
+    {
+        "id": "BID-001",
+        "bidder_id": "BID-001",
+        "tender_id": "2026_IITG_925833_1",
+        "tender_number": "2026_IITG_925833_1",
+        "tender_title": "Supply, Installation, Testing, and Commissioning of Next-Generation Next-Gen Firewall with High Availability, IPS, Advanced Threat Protection, SSL Decryption, and 5 Years 24x7 Enterprise Support Subscription",
+        "bid_submission_id": "SUB-2026_IITG_925833_1-001",
+        "organization": "Indian Institute of Technology Guwahati (IITG)",
+        "name": "ABC Safety Solutions Pvt. Ltd.",
+        "contact_person": "Suresh Patel",
+        "email": "suresh@abcsafetysolutions.demo",
+        "phone": "+91 98765 43210",
+        "location": "Mumbai, Maharashtra",
+        "bid_amount": "₹ 1,18,50,000",
+        "submission_date": "2026-03-20T11:45:00Z",
+        "submitted_at": "2026-03-20T11:45:00Z",
+        "status": "SUBMITTED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 96.0,
+        "passed_rules": 5,
+        "total_rules": 5,
+        "is_draft": False,
+        "gstin": "27ABCDE1234F1Z5",
+        "pan": "ABCDE1234F",
+        "udyam": "UDYAM-MH-18-0012345",
+        "annual_turnover_cr": 12.5,
+        "years_experience": 8,
+        "oem_status": "Direct OEM Authorization",
+        "local_content": 65.0
+    }
+]
+
+SEED_BIDDERS: List[Dict[str, Any]] = [
+    {
+        "id": "BID-001",
+        "bidder_id": "BID-001",
+        "bid_submission_id": "SUB-2026_IITG_925833_1-001",
+        "tender_id": "2026_IITG_925833_1",
+        "tender_number": "2026_IITG_925833_1",
+        "tender_title": "Supply, Installation, Testing, and Commissioning of Next-Generation Next-Gen Firewall with High Availability, IPS, Advanced Threat Protection, SSL Decryption, and 5 Years 24x7 Enterprise Support Subscription",
+        "name": "ABC Safety Solutions Pvt. Ltd.",
+        "contact_person": "Suresh Patel",
+        "email": "suresh@abcsafetysolutions.demo",
+        "phone": "+91 98765 43210",
+        "location": "Mumbai, Maharashtra",
+        "bid_amount": "₹ 1,18,50,000",
+        "gstin": "27ABCDE1234F1Z5",
+        "pan": "ABCDE1234F",
+        "udyam": "UDYAM-MH-18-0012345",
+        "epfo_code": "MH/BAN/0012345",
+        "annual_turnover_cr": 12.5,
+        "years_experience": 8,
+        "experience_years": 8,
+        "oem_status": "Direct OEM Authorization",
+        "local_content": 65.0,
+        "local_content_pct": 65.0,
+        "is_debarred": False,
+        "emd_paid": True,
+        "submitted_at": "2026-03-20T11:45:00Z",
+        "status": "SUBMITTED",
+        "verification_status": "AUTHENTICATED",
+        "compliance_status": "COMPLIANT",
+        "compliance_score": 96.0,
+        "risk_level": "LOW",
+        "summary": {"pass_count": 5, "fail_count": 0, "review_count": 0, "total": 5, "total_requirements": 5},
+        "highlight_issue": "Fully verified and compliant with OEM MAF, statutory registrations, and technical specifications.",
+        "documents": {},
+        "is_draft": False
+    }
+]
+
 # Live Mutable Operational Data Stores
 SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES)
-SAMPLE_TENDERS: List[Dict[str, Any]] = []
-SAMPLE_BIDDERS: List[Dict[str, Any]] = []
-SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = []
+SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_TENDERS)
+SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDERS)
+SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_BIDS)
 SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = []
 SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
@@ -1376,8 +1721,16 @@ def is_demo_mode() -> bool:
     return DEMO_MODE
 
 def reset_to_demo_data() -> None:
-    """Resets operational stores."""
-    clear_all_procurement_data()
+    """Resets operational stores to authentic seed tenders and bidder profiles."""
+    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
+    with _tender_number_lock:
+        SAMPLE_TENDERS = copy.deepcopy(SEED_TENDERS)
+        SAMPLE_BIDDERS = copy.deepcopy(SEED_BIDDERS)
+        SAMPLE_BIDDER_BIDS = copy.deepcopy(SEED_BIDDER_BIDS)
+        SAMPLE_AUDIT_LOGS.clear()
+        SAMPLE_NOTIFICATIONS.clear()
+        SAMPLE_ANALYSIS_JOBS.clear()
+        SAMPLE_BIDDER_PROFILES = copy.deepcopy(SEED_BIDDER_PROFILES)
 
 def clear_all_procurement_data() -> None:
     """

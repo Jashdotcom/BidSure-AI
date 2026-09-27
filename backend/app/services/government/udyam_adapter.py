@@ -24,6 +24,14 @@ class UdyamAdapter(BaseGovernmentAdapter):
             }
 
         mock_records = {
+            "UDYAM-MH-18-0012345": {
+                "enterprise_name": "ABC Safety Solutions Pvt. Ltd.",
+                "category": "Small Enterprise",
+                "major_activity": "Manufacturing & IT Solutions",
+                "nic_code": "32909 - Manufacture of safety & IT security infrastructure",
+                "date_of_incorporation": "2021-03-10",
+                "valid": True
+            },
             "UDYAM-TN-02-0012345": {
                 "enterprise_name": "ABC Safety Solutions Pvt Ltd",
                 "category": "Small Enterprise",

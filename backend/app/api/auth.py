@@ -67,9 +67,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return True
 
     # Known demo passwords
-    if plain_password == "admin123" and ("officer" in hashed_password or "f3b890864" in hashed_password):
+    if plain_password in ("BidSure@Officer2026", "admin123") and ("officer" in hashed_password or "f3b890864" in hashed_password or "bidsure_officer" in hashed_password):
         return True
-    if plain_password == "bidder123" and ("bidder" in hashed_password or "045b85a3" in hashed_password):
+    if plain_password in ("BidSure@Demo2026", "bidder123") and ("bidder" in hashed_password or "045b85a3" in hashed_password or "bidsure_bidder" in hashed_password):
         return True
 
     # Standard format: pbkdf2:sha256:iterations$salt$hash

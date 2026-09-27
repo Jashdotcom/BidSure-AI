@@ -16,6 +16,11 @@ import { isBidder } from "@/lib/types";
 
 type RoleMode = "OFFICER" | "BIDDER";
 
+const DEMO_OFFICER_CREDENTIALS = {
+  email: "officer@bidsure.demo",
+  password: "BidSure@Officer2026",
+};
+
 const OFFICER_CREDENTIALS = {
   email: "officer@cpcl.gov.in",
   password: "admin123",
@@ -24,6 +29,11 @@ const OFFICER_CREDENTIALS = {
 const SENIOR_OFFICER_CREDENTIALS = {
   email: "cpo@cpcl.gov.in",
   password: "admin123",
+};
+
+const DEMO_BIDDER_CREDENTIALS = {
+  email: "suresh@abcsafetysolutions.demo",
+  password: "BidSure@Demo2026",
 };
 
 const BIDDER_CREDENTIALS = {
@@ -319,6 +329,22 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    setEmail(DEMO_OFFICER_CREDENTIALS.email);
+                    setPassword(DEMO_OFFICER_CREDENTIALS.password);
+                    setError(null);
+                  }}
+                  className="w-full flex items-center justify-between rounded-md bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-left text-[11px] transition-colors border border-slate-200/60"
+                >
+                  <span className="font-medium text-slate-700">
+                    CPCL Procurement Officer (Demo)
+                  </span>
+                  <span className="text-slate-400 font-mono text-[10px]">
+                    officer@bidsure.demo
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     setEmail(OFFICER_CREDENTIALS.email);
                     setPassword(OFFICER_CREDENTIALS.password);
                     setError(null);
@@ -326,7 +352,7 @@ export default function LoginPage() {
                   className="w-full flex items-center justify-between rounded-md bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-left text-[11px] transition-colors border border-slate-200/60"
                 >
                   <span className="font-medium text-slate-700">
-                    Procurement Officer
+                    Senior Manager (CPCL)
                   </span>
                   <span className="text-slate-400 font-mono text-[10px]">
                     officer@cpcl.gov.in
@@ -342,7 +368,7 @@ export default function LoginPage() {
                   className="w-full flex items-center justify-between rounded-md bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-left text-[11px] transition-colors border border-slate-200/60"
                 >
                   <span className="font-medium text-slate-700">
-                    Senior CPO Officer
+                    Chief CPO Officer
                   </span>
                   <span className="text-slate-400 font-mono text-[10px]">
                     cpo@cpcl.gov.in
@@ -350,22 +376,40 @@ export default function LoginPage() {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail(BIDDER_CREDENTIALS.email);
-                  setPassword(BIDDER_CREDENTIALS.password);
-                  setError(null);
-                }}
-                className="w-full flex items-center justify-between rounded-md bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-left text-[11px] transition-colors border border-slate-200/60"
-              >
-                <span className="font-medium text-slate-700">
-                  Demo Bidder (ABC Safety)
-                </span>
-                <span className="text-slate-400 font-mono text-[10px]">
-                  abc@abcsafety.com
-                </span>
-              </button>
+              <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(DEMO_BIDDER_CREDENTIALS.email);
+                    setPassword(DEMO_BIDDER_CREDENTIALS.password);
+                    setError(null);
+                  }}
+                  className="w-full flex items-center justify-between rounded-md bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-left text-[11px] transition-colors border border-slate-200/60"
+                >
+                  <span className="font-medium text-slate-700">
+                    Suresh Patel (ABC Safety Demo)
+                  </span>
+                  <span className="text-slate-400 font-mono text-[10px]">
+                    suresh@abcsafetysolutions.demo
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail(BIDDER_CREDENTIALS.email);
+                    setPassword(BIDDER_CREDENTIALS.password);
+                    setError(null);
+                  }}
+                  className="w-full flex items-center justify-between rounded-md bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-left text-[11px] transition-colors border border-slate-200/60"
+                >
+                  <span className="font-medium text-slate-700">
+                    Suresh Patel (Legacy)
+                  </span>
+                  <span className="text-slate-400 font-mono text-[10px]">
+                    abc@abcsafety.com
+                  </span>
+                </button>
+              </div>
             )}
           </div>
         </div>

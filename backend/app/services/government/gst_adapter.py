@@ -27,6 +27,26 @@ class GSTAdapter(BaseGovernmentAdapter):
 
         # Mock lookup dictionary for known demo GSTINs
         mock_records = {
+            "27ABCDE1234F1Z5": {
+                "trade_name": "ABC Safety Solutions Pvt. Ltd.",
+                "legal_name": "ABC SAFETY SOLUTIONS PRIVATE LIMITED",
+                "registration_date": "2021-04-15",
+                "taxpayer_type": "Regular",
+                "gstin_status": "Active",
+                "state_jurisdiction": "Maharashtra (27)",
+                "filing_status_last_3_months": "FILLED_ON_TIME",
+                "risk_score": 0.02
+            },
+            "33AABCA1234F1Z5": {
+                "trade_name": "ABC Safety Solutions Pvt Ltd",
+                "legal_name": "ABC SAFETY SOLUTIONS PRIVATE LIMITED",
+                "registration_date": "2021-04-15",
+                "taxpayer_type": "Regular",
+                "gstin_status": "Active",
+                "state_jurisdiction": "Tamil Nadu (33)",
+                "filing_status_last_3_months": "FILLED_ON_TIME",
+                "risk_score": 0.05
+            },
             "33AABCA1234F1ZP": {
                 "trade_name": "ABC Safety Solutions Pvt Ltd",
                 "legal_name": "ABC SAFETY SOLUTIONS PRIVATE LIMITED",

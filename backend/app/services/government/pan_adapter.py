@@ -25,6 +25,14 @@ class PANAdapter(BaseGovernmentAdapter):
             }
 
         mock_records = {
+            "ABCDE1234F": {
+                "entity_name": "ABC Safety Solutions Pvt. Ltd.",
+                "pan_status": "VALID",
+                "category": "Company",
+                "aadhaar_seeding_status": "LINKED",
+                "filing_compliant": True,
+                "reference_id": "ITD-PAN-MOCK-99011"
+            },
             "AABCA1234F": {
                 "entity_name": "ABC Safety Solutions Pvt Ltd",
                 "pan_status": "VALID",
