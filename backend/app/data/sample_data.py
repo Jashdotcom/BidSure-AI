@@ -908,6 +908,93 @@ else:
     SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS) if DEMO_MODE else []
     SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
 
+def sync_bids_and_bidders():
+    """
+    Ensures SAMPLE_BIDDERS contains submission entries corresponding to all bids in SAMPLE_BIDDER_BIDS.
+    Bridges the gap between raw bidder profiles and officer received bid submissions.
+    """
+    global SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS
+    if not SAMPLE_BIDDER_BIDS:
+        return
+    existing_bids_map = {(b.get("id"), str(b.get("tender_id"))) for b in SAMPLE_BIDDERS if b.get("tender_id")}
+    for bid in SAMPLE_BIDDER_BIDS:
+        b_id = bid.get("id")
+        t_id = bid.get("tender_id")
+        if not b_id or not t_id:
+            continue
+        key = (b_id, str(t_id))
+        found = False
+        for sb in SAMPLE_BIDDERS:
+            if sb.get("id") == b_id or (sb.get("bidder_id") == bid.get("bidder_id") and str(sb.get("tender_id")) == str(t_id)):
+                sb.update({
+                    "tender_id": t_id,
+                    "tender_number": bid.get("tender_number") or sb.get("tender_number") or t_id,
+                    "tender_title": bid.get("tender_title") or sb.get("tender_title") or "",
+                    "bidder_id": bid.get("bidder_id") or sb.get("bidder_id"),
+                    "name": bid.get("bidder_name") or bid.get("name") or sb.get("name"),
+                    "submitted_at": bid.get("submitted_at") or sb.get("submitted_at"),
+                    "status": bid.get("status") or sb.get("status") or "SUBMITTED",
+                    "compliance_status": bid.get("compliance_status") or sb.get("compliance_status") or "COMPLIANT",
+                    "evaluation_result": bid.get("evaluation_result") or sb.get("evaluation_result"),
+                    "risk_level": bid.get("risk_level") or sb.get("risk_level") or "LOW",
+                    "bid_amount": bid.get("bid_amount") or sb.get("bid_amount") or (f"₹ {bid.get('quoted_amount', 0):,.2f}" if isinstance(bid.get("quoted_amount"), (int, float)) else "₹ 0"),
+                    "verification_status": bid.get("verification_status") or sb.get("verification_status") or "AUTHENTICATED",
+                    "is_draft": bid.get("is_draft", False)
+                })
+                found = True
+                break
+        if not found:
+            quoted = bid.get("quoted_amount")
+            amt_str = f"₹ {quoted:,.2f}" if isinstance(quoted, (int, float)) else (bid.get("bid_amount") or "₹ 1,00,000")
+            submission_entry = {
+                "id": b_id,
+                "bid_submission_id": bid.get("bid_submission_id") or b_id,
+                "tender_id": t_id,
+                "tender_number": bid.get("tender_number") or t_id,
+                "tender_title": bid.get("tender_title") or "",
+                "bidder_id": bid.get("bidder_id"),
+                "name": bid.get("bidder_name") or bid.get("name") or "Authorized Bidder",
+                "contact_person": bid.get("contact_person") or "Authorized Signatory",
+                "email": bid.get("email") or "bidder@bidsure.local",
+                "phone": bid.get("phone") or "+91 9820000000",
+                "location": bid.get("location") or "India",
+                "bid_amount": amt_str,
+                "submitted_at": bid.get("submitted_at") or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "status": bid.get("status") or "SUBMITTED",
+                "verification_status": bid.get("verification_status") or "AUTHENTICATED",
+                "compliance_status": bid.get("compliance_status") or "COMPLIANT",
+                "compliance_score": bid.get("compliance_score", 92.0),
+                "risk_level": bid.get("risk_level") or "LOW",
+                "summary": {"pass_count": 5, "fail_count": 0, "review_count": 0, "total": 5},
+                "highlight_issue": "Synthetically verified compliance record.",
+                "documents": {},
+                "is_draft": bid.get("is_draft", False)
+            }
+            SAMPLE_BIDDERS.append(submission_entry)
+
+def reload_persisted_state():
+    """
+    Reloads state from demo_dataset_state.json if available and synchronizes bidders and bids.
+    """
+    global SAMPLE_BIDDER_PROFILES, SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_BIDDER_DOCUMENTS, SAMPLE_AUDIT_LOGS, SAMPLE_USERS
+    _p = _load_or_generate_persisted_state()
+    if _p:
+        SAMPLE_BIDDER_PROFILES = _p.get("bidder_profiles", {})
+        SAMPLE_TENDERS = _p.get("tenders", [])
+        SAMPLE_BIDDERS = _p.get("bidders", [])
+        SAMPLE_BIDDER_BIDS = _p.get("bidder_bids", [])
+        SAMPLE_BIDDER_DOCUMENTS = _p.get("bidder_documents", [])
+        SAMPLE_AUDIT_LOGS = _p.get("audit_logs", [])
+        if _p.get("users"):
+            existing_emails = {u["email"].lower() for u in SAMPLE_USERS}
+            for u in _p["users"]:
+                if u["email"].lower() not in existing_emails:
+                    SAMPLE_USERS.append(u)
+    sync_bids_and_bidders()
+
+# Initial synchronization on import
+sync_bids_and_bidders()
+
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = []
 SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
 

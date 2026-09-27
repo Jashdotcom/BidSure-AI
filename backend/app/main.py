@@ -73,9 +73,17 @@ app.include_router(dashboard_router, prefix="/api")
 @app.on_event("startup")
 async def startup_event():
     """
-    Initializes document store and infrastructure.
+    Initializes document store, infrastructure, and reloads persisted demo state.
     """
     print("[STARTUP] BidSure AI backend startup initiated...")
+    try:
+        from app.data.sample_data import reload_persisted_state
+        print("[STARTUP] Reloading persisted demo dataset state...")
+        reload_persisted_state()
+        print("[STARTUP] Persisted demo dataset state loaded and synchronized successfully.")
+    except Exception as e:
+        print(f"[STARTUP WARNING] Failed to reload persisted state: {e}")
+
     try:
         from app.data.document_store import ensure_seed_documents
         print("[STARTUP] Ensuring seed documents in document store...")
