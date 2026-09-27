@@ -814,7 +814,8 @@ async def run_bidder_pre_check(
     current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
 ):
     """
-    Allows bidder to simulate a preliminary compliance check before final bid submission.
+    Allows bidder to simulate a preliminary compliance check before final bid submission
+    using actual tender requirements and bidder's actual My Documents data.
     """
     tender_id = payload.get("tender_id")
     if not tender_id:
@@ -836,31 +837,138 @@ async def run_bidder_pre_check(
             detail=f"Tender {tender_id} is CLOSED. Pre-check and bidding are not available for closed tenders."
         )
 
-    # Construct candidate bidder profile for evaluation
-    candidate_bidder = {
-        "id": current_user.get("bidder_id", "BID-CANDIDATE"),
-        "name": current_user.get("organization", "Candidate Bidder"),
-        "gstin": payload.get("gstin", "33AABCA1234F1Z5"),
-        "pan": payload.get("pan", "AABCA1234F"),
-        "udyam": payload.get("udyam", "UDYAM-TN-02-0012345"),
-        "epfo_code": payload.get("epfo_code", "TN/MAS/0099881"),
-        "annual_turnover_cr": float(payload.get("annual_turnover_cr", 4.0)),
-        "years_experience": int(payload.get("years_experience", 4)),
-        "oem_authorization": payload.get("oem_authorization", "Direct OEM Authorization"),
-        "local_content": float(payload.get("local_content", 60.0)),
-        "emd_paid": bool(payload.get("emd_paid", False)),
-        "documents": {}
-    }
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    bidder_profile = get_bidder_profile(bidder_id) or get_bidder_by_id(bidder_id) or {}
+    bidder_docs = get_documents_for_bidder(bidder_id)
 
-    gov_res = await gov_service.verify_all_for_bidder(candidate_bidder)
-    eval_res = rules_engine.evaluate_submission(tender, candidate_bidder, gov_verification=gov_res)
+    gov_res = await gov_service.verify_all_for_bidder(bidder_profile)
+
+    # Evaluate requirements using actual tender requirements and bidder docs
+    tender_requirements = tender.get("requirements", [])
+    clauses_evaluated = []
+    satisfied_count = 0
+    missing_count = 0
+    fail_count = 0
+    unable_to_verify_count = 0
+
+    doc_map = { (d.get("document_type") or "").upper(): d for d in bidder_docs }
+    doc_map_by_name = { (d.get("name") or "").lower(): d for d in bidder_docs }
+
+    for req in tender_requirements:
+        req_name = req.get("title") or req.get("name") or "Requirement"
+        clause = req.get("clause_reference") or req.get("clause") or "Clause"
+        mandatory = req.get("mandatory", True)
+        req_type = (req.get("type") or req_name).upper()
+
+        # Check if matching document exists
+        matched_doc = None
+        for dt, d in doc_map.items():
+            if dt in req_type or dt in req_name.upper() or req_type in dt:
+                matched_doc = d
+                break
+        if not matched_doc:
+            for n, d in doc_map_by_name.items():
+                if any(w in req_name.lower() for w in n.split() if len(w) > 3):
+                    matched_doc = d
+                    break
+
+        status_val = "PASS"
+        detail_msg = ""
+        required_doc_type = req.get("document_type") or "Supporting Document"
+        evidence = ""
+        reason = ""
+
+        if "PAN" in req_type or "GST" in req_type:
+            stat_key = "pan" if "PAN" in req_type else "gstin"
+            stat_val = bidder_profile.get(stat_key) or current_user.get(stat_key)
+            if not stat_val:
+                status_val = "MISSING DOCUMENT"
+                reason = "Required statutory credential not provided in bidder profile."
+                missing_count += 1
+            else:
+                gov_s = gov_res.get("pan" if "PAN" in req_type else "gstin", {}).get("status", "VALID")
+                if gov_s in ["VALID", "VERIFIED"]:
+                    status_val = "PASS"
+                    satisfied_count += 1
+                    evidence = f"{stat_key.upper()}: {stat_val}"
+                    detail_msg = "Verified active with government gateway."
+                else:
+                    status_val = "FAIL"
+                    fail_count += 1
+                    reason = "Statutory verification failed or returned invalid."
+        elif "TURNOVER" in req_type or "FINANCIAL" in req_type:
+            min_t = float(req.get("threshold") or 5.0)
+            act_t = float(bidder_profile.get("annual_turnover_cr") or 4.0)
+            if act_t >= min_t:
+                status_val = "PASS"
+                satisfied_count += 1
+                evidence = f"Turnover: ₹{act_t} Cr (Required: ₹{min_t} Cr)"
+                detail_msg = "Satisfies minimum financial turnover threshold."
+            else:
+                status_val = "FAIL"
+                fail_count += 1
+                reason = f"Turnover ₹{act_t} Cr is below required threshold of ₹{min_t} Cr."
+        elif matched_doc:
+            v_stat = matched_doc.get("verification_status") or matched_doc.get("status")
+            if v_stat == "AUTHENTICATED":
+                status_val = "PASS"
+                satisfied_count += 1
+                evidence = matched_doc.get("name")
+                detail_msg = f"Found in My Documents ({matched_doc.get('source', 'Manual Upload')}). Verified Authenticated."
+            elif v_stat == "INVALID":
+                status_val = "FAIL"
+                fail_count += 1
+                reason = matched_doc.get("verification_reason", "Document authenticity check failed.")
+            else:
+                status_val = "UNABLE TO VERIFY"
+                unable_to_verify_count += 1
+                reason = matched_doc.get("verification_reason", "Authenticity could not be established.")
+        else:
+            status_val = "MISSING DOCUMENT"
+            missing_count += 1
+            reason = "Required document not found in your document library."
+
+        clauses_evaluated.append({
+            "name": req_name,
+            "clause": clause,
+            "mandatory": mandatory,
+            "status": status_val,
+            "required_document": required_doc_type,
+            "document_name": matched_doc.get("name") if matched_doc else None,
+            "source": matched_doc.get("source_display") or matched_doc.get("source") if matched_doc else "Not Found",
+            "verification_status": matched_doc.get("verification_status") if matched_doc else "NOT_FOUND",
+            "detail": detail_msg or reason or "Evaluated against bidder profile and documents.",
+            "bidder_evidence": evidence or (matched_doc.get("name") if matched_doc else "Not Found"),
+            "reason": reason
+        })
+
+    total_req = len(tender_requirements) or 1
+    score = round((satisfied_count / total_req) * 100, 1)
+    readiness = "READY TO APPLY"
+    if score < 70:
+        readiness = "NOT READY"
+    elif score < 95:
+        readiness = "PARTIALLY READY"
+
+    eval_res = {
+        "tender_id": tender_id,
+        "overall_status": "COMPLIANT" if score >= 90 else "REQUIRES_REVIEW",
+        "compliance_score": score,
+        "total_requirements": total_req,
+        "passed_count": satisfied_count,
+        "failed_count": fail_count,
+        "missing_count": missing_count,
+        "unable_to_verify_count": unable_to_verify_count,
+        "readiness": readiness,
+        "clauses_evaluated": clauses_evaluated
+    }
 
     return {
         "status": "SUCCESS",
         "pre_check_evaluation": eval_res,
         "recommendations": [
             "Ensure latest statutory balance sheet with UDIN is attached.",
-            "Verify that OEM Authorization letter explicitly references CPCL tender number."
+            "Verify that required certificates reference the active tender number."
         ]
     }
 
