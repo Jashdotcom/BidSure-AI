@@ -208,7 +208,7 @@ export default function BidderDashboardPage() {
     }
   ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [assistantStatus, setAssistantStatus] = useState<"ONLINE" | "OFFLINE">("ONLINE");
   const [assistantModel, setAssistantModel] = useState<string>("gemma3:4b");
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -226,7 +226,7 @@ export default function BidderDashboardPage() {
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isThinking]);
 
   useEffect(() => {
     async function checkAssistant() {
@@ -243,7 +243,7 @@ export default function BidderDashboardPage() {
 
   const handleSendMessage = async (text?: string) => {
     const messageText = text || input;
-    if (!messageText.trim() || isTyping) return;
+    if (!messageText.trim() || isThinking) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -254,13 +254,22 @@ export default function BidderDashboardPage() {
 
     setMessages(prev => [...prev, userMsg]);
     if (!text) setInput("");
-    setIsTyping(true);
+    setIsThinking(true);
+    const thinkingStartedAt = Date.now();
 
     try {
+      // 1. Start API request immediately without delay
       const res = await apiRequest<{ reply: string; status: string; is_fallback?: boolean; model?: string }>("/bidder-portal/assistant/chat", {
         method: "POST",
         body: { message: messageText }
       });
+
+      // 2. Ensure visible Thinking bubble stays on screen for AT LEAST 2000ms
+      const elapsed = Date.now() - thinkingStartedAt;
+      const remaining = Math.max(0, 2000 - elapsed);
+      if (remaining > 0) {
+        await new Promise(resolve => setTimeout(resolve, remaining));
+      }
 
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -268,12 +277,23 @@ export default function BidderDashboardPage() {
         content: res?.reply || "I'm sorry, I couldn't process that request right now.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
+
+      // 3. Remove Thinking bubble and append assistant response together
+      setIsThinking(false);
       setMessages(prev => [...prev, assistantMsg]);
+
       if (res?.status === "SUCCESS") {
         setAssistantStatus("ONLINE");
         if (res?.model) setAssistantModel(res.model);
       }
     } catch (err: any) {
+      // 4. Guarantee minimum 2000ms duration even on error before showing failure message
+      const elapsed = Date.now() - thinkingStartedAt;
+      const remaining = Math.max(0, 2000 - elapsed);
+      if (remaining > 0) {
+        await new Promise(resolve => setTimeout(resolve, remaining));
+      }
+
       const isTimeout = err?.status === 504 || (err?.message && err.message.toLowerCase().includes("timed out"));
       const errorContent = isTimeout
         ? "The AI assistant took too long to respond. Please try again."
@@ -285,10 +305,9 @@ export default function BidderDashboardPage() {
         content: errorContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
+
+      setIsThinking(false);
       setMessages(prev => [...prev, errorMsg]);
-      // Do NOT mark the provider service OFFLINE for a chat generation failure/timeout
-    } finally {
-      setIsTyping(false);
     }
   };
 
@@ -710,7 +729,7 @@ export default function BidderDashboardPage() {
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(p.query)}
-                  disabled={assistantStatus === "OFFLINE" || isTyping}
+                  disabled={assistantStatus === "OFFLINE" || isThinking}
                   className="shrink-0 rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50 hover:text-emerald-800 transition-all disabled:opacity-50"
                 >
                   {p.label}
@@ -744,7 +763,7 @@ export default function BidderDashboardPage() {
                   </div>
                 </div>
               ))}
-              {isTyping && (
+              {isThinking && (
                 <div className="flex justify-start">
                   <div className="flex gap-2.5 items-center">
                     <div className="flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white border border-emerald-700 shadow-sm">
@@ -773,12 +792,12 @@ export default function BidderDashboardPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={assistantStatus === "ONLINE" ? "Ask about bids, documents, tenders..." : "AI Assistant Offline"}
-                  disabled={assistantStatus === "OFFLINE" || isTyping}
+                  disabled={assistantStatus === "OFFLINE" || isThinking}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-12 py-2.5 text-xs focus:bg-white focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || isTyping || assistantStatus === "OFFLINE"}
+                  disabled={!input.trim() || isThinking || assistantStatus === "OFFLINE"}
                   className="absolute right-1.5 top-1.5 flex size-8 items-center justify-center rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <SendIcon className="size-4" />
