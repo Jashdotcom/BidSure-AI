@@ -315,6 +315,33 @@ def associate_document_with_tender(document_id: str, tender_id: str) -> Optional
         return None
 
 
+def clear_all_documents() -> None:
+    """Clears all stored documents and resets the index."""
+    global _in_memory_index
+    with _doc_lock:
+        if not _is_initialized:
+            _load_index()
+
+        # Remove files from disk
+        for doc_id, record in _in_memory_index.items():
+            path = record.get("storage_path")
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except Exception:
+                    pass
+
+        _in_memory_index = {}
+        if os.path.exists(INDEX_FILE_PATH):
+            try:
+                os.remove(INDEX_FILE_PATH)
+            except Exception:
+                pass
+
+        # Ensure dir exists again
+        _ensure_storage_dir()
+
+
 def ensure_seed_documents() -> List[Dict[str, Any]]:
     """
     Ensures that essential test/operational seed documents (such as Tendernotice_1.pdf for IITG)

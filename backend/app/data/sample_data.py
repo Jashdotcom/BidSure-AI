@@ -677,11 +677,13 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
 ]
 
 # Live Mutable Operational Data Stores
-SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES)
-SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_TENDERS)
-SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDERS)
-SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_BIDS)
-SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS)
+# Procurement data is empty by default. Demo records are only materialized when
+# explicitly enabled for a local demo session via DEMO_MODE=true.
+SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES) if DEMO_MODE else {}
+SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_TENDERS) if DEMO_MODE else []
+SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDERS) if DEMO_MODE else []
+SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_BIDS) if DEMO_MODE else []
+SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS) if DEMO_MODE else []
 SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = []
 SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
@@ -1942,8 +1944,8 @@ def reset_to_demo_data() -> None:
 
 def clear_all_procurement_data() -> None:
     """
-    Resets all operational procurement records (tenders, tender bids, logs)
-    to empty state while keeping authenticated officer credentials and bidder profiles intact.
+    Resets all operational procurement records (tenders, tender bids, profiles, logs, documents)
+    to empty state while keeping authenticated user credentials intact.
     """
     global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_BIDDER_DOCUMENTS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
     with _tender_number_lock:
@@ -1954,7 +1956,12 @@ def clear_all_procurement_data() -> None:
         SAMPLE_AUDIT_LOGS.clear()
         SAMPLE_NOTIFICATIONS.clear()
         SAMPLE_ANALYSIS_JOBS.clear()
-        SAMPLE_BIDDER_PROFILES = copy.deepcopy(SEED_BIDDER_PROFILES)
+        SAMPLE_BIDDER_PROFILES.clear()
+    try:
+        from app.data.document_store import clear_all_documents
+        clear_all_documents()
+    except Exception:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
