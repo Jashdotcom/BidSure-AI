@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import re
+import socket
 from typing import Dict, Any, List, Optional
 from urllib.parse import urljoin
 
@@ -15,6 +16,7 @@ from app.services.ai_providers.base import (
     AIProviderUnavailableError,
     AIModelUnavailableError,
     AIExtractionError,
+    AITimeoutError,
 )
 
 logger = logging.getLogger("bidsure.ai.ollama")
@@ -419,15 +421,18 @@ class OllamaAIProvider(AIProvider):
             if role in ("user", "assistant", "system") and content:
                 formatted_messages.append({"role": role, "content": content})
 
+        # Options tuned for responsive, bounded conversational generation
         payload = {
             "model": self._model,
             "messages": formatted_messages,
             "stream": False,
             "options": {
-                "temperature": 0.3,
-                "num_predict": 2048,
+                "temperature": 0.2,
+                "num_predict": 512,
             },
         }
+
+        chat_timeout = min(self._timeout, 60)
 
         try:
             req_data = json.dumps(payload).encode("utf-8")
@@ -437,14 +442,25 @@ class OllamaAIProvider(AIProvider):
                 method="POST",
                 headers={"Content-Type": "application/json", "Accept": "application/json"},
             )
-            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+            with urllib.request.urlopen(req, timeout=chat_timeout) as resp:
                 response_body = json.loads(resp.read().decode("utf-8"))
+        except (TimeoutError, socket.timeout) as e:
+            logger.warning("Ollama chat generation timed out after %ds: %s", chat_timeout, str(e))
+            raise AITimeoutError("ollama", f"Ollama generation timed out after {chat_timeout}s: {str(e)}")
         except urllib.error.URLError as e:
+            reason_str = str(getattr(e, "reason", e)).lower()
+            if "timed out" in reason_str or "timeout" in reason_str:
+                logger.warning("Ollama chat generation URLError timeout: %s", reason_str)
+                raise AITimeoutError("ollama", f"Ollama generation timed out: {reason_str}")
+            logger.error("Ollama chat URLError: %s", str(e))
             raise AIProviderUnavailableError(
                 "ollama",
                 f"Ollama chat request failed: {getattr(e, 'reason', str(e))}",
             )
         except Exception as e:
+            if "timeout" in str(e).lower():
+                raise AITimeoutError("ollama", f"Ollama generation timed out: {str(e)}")
+            logger.error("Ollama chat unexpected error: %s", str(e))
             raise AIProviderUnavailableError(
                 "ollama",
                 f"Ollama chat request failed: {str(e)}",
@@ -454,4 +470,7 @@ class OllamaAIProvider(AIProvider):
         content = message.get("content", "")
         if not content or not content.strip():
             return "Hello! I am your BidSure AI Assistant. How can I help you with your tenders and bids today?"
-        return content.strip()
+
+        # Strip any internal thought tags emitted by reasoning models
+        cleaned_content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+        return cleaned_content or content.strip()

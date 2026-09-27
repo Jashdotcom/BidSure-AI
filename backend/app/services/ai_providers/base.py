@@ -115,3 +115,11 @@ class AIExtractionError(Exception):
         self.details = details
         self.message = f"AI extraction failed ({provider}): {reason}"
         super().__init__(self.message)
+
+
+class AITimeoutError(Exception):
+    """Raised when an AI request exceeds its allocated timeout."""
+    def __init__(self, provider: str, message: str = ""):
+        self.provider = provider
+        self.message = message or f"AI provider '{provider}' request timed out."
+        super().__init__(self.message)

@@ -245,7 +245,7 @@ export default function BidderDashboardPage() {
     setIsTyping(true);
 
     try {
-      const res = await apiRequest<{ reply: string; status: string }>("/bidder-portal/assistant/chat", {
+      const res = await apiRequest<{ reply: string; status: string; is_fallback?: boolean }>("/bidder-portal/assistant/chat", {
         method: "POST",
         body: { message: messageText }
       });
@@ -260,15 +260,20 @@ export default function BidderDashboardPage() {
       if (res?.status === "SUCCESS") {
         setAssistantStatus("ONLINE");
       }
-    } catch (err) {
+    } catch (err: any) {
+      const isTimeout = err?.status === 504 || (err?.message && err.message.toLowerCase().includes("timed out"));
+      const errorContent = isTimeout
+        ? "The AI assistant took too long to respond. Please try again."
+        : "AI response failed. Please try again.";
+
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "AI Assistant is temporarily unavailable. You can still use Available Tenders, My Documents, Pre-check, and My Bids.",
+        content: errorContent,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, errorMsg]);
-      setAssistantStatus("OFFLINE");
+      // Do NOT mark the provider service OFFLINE for a chat generation failure/timeout
     } finally {
       setIsTyping(false);
     }

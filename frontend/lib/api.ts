@@ -20,6 +20,7 @@ interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   token?: string | null;
+  timeout?: number;
 }
 
 export async function apiRequest<T>(
@@ -40,7 +41,8 @@ export async function apiRequest<T>(
 
   let response: Response;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutMs = options.timeout ?? 45000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const serializedBody =
     options.body !== undefined
