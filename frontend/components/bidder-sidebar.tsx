@@ -20,7 +20,7 @@ const BIDDER_NAV_ITEMS = [
   { name: "Dashboard", href: "/bidder/dashboard", icon: BarChart3Icon },
   { name: "Available Tenders", href: "/bidder/tenders", icon: FileTextIcon },
   { name: "My Bids", href: "/bidder/bids", icon: ShieldCheckIcon },
-  { name: "Documents", href: "/bidder/documents", icon: UploadCloudIcon },
+  { name: "My Documents", href: "/bidder/documents", icon: UploadCloudIcon },
   { name: "Verification", href: "/bidder/verification", icon: CheckCircleIcon },
   { name: "Profile", href: "/bidder/profile", icon: UsersIcon },
 ];

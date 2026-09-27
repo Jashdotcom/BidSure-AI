@@ -470,11 +470,186 @@ SEED_BIDDERS: List[Dict[str, Any]] = [
     }
 ]
 
+# Pre-seeded canonical bidder documents repository for BID-001 (ABC Safety Solutions)
+# Explicit Sources: MANUAL_UPLOAD, DIGILOCKER, DIGILOCKER_DEMO
+# Explicit Verification Statuses: UPLOADED, PROCESSING, VERIFIED, REQUIRES_REVIEW, REJECTED, EXPIRED, IMPORTED
+SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
+    {
+        "id": "DOC-BID-001-PAN",
+        "bidder_id": "BID-001",
+        "name": "PAN Card (ABC Safety Solutions)",
+        "category": "IDENTITY_TAX",
+        "category_display": "Identity & Tax",
+        "document_type": "PAN",
+        "document_number": "ABCDE1234F",
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "VERIFIED",
+        "file_name": "ABC_Safety_PAN_Card.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 128,
+        "uploaded_at": "2026-03-10T10:15:00Z",
+        "issuer": "Income Tax Department (NSDL)",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "Permanent Account Number: ABCDE1234F | Entity Name: ABC Safety Solutions Pvt. Ltd. | Category: Company | Status: Active & Linked",
+        "description": "Permanent Account Number card issued by Income Tax Department."
+    },
+    {
+        "id": "DOC-BID-001-GST",
+        "bidder_id": "BID-001",
+        "name": "GST Registration Certificate (Form GST REG-06)",
+        "category": "IDENTITY_TAX",
+        "category_display": "Identity & Tax",
+        "document_type": "GST",
+        "document_number": "27ABCDE1234F1Z5",
+        "source": "DIGILOCKER_DEMO",
+        "source_display": "DigiLocker (Demo)",
+        "status": "REQUIRES_REVIEW",
+        "file_name": "GST_REG06_Certificate.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 210,
+        "uploaded_at": "2026-03-11T14:30:00Z",
+        "issuer": "Goods and Services Tax Network (GSTN)",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "GSTIN: 27ABCDE1234F1Z5 | Legal Name: ABC SAFETY SOLUTIONS PRIVATE LIMITED | Jurisdiction: Maharashtra (27) | Status: Active",
+        "description": "Goods and Services Tax Registration Certificate under CGST/SGST Act."
+    },
+    {
+        "id": "DOC-BID-001-UDYAM",
+        "bidder_id": "BID-001",
+        "name": "Udyam Registration Certificate",
+        "category": "BUSINESS_REGISTRATION",
+        "category_display": "Business Registration",
+        "document_type": "UDYAM",
+        "document_number": "UDYAM-MH-18-0012345",
+        "source": "DIGILOCKER_DEMO",
+        "source_display": "DigiLocker (Demo)",
+        "status": "REQUIRES_REVIEW",
+        "file_name": "MSME_Udyam_Registration.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 175,
+        "uploaded_at": "2026-03-12T09:20:00Z",
+        "issuer": "Ministry of Micro, Small and Medium Enterprises (MSME)",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "Udyam Reg No: UDYAM-MH-18-0012345 | Enterprise: ABC Safety Solutions Pvt. Ltd. | Category: Small Enterprise | NIC Code: 32909",
+        "description": "Ministry of MSME Udyam Registration for Small Scale Enterprise."
+    },
+    {
+        "id": "DOC-BID-001-EPFO",
+        "bidder_id": "BID-001",
+        "name": "EPFO Establishment Registration Certificate",
+        "category": "STATUTORY",
+        "category_display": "Statutory & Compliance",
+        "document_type": "EPFO",
+        "document_number": "MH/BAN/0012345",
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "VERIFIED",
+        "file_name": "EPFO_Registration_Certificate.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 164,
+        "uploaded_at": "2026-03-13T11:00:00Z",
+        "issuer": "Employees' Provident Fund Organisation (EPFO)",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "Establishment Code: MH/BAN/0012345 | Name: ABC Safety Solutions Pvt. Ltd. | Wage Month: Feb 2026 | Active Headcount: 48",
+        "description": "Statutory EPFO establishment registration and compliance proof."
+    },
+    {
+        "id": "DOC-BID-001-EXP",
+        "bidder_id": "BID-001",
+        "name": "Past Experience & Project Completion Certificate",
+        "category": "TENDER_SPECIFIC",
+        "category_display": "Tender Specific",
+        "document_type": "EXPERIENCE",
+        "document_number": "EXP-2024-8842",
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "VERIFIED",
+        "file_name": "IIT_Project_Completion_Cert.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 320,
+        "uploaded_at": "2026-03-14T16:45:00Z",
+        "issuer": "National Security & Network Infrastructure Board",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "Project: Enterprise Network Security & Next-Gen Perimeter Firewall Deployment (Value: ₹ 1.45 Cr) | Performance: Satisfactory | Period: 2023-2025",
+        "description": "Work completion certificate validating past experience in firewall & network security."
+    },
+    {
+        "id": "DOC-BID-001-OEM",
+        "bidder_id": "BID-001",
+        "name": "Manufacturer Authorization Form (MAF)",
+        "category": "TENDER_SPECIFIC",
+        "category_display": "Tender Specific",
+        "document_type": "OEM_AUTHORIZATION",
+        "document_number": "MAF-2026-IITG-99",
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "VERIFIED",
+        "file_name": "OEM_Authorization_MAF_Letter.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 195,
+        "uploaded_at": "2026-03-15T12:00:00Z",
+        "issuer": "FortiGate / Palo Alto Enterprise Security OEM",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "MAF Reference: MAF-2026-IITG-99 | Authorizes: ABC Safety Solutions Pvt. Ltd. for IITG Next-Gen Firewall Tender 2026_IITG_925833_1 | Warranty: 5 Years 24x7 Direct OEM Backing",
+        "description": "Direct OEM Authorization letter authorizing ABC Safety Solutions for tender bidding."
+    },
+    {
+        "id": "DOC-BID-001-LOCAL",
+        "bidder_id": "BID-001",
+        "name": "Class-I Local Content Declaration (Make in India)",
+        "category": "TENDER_SPECIFIC",
+        "category_display": "Tender Specific",
+        "document_type": "LOCAL_CONTENT_DECLARATION",
+        "document_number": "MII-DECL-2026-01",
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "VERIFIED",
+        "file_name": "Make_in_India_Local_Content_Affidavit.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 140,
+        "uploaded_at": "2026-03-16T14:10:00Z",
+        "issuer": "Chartered Accountant & Self-Certification",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "Local Content Percentage: 65.0% | Classification: Class-I Local Supplier | Location of Value Addition: Andheri East, Mumbai, Maharashtra",
+        "description": "Statutory self-declaration under Public Procurement (Preference to Make in India) Order."
+    },
+    {
+        "id": "DOC-BID-001-BLACK",
+        "bidder_id": "BID-001",
+        "name": "Non-Blacklisting & Integrity Declaration",
+        "category": "TENDER_SPECIFIC",
+        "category_display": "Tender Specific",
+        "document_type": "BLACKLISTING_DECLARATION",
+        "document_number": "AFF-NOTARY-2026-44",
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "VERIFIED",
+        "file_name": "Non_Blacklisting_Notary_Affidavit.pdf",
+        "file_type": "PDF",
+        "file_size_kb": 115,
+        "uploaded_at": "2026-03-16T15:30:00Z",
+        "issuer": "Notary Public (Govt of Maharashtra)",
+        "is_synthetic_demo": True,
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+        "preview_summary": "Affidavit: The vendor ABC Safety Solutions Pvt. Ltd. has never been blacklisted, debarred, or restrained by any Central/State Govt Ministry or PSU.",
+        "description": "Notarized affidavit affirming non-debarment and integrity compliance."
+    }
+]
+
 # Live Mutable Operational Data Stores
 SAMPLE_BIDDER_PROFILES: Dict[str, Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_PROFILES)
 SAMPLE_TENDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_TENDERS)
 SAMPLE_BIDDERS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDERS)
 SAMPLE_BIDDER_BIDS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_BIDS)
+SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS)
 SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = []
 SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
@@ -1722,11 +1897,12 @@ def is_demo_mode() -> bool:
 
 def reset_to_demo_data() -> None:
     """Resets operational stores to authentic seed tenders and bidder profiles."""
-    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
+    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_BIDDER_DOCUMENTS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
     with _tender_number_lock:
         SAMPLE_TENDERS = copy.deepcopy(SEED_TENDERS)
         SAMPLE_BIDDERS = copy.deepcopy(SEED_BIDDERS)
         SAMPLE_BIDDER_BIDS = copy.deepcopy(SEED_BIDDER_BIDS)
+        SAMPLE_BIDDER_DOCUMENTS = copy.deepcopy(SEED_BIDDER_DOCUMENTS)
         SAMPLE_AUDIT_LOGS.clear()
         SAMPLE_NOTIFICATIONS.clear()
         SAMPLE_ANALYSIS_JOBS.clear()
@@ -1737,12 +1913,311 @@ def clear_all_procurement_data() -> None:
     Resets all operational procurement records (tenders, tender bids, logs)
     to empty state while keeping authenticated officer credentials and bidder profiles intact.
     """
-    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
+    global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_BIDDER_DOCUMENTS, SAMPLE_AUDIT_LOGS, SAMPLE_NOTIFICATIONS, SAMPLE_ANALYSIS_JOBS, SAMPLE_BIDDER_PROFILES
     with _tender_number_lock:
         SAMPLE_TENDERS.clear()
         SAMPLE_BIDDERS.clear()
         SAMPLE_BIDDER_BIDS.clear()
+        SAMPLE_BIDDER_DOCUMENTS.clear()
         SAMPLE_AUDIT_LOGS.clear()
         SAMPLE_NOTIFICATIONS.clear()
         SAMPLE_ANALYSIS_JOBS.clear()
         SAMPLE_BIDDER_PROFILES = copy.deepcopy(SEED_BIDDER_PROFILES)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bidder Document Repository Management & DigiLocker Adapter
+# ─────────────────────────────────────────────────────────────────────────────
+DIGILOCKER_DEMO_CATALOG: List[Dict[str, Any]] = [
+    {
+        "key": "PAN",
+        "name": "PAN Verification Record / Card",
+        "category": "IDENTITY_TAX",
+        "category_display": "Identity & Tax",
+        "document_type": "PAN",
+        "issuer": "Income Tax Department (NSDL)",
+        "issuer_code": "ITD",
+        "document_number": "ABCDE1234F",
+        "format": "PDF",
+        "file_size_kb": 130,
+        "eligible": True,
+        "description": "Form 49A / PAN verification digital credential issued by Income Tax Department.",
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"
+    },
+    {
+        "key": "GST",
+        "name": "GST Registration Certificate (Form GST REG-06)",
+        "category": "IDENTITY_TAX",
+        "category_display": "Identity & Tax",
+        "document_type": "GST",
+        "issuer": "Goods and Services Tax Network (GSTN)",
+        "issuer_code": "GSTN",
+        "document_number": "27ABCDE1234F1Z5",
+        "format": "PDF",
+        "file_size_kb": 210,
+        "eligible": True,
+        "description": "Registration certificate issued under Goods and Services Tax Act.",
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"
+    },
+    {
+        "key": "UDYAM",
+        "name": "MSME Udyam Registration Certificate",
+        "category": "BUSINESS_REGISTRATION",
+        "category_display": "Business Registration",
+        "document_type": "UDYAM",
+        "issuer": "Ministry of Micro, Small and Medium Enterprises (MSME)",
+        "issuer_code": "MSME",
+        "document_number": "UDYAM-MH-18-0012345",
+        "format": "PDF",
+        "file_size_kb": 180,
+        "eligible": True,
+        "description": "Official MSME Udyam Registration certificate for Small Enterprise classification.",
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"
+    },
+    {
+        "key": "CIN",
+        "name": "Certificate of Incorporation (CIN / MCA)",
+        "category": "BUSINESS_REGISTRATION",
+        "category_display": "Business Registration",
+        "document_type": "COMPANY_REGISTRATION",
+        "issuer": "Ministry of Corporate Affairs (MCA)",
+        "issuer_code": "MCA",
+        "document_number": "U74999MH2021PTC142890",
+        "format": "PDF",
+        "file_size_kb": 245,
+        "eligible": True,
+        "description": "Certificate of Incorporation issued by Registrar of Companies (RoC Mumbai).",
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"
+    },
+    {
+        "key": "EPFO",
+        "name": "EPFO Establishment Registration Certificate",
+        "category": "STATUTORY",
+        "category_display": "Statutory & Compliance",
+        "document_type": "EPFO",
+        "issuer": "Employees' Provident Fund Organisation (EPFO)",
+        "issuer_code": "EPFO",
+        "document_number": "MH/BAN/0012345",
+        "format": "PDF",
+        "file_size_kb": 160,
+        "eligible": True,
+        "description": "Establishment code and registration record under EPF & MP Act 1952.",
+        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE"
+    }
+]
+
+def get_documents_for_bidder(bidder_id: str) -> List[Dict[str, Any]]:
+    """
+    Returns all stored documents belonging to a specific bidder ID.
+    Enforces strict bidder data isolation.
+    """
+    b_id = str(bidder_id).strip()
+    return [
+        dict(d) for d in SAMPLE_BIDDER_DOCUMENTS
+        if d.get("bidder_id") == b_id or d.get("user_id") == b_id
+    ]
+
+def get_document_by_id(doc_id: str, bidder_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """
+    Finds a document by document ID, optionally verifying bidder ownership.
+    """
+    for d in SAMPLE_BIDDER_DOCUMENTS:
+        if d.get("id") == doc_id:
+            if bidder_id and d.get("bidder_id") != bidder_id and d.get("user_id") != bidder_id:
+                return None
+            return dict(d)
+    return None
+
+def add_bidder_document(doc_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Appends a new document to the bidder document repository.
+    """
+    with _tender_number_lock:
+        doc_copy = copy.deepcopy(doc_data)
+        if not doc_copy.get("id"):
+            doc_copy["id"] = f"DOC-BID-{int(time.time()*1000)}"
+        if not doc_copy.get("uploaded_at"):
+            doc_copy["uploaded_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        SAMPLE_BIDDER_DOCUMENTS.append(doc_copy)
+        return doc_copy
+
+def delete_bidder_document(doc_id: str, bidder_id: str) -> bool:
+    """
+    Deletes a document from the bidder repository after verifying ownership and bid safety.
+    """
+    with _tender_number_lock:
+        b_id = str(bidder_id).strip()
+        idx_to_remove = None
+        for i, d in enumerate(SAMPLE_BIDDER_DOCUMENTS):
+            if d.get("id") == doc_id:
+                if d.get("bidder_id") != b_id and d.get("user_id") != b_id:
+                    raise PermissionError("Access denied: You do not own this document.")
+                idx_to_remove = i
+                break
+
+        if idx_to_remove is not None:
+            SAMPLE_BIDDER_DOCUMENTS.pop(idx_to_remove)
+            return True
+        return False
+
+def get_digilocker_catalog(bidder_id: str) -> List[Dict[str, Any]]:
+    """
+    Returns available digital documents in simulated DigiLocker sandbox account.
+    """
+    existing_docs = get_documents_for_bidder(bidder_id)
+    existing_types = {d.get("document_type") for d in existing_docs}
+
+    catalog = []
+    for item in DIGILOCKER_DEMO_CATALOG:
+        entry = dict(item)
+        entry["already_imported"] = item.get("document_type") in existing_types
+        catalog.append(entry)
+    return catalog
+
+def import_digilocker_documents(bidder_id: str, doc_keys: List[str]) -> List[Dict[str, Any]]:
+    """
+    Simulates importing selected documents from DigiLocker sandbox into the bidder's repository.
+    Sets source = DIGILOCKER_DEMO and status = REQUIRES_REVIEW.
+    """
+    imported = []
+    now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    with _tender_number_lock:
+        for key in doc_keys:
+            clean_key = str(key).strip().upper()
+            matching_item = None
+            for item in DIGILOCKER_DEMO_CATALOG:
+                if item.get("key") == clean_key or item.get("document_type") == clean_key:
+                    matching_item = item
+                    break
+
+            if matching_item:
+                # Check if already present to avoid duplicate
+                existing = None
+                for d in SAMPLE_BIDDER_DOCUMENTS:
+                    if (d.get("bidder_id") == bidder_id or d.get("user_id") == bidder_id) and d.get("document_type") == matching_item.get("document_type"):
+                        existing = d
+                        break
+
+                if existing:
+                    existing["source"] = "DIGILOCKER_DEMO"
+                    existing["source_display"] = "DigiLocker (Demo)"
+                    existing["status"] = "REQUIRES_REVIEW"
+                    existing["uploaded_at"] = now_ts
+                    imported.append(existing)
+                else:
+                    new_doc = {
+                        "id": f"DOC-BID-{bidder_id}-{matching_item.get('document_type')}",
+                        "bidder_id": bidder_id,
+                        "name": matching_item.get("name"),
+                        "category": matching_item.get("category"),
+                        "category_display": matching_item.get("category_display"),
+                        "document_type": matching_item.get("document_type"),
+                        "document_number": matching_item.get("document_number"),
+                        "source": "DIGILOCKER_DEMO",
+                        "source_display": "DigiLocker (Demo)",
+                        "status": "REQUIRES_REVIEW",
+                        "file_name": f"{matching_item.get('document_type')}_DigiLocker_Import.pdf",
+                        "file_type": "PDF",
+                        "file_size_kb": matching_item.get("file_size_kb", 150),
+                        "uploaded_at": now_ts,
+                        "issuer": matching_item.get("issuer"),
+                        "is_synthetic_demo": True,
+                        "demo_watermark": "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+                        "preview_summary": f"Imported via DigiLocker Demo Sandbox. Document No: {matching_item.get('document_number')} | Issuer: {matching_item.get('issuer')}",
+                        "description": matching_item.get("description")
+                    }
+                    SAMPLE_BIDDER_DOCUMENTS.append(new_doc)
+                    imported.append(new_doc)
+
+    return imported
+
+def check_tender_document_requirements(tender_id: str, bidder_id: str) -> Dict[str, Any]:
+    """
+    Compares tender requirements with bidder's My Documents library.
+    Identifies available vs missing documents.
+    """
+    tender = get_tender_by_id(tender_id)
+    if not tender:
+        raise KeyError(f"Tender '{tender_id}' not found.")
+
+    bidder_docs = get_documents_for_bidder(bidder_id)
+    doc_type_map = {d.get("document_type"): d for d in bidder_docs}
+
+    requirements = tender.get("requirements", [])
+    clause_eval = []
+
+    for req in requirements:
+        cat = (req.get("category") or req.get("type") or "").upper()
+        req_text = (req.get("text") or req.get("name") or "").lower()
+        clause_ref = req.get("clause") or req.get("clause_reference") or "Clause"
+
+        matched_doc = None
+        doc_type_needed = "OTHER"
+        doc_name_needed = req.get("text", "Requirement Document")
+
+        if "oem" in req_text or "maf" in req_text or cat == "OEM_AUTHORIZATION":
+            doc_type_needed = "OEM_AUTHORIZATION"
+            doc_name_needed = "Manufacturer Authorization Form (MAF)"
+            matched_doc = doc_type_map.get("OEM_AUTHORIZATION")
+        elif "gst" in req_text or "gstr" in req_text or "pan" in req_text or cat in ("STATUTORY_COMPLIANCE", "IDENTITY_TAX"):
+            if "gst" in req_text:
+                doc_type_needed = "GST"
+                doc_name_needed = "GST Registration Certificate"
+                matched_doc = doc_type_map.get("GST")
+            else:
+                doc_type_needed = "PAN"
+                doc_name_needed = "PAN Card"
+                matched_doc = doc_type_map.get("PAN")
+        elif "udyam" in req_text or "msme" in req_text or "mse" in req_text:
+            doc_type_needed = "UDYAM"
+            doc_name_needed = "Udyam Registration Certificate"
+            matched_doc = doc_type_map.get("UDYAM")
+        elif "local content" in req_text or "make in india" in req_text or cat == "LOCAL_CONTENT":
+            doc_type_needed = "LOCAL_CONTENT_DECLARATION"
+            doc_name_needed = "Local Content Declaration (Make in India)"
+            matched_doc = doc_type_map.get("LOCAL_CONTENT_DECLARATION")
+        elif "warranty" in req_text or "support" in req_text or cat == "WARRANTY_SUPPORT":
+            doc_type_needed = "OEM_AUTHORIZATION"
+            doc_name_needed = "OEM Warranty & Support Commitment Letter"
+            matched_doc = doc_type_map.get("OEM_AUTHORIZATION")
+        elif "experience" in req_text or "past performance" in req_text:
+            doc_type_needed = "EXPERIENCE"
+            doc_name_needed = "Past Experience & Performance Certificate"
+            matched_doc = doc_type_map.get("EXPERIENCE")
+        elif "blacklisting" in req_text or "debarment" in req_text:
+            doc_type_needed = "BLACKLISTING_DECLARATION"
+            doc_name_needed = "Non-Blacklisting Declaration & Affidavit"
+            matched_doc = doc_type_map.get("BLACKLISTING_DECLARATION")
+
+        clause_eval.append({
+            "requirement_id": req.get("id"),
+            "clause": clause_ref,
+            "requirement_text": req.get("text") or req.get("name"),
+            "document_needed": doc_name_needed,
+            "document_type": doc_type_needed,
+            "mandatory": req.get("mandatory", True),
+            "is_available": matched_doc is not None,
+            "matched_document": {
+                "id": matched_doc.get("id"),
+                "name": matched_doc.get("name"),
+                "source": matched_doc.get("source"),
+                "source_display": matched_doc.get("source_display", "Manual Upload"),
+                "status": matched_doc.get("status", "VERIFIED"),
+                "document_number": matched_doc.get("document_number", "")
+            } if matched_doc else None
+        })
+
+    available_count = sum(1 for c in clause_eval if c["is_available"])
+    missing_count = len(clause_eval) - available_count
+
+    return {
+        "tender_id": tender.get("id") or tender_id,
+        "tender_number": tender.get("tender_number", tender_id),
+        "tender_title": tender.get("title"),
+        "total_requirements": len(clause_eval),
+        "available_documents_count": available_count,
+        "missing_documents_count": missing_count,
+        "ready_to_participate": missing_count == 0,
+        "requirements_evaluation": clause_eval
+    }

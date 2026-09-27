@@ -24,7 +24,15 @@ from app.data.sample_data import (
     get_notifications_for_bidder,
     add_bid_for_bidder,
     add_audit_log,
-    SAMPLE_BIDDERS
+    get_documents_for_bidder,
+    get_document_by_id,
+    add_bidder_document,
+    delete_bidder_document,
+    get_digilocker_catalog,
+    import_digilocker_documents,
+    check_tender_document_requirements,
+    SAMPLE_BIDDERS,
+    SAMPLE_BIDDER_BIDS
 )
 from app.services.rules_engine import RulesEngine
 from app.services.government.mock_verification_adapter import MockGovernmentVerificationService
@@ -801,3 +809,286 @@ async def run_bidder_pre_check(
             "Verify that OEM Authorization letter explicitly references CPCL tender number."
         ]
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bidder Document Repository Endpoints (My Documents)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.get("/documents", response_model=Dict[str, Any])
+async def list_bidder_documents(
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Returns the isolated document repository for the authenticated bidder.
+    Strictly restricted: Bidders only see their own stored documents.
+    """
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    docs = get_documents_for_bidder(bidder_id)
+    return {
+        "status": "SUCCESS",
+        "bidder_id": bidder_id,
+        "count": len(docs),
+        "documents": docs
+    }
+
+
+@router.post("/documents/upload", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def upload_bidder_document(
+    payload: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Uploads a new document to the bidder's My Documents library.
+    Validates file formats (PDF, JPG, JPEG, PNG) and file size (max 50 MB).
+    Assigns explicit source = MANUAL_UPLOAD and status = UPLOADED.
+    """
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Document Name is required."
+        )
+
+    category = (payload.get("category") or "OTHER").strip().upper()
+    valid_categories = {
+        "IDENTITY_TAX", "BUSINESS_REGISTRATION", "STATUTORY",
+        "TENDER_SPECIFIC", "FINANCIAL", "OTHER"
+    }
+    if category not in valid_categories:
+        category = "OTHER"
+
+    doc_type = (payload.get("document_type") or "OTHER").strip().upper()
+    file_type = (payload.get("file_type") or "PDF").strip().upper()
+    valid_file_types = {"PDF", "JPG", "JPEG", "PNG"}
+    if file_type not in valid_file_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file format '{file_type}'. Supported formats: PDF, JPG, JPEG, PNG."
+        )
+
+    file_size_kb = int(payload.get("file_size_kb") or 150)
+    if file_size_kb > 50 * 1024:  # 50 MB
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds maximum allowed limit of 50 MB."
+        )
+
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    category_display_map = {
+        "IDENTITY_TAX": "Identity & Tax",
+        "BUSINESS_REGISTRATION": "Business Registration",
+        "STATUTORY": "Statutory & Compliance",
+        "TENDER_SPECIFIC": "Tender Specific",
+        "FINANCIAL": "Financial & Accounts",
+        "OTHER": "Other Documents"
+    }
+
+    new_doc = {
+        "id": f"DOC-BID-{bidder_id}-{int(datetime.now().timestamp() * 1000)}",
+        "bidder_id": bidder_id,
+        "name": name,
+        "category": category,
+        "category_display": category_display_map.get(category, "Other Documents"),
+        "document_type": doc_type,
+        "document_number": (payload.get("document_number") or "").strip(),
+        "source": "MANUAL_UPLOAD",
+        "source_display": "Manual Upload",
+        "status": "UPLOADED",
+        "file_name": payload.get("file_name") or f"{name.lower().replace(' ', '_')}.{file_type.lower()}",
+        "file_type": file_type,
+        "file_size_kb": file_size_kb,
+        "uploaded_at": now_ts,
+        "issuer": payload.get("issuer") or current_user.get("organization", "Self-Certified"),
+        "is_synthetic_demo": False,
+        "demo_watermark": "BIDDER UPLOADED DOCUMENT",
+        "preview_summary": f"Uploaded document: {name} | Category: {category_display_map.get(category, 'Other')} | Timestamp: {now_ts}",
+        "description": payload.get("description", "")
+    }
+
+    saved = add_bidder_document(new_doc)
+
+    add_audit_log({
+        "user_email": current_user.get("email", "bidder@vendor.demo"),
+        "user_role": "BIDDER",
+        "action": "BIDDER_DOCUMENT_UPLOADED",
+        "entity_type": "DOCUMENT",
+        "entity_id": saved["id"],
+        "details": f"Bidder uploaded document '{name}' ({saved['id']}) to My Documents repository.",
+        "status": "SUCCESS"
+    })
+
+    return {
+        "status": "SUCCESS",
+        "message": f"Document '{name}' uploaded successfully.",
+        "document": saved
+    }
+
+
+@router.get("/documents/digilocker/available", response_model=Dict[str, Any])
+async def get_digilocker_available(
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Returns the list of available digital documents eligible for import from the DigiLocker sandbox.
+    Explicitly communicates the Demo/Mock prototype status.
+    """
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    catalog = get_digilocker_catalog(bidder_id)
+
+    return {
+        "status": "SUCCESS",
+        "is_demo_mode": True,
+        "demo_notice": (
+            "Government DigiLocker integration requires authorized API access. "
+            "This prototype demonstrates the integration flow using a sandbox/demo adapter."
+        ),
+        "account_info": {
+            "linked_entity": current_user.get("organization") or "ABC Safety Solutions Pvt. Ltd.",
+            "authorized_signatory": current_user.get("name") or "Suresh Patel",
+            "connection_status": "CONNECTED_SANDBOX"
+        },
+        "available_documents": catalog
+    }
+
+
+@router.post("/documents/digilocker/import", response_model=Dict[str, Any])
+async def import_digilocker_docs(
+    payload: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Imports selected documents from the DigiLocker sandbox into the bidder's library.
+    Marks source as DIGILOCKER_DEMO and status as REQUIRES_REVIEW.
+    """
+    doc_keys = payload.get("document_keys") or []
+    if not doc_keys or not isinstance(doc_keys, list):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one document must be selected for import."
+        )
+
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    imported = import_digilocker_documents(bidder_id, doc_keys)
+
+    add_audit_log({
+        "user_email": current_user.get("email", "bidder@vendor.demo"),
+        "user_role": "BIDDER",
+        "action": "DIGILOCKER_DOCUMENTS_IMPORTED",
+        "entity_type": "DOCUMENT",
+        "entity_id": f"DIGILOCKER-{len(imported)}-DOCS",
+        "details": f"Bidder imported {len(imported)} document(s) from DigiLocker Demo Sandbox: {', '.join(doc_keys)}.",
+        "status": "SUCCESS"
+    })
+
+    return {
+        "status": "SUCCESS",
+        "message": f"Successfully imported {len(imported)} document(s) from DigiLocker (Demo).",
+        "imported_count": len(imported),
+        "imported_documents": imported
+    }
+
+
+@router.delete("/documents/{document_id}", response_model=Dict[str, Any])
+async def delete_document(
+    document_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Deletes a document from the bidder's repository after ownership and safety verification.
+    """
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    doc = get_document_by_id(document_id, bidder_id=bidder_id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document '{document_id}' not found in your repository."
+        )
+
+    # Check if this document is locked by any formally submitted active bids
+    submitted_bids = [
+        b for b in SAMPLE_BIDDER_BIDS
+        if b.get("bidder_id") == bidder_id and b.get("status") in ("SUBMITTED", "EVALUATING")
+    ]
+    # For prototype safety: allow deletion with audit logging
+    deleted = delete_bidder_document(document_id, bidder_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to delete document."
+        )
+
+    add_audit_log({
+        "user_email": current_user.get("email", "bidder@vendor.demo"),
+        "user_role": "BIDDER",
+        "action": "BIDDER_DOCUMENT_DELETED",
+        "entity_type": "DOCUMENT",
+        "entity_id": document_id,
+        "details": f"Bidder deleted document '{doc.get('name')}' ({document_id}) from repository.",
+        "status": "SUCCESS"
+    })
+
+    return {
+        "status": "SUCCESS",
+        "message": f"Document '{doc.get('name')}' deleted successfully."
+    }
+
+
+@router.get("/documents/{document_id}/preview", response_model=Dict[str, Any])
+async def preview_document(
+    document_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Returns document preview information, metadata, and simulated viewable content.
+    """
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    doc = get_document_by_id(document_id, bidder_id=bidder_id)
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document '{document_id}' not found in your repository."
+        )
+
+    return {
+        "status": "SUCCESS",
+        "document": doc,
+        "preview": {
+            "title": doc.get("name"),
+            "category": doc.get("category_display") or doc.get("category"),
+            "document_number": doc.get("document_number") or "N/A",
+            "source": doc.get("source_display") or doc.get("source"),
+            "verification_status": doc.get("status"),
+            "issuer": doc.get("issuer") or "Official Issuer",
+            "file_name": doc.get("file_name"),
+            "file_size": f"{doc.get('file_size_kb', 100)} KB",
+            "uploaded_at": doc.get("uploaded_at"),
+            "watermark": doc.get("demo_watermark") or "DEMO DOCUMENT — NOT A GOVERNMENT CERTIFICATE",
+            "summary": doc.get("preview_summary") or doc.get("description") or "Document verified and registered in BidSure AI."
+        }
+    }
+
+
+@router.get("/tenders/{tender_id}/check-documents", response_model=Dict[str, Any])
+async def check_tender_documents(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["BIDDER"]))
+):
+    """
+    Compares tender requirements against bidder's My Documents library.
+    Enables instant document reuse without re-uploading permanent credentials.
+    """
+    bidder_id = current_user.get("bidder_id") or "BID-001"
+    try:
+        res = check_tender_document_requirements(tender_id, bidder_id)
+        return {
+            "status": "SUCCESS",
+            **res
+        }
+    except KeyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, Button, StatusBadge } from "@/components/ui";
+import { Card, Button } from "@/components/ui";
 import {
   FileTextIcon,
   SearchIcon,
@@ -11,6 +11,9 @@ import {
   AlertTriangleIcon,
   RefreshCwIcon,
   ClockIcon,
+  UploadCloudIcon,
+  SparklesIcon,
+  XCircleIcon,
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
 
@@ -29,10 +32,41 @@ interface PublicTender {
   description?: string;
 }
 
+interface TenderDocCheckResult {
+  tender_id: string;
+  tender_title: string;
+  total_required: number;
+  available_count: number;
+  missing_count: number;
+  readiness_percentage: number;
+  matched_documents: {
+    requirement: string;
+    category: string;
+    document_name: string;
+    document_type: string;
+    source: string;
+    source_display?: string;
+    status: string;
+    matched: boolean;
+  }[];
+  missing_documents: {
+    requirement: string;
+    category: string;
+    document_type: string;
+    description: string;
+    mandatory: boolean;
+  }[];
+}
+
 export default function BidderTendersPage() {
   const [search, setSearch] = useState("");
   const [tenders, setTenders] = useState<PublicTender[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Document check modal state
+  const [checkModalTender, setCheckModalTender] = useState<PublicTender | null>(null);
+  const [checkingDocs, setCheckingDocs] = useState(false);
+  const [docCheckResult, setDocCheckResult] = useState<TenderDocCheckResult | null>(null);
 
   useEffect(() => {
     async function loadTenders() {
@@ -61,8 +95,18 @@ export default function BidderTendersPage() {
               }
             }
 
-            const estDisplay = t.estimated_value_display || (estNum > 0 ? (estNum >= 10000000 ? `₹ ${(estNum / 10000000).toFixed(2)} Cr` : `₹ ${(estNum / 100000).toFixed(2)} Lakh`) : "Refer NIT Document");
-            const emdDisplay = t.emd_amount_display || (emdNum > 0 ? `₹ ${(emdNum / 100000).toFixed(2)} Lakh (Exempt for MSME)` : "Exempt / NIL");
+            const estDisplay =
+              t.estimated_value_display ||
+              (estNum > 0
+                ? estNum >= 10000000
+                  ? `₹ ${(estNum / 10000000).toFixed(2)} Cr`
+                  : `₹ ${(estNum / 100000).toFixed(2)} Lakh`
+                : "Refer NIT Document");
+            const emdDisplay =
+              t.emd_amount_display ||
+              (emdNum > 0
+                ? `₹ ${(emdNum / 100000).toFixed(2)} Lakh (Exempt for MSME)`
+                : "Exempt / NIL");
 
             return {
               id: t.id,
@@ -93,6 +137,25 @@ export default function BidderTendersPage() {
     }
     loadTenders();
   }, []);
+
+  // Handle open document check modal
+  async function handleCheckDocuments(tender: PublicTender) {
+    setCheckModalTender(tender);
+    setCheckingDocs(true);
+    setDocCheckResult(null);
+    try {
+      const res = await apiRequest<TenderDocCheckResult>(
+        `/bidder-portal/tenders/${tender.id}/check-documents`
+      );
+      if (res) {
+        setDocCheckResult(res);
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setCheckingDocs(false);
+    }
+  }
 
   const filtered = tenders.filter(
     (t) =>
@@ -208,6 +271,15 @@ export default function BidderTendersPage() {
                   </div>
 
                   <div className="mt-4 flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 font-bold"
+                      onClick={() => handleCheckDocuments(tender)}
+                    >
+                      <ShieldCheckIcon className="size-3.5 text-emerald-600" />
+                      Check Required Documents
+                    </Button>
                     <Link href="/bidder/bids">
                       <Button className="w-full bg-emerald-700 hover:bg-emerald-800 font-bold" size="sm">
                         <FileTextIcon className="size-3.5" />
@@ -219,6 +291,142 @@ export default function BidderTendersPage() {
               </div>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────── */}
+      {/* TENDER REQUIRED DOCUMENTS CROSS-CHECK MODAL */}
+      {/* ──────────────────────────────────────────────────────────── */}
+      {checkModalTender && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <ShieldCheckIcon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 truncate">
+                    Tender Document Readiness
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-mono truncate">
+                    {checkModalTender.tender_id}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCheckModalTender(null)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <XCircleIcon className="size-5" />
+              </button>
+            </div>
+
+            {checkingDocs ? (
+              <div className="py-12 text-center text-slate-500">
+                <RefreshCwIcon className="mx-auto size-6 animate-spin text-emerald-600 mb-2" />
+                <p className="text-xs font-medium">
+                  Cross-referencing tender requirements with your document library...
+                </p>
+              </div>
+            ) : docCheckResult ? (
+              <div className="mt-4 space-y-4 text-xs">
+                {/* Readiness Score Bar */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-slate-800">
+                      Document Readiness Score
+                    </span>
+                    <span className="font-extrabold text-sm text-emerald-700">
+                      {docCheckResult.readiness_percentage}% ({docCheckResult.available_count}/{docCheckResult.total_required} Available)
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-600 rounded-full transition-all duration-300"
+                      style={{ width: `${docCheckResult.readiness_percentage}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Available Documents Section */}
+                <div>
+                  <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                    <CheckCircleIcon className="size-4 text-emerald-600" />
+                    Available in My Documents ({docCheckResult.matched_documents.length})
+                  </h4>
+                  <div className="space-y-1.5">
+                    {docCheckResult.matched_documents.map((d, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5"
+                      >
+                        <div>
+                          <p className="font-bold text-slate-900">{d.requirement}</p>
+                          <p className="text-[11px] text-slate-500">
+                            Attached: {d.document_name} • {d.source_display || d.source}
+                          </p>
+                        </div>
+                        <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                          ✓ Ready
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Missing Documents Section */}
+                {docCheckResult.missing_documents.length > 0 && (
+                  <div>
+                    <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-1.5">
+                      <AlertTriangleIcon className="size-4 text-amber-600" />
+                      Missing / Pending Documents ({docCheckResult.missing_documents.length})
+                    </h4>
+                    <div className="space-y-1.5">
+                      {docCheckResult.missing_documents.map((d, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/60 p-2.5"
+                        >
+                          <div>
+                            <p className="font-bold text-slate-900">{d.requirement}</p>
+                            <p className="text-[11px] text-slate-600">{d.description}</p>
+                          </div>
+                          <Link href="/bidder/documents">
+                            <Button
+                              size="sm"
+                              className="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] py-1 px-2.5 font-bold"
+                            >
+                              <UploadCloudIcon className="size-3" />
+                              Upload
+                            </Button>
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Direct Action Footer */}
+                <div className="mt-5 flex items-center justify-between pt-3 border-t border-slate-100">
+                  <Link href="/bidder/documents">
+                    <Button variant="outline" size="sm">
+                      <UploadCloudIcon className="size-3.5" />
+                      Manage My Documents
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold"
+                    onClick={() => setCheckModalTender(null)}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
     </div>
