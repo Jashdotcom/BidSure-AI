@@ -43,6 +43,23 @@ from app.services.ai_providers.base import (
     AIExtractionError,
 )
 from app.services.tender_sources import CPPPTenderAdapter, ManualTenderAdapter
+from app.integrations.cppp import (
+    CPPPIntegrationService,
+    CPPPClient,
+    CPPPParser,
+    CPPPImportRequest,
+    CPPPSearchRequest,
+    CPPPSyncResult,
+    CPPPTenderSummary,
+    CPPPTenderDetail,
+    CPPPError,
+    CPPPCaptchaBlockedError,
+    CPPPAccessBlockedError,
+    CPPPNotFoundError,
+    CPPPSSRFBlockedError,
+    CPPPTimeoutError,
+    CPPPConnectionError,
+)
 from app.data.document_store import (
     save_document,
     get_document_bytes,
@@ -60,6 +77,147 @@ class TenderImportUrlSchema(BaseModel):
     title: Optional[str] = None
     estimated_value: Optional[float] = None
     category: Optional[str] = None
+
+@router.get("/cppp/browse", response_model=List[Dict[str, Any]])
+async def browse_cppp_public_tenders(
+    query: Optional[str] = Query(None, description="Search term across public CPPP tenders"),
+    page: int = Query(1, ge=1, description="Page number"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Retrieves live active public tender listings directly from CPPP / eProcurement portal.
+    Enforces SSRF prevention and rate limiting.
+    RESTRICTED: Officer role only.
+    """
+    service = CPPPIntegrationService()
+    try:
+        results = service.browse_public_tenders(query=query, page=page)
+        return [r.model_dump() for r in results]
+    except (CPPPCaptchaBlockedError, CPPPAccessBlockedError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPPP_REQUIRES_HUMAN_VERIFICATION: {str(e)}"
+        )
+    except CPPPError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"CPPP Portal Error: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error while querying CPPP: {str(e)}"
+        )
+
+
+@router.get("/cppp/search", response_model=List[Dict[str, Any]])
+async def search_cppp_tenders(
+    q: str = Query(..., description="Tender ID, title keyword, or organisation name"),
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Searches active public tenders on CPPP.
+    RESTRICTED: Officer role only.
+    """
+    service = CPPPIntegrationService()
+    try:
+        results = service.browse_public_tenders(query=q)
+        return [r.model_dump() for r in results]
+    except (CPPPCaptchaBlockedError, CPPPAccessBlockedError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPPP_REQUIRES_HUMAN_VERIFICATION: {str(e)}"
+        )
+    except CPPPError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"CPPP Portal Error: {str(e)}"
+        )
+
+
+@router.post("/cppp/import", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def import_cppp_tender_direct(
+    payload: CPPPImportRequest,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Imports or syncs an authentic public tender from CPPP by Tender ID or URL.
+    - Validates URL against SSRF and domain allowlist.
+    - Extracts all public fields without fabrication.
+    - Persists authentic NIT/RFP PDF into document_store with SHA-256 deduplication.
+    - Deduplicates against existing tenders by official Tender ID.
+    - Records data provenance and audit trail.
+    RESTRICTED: Officer role only.
+    """
+    service = CPPPIntegrationService()
+    try:
+        tender_record = service.import_tender(
+            url_or_id=payload.url_or_id,
+            officer_user=current_user,
+            download_documents=payload.download_documents,
+            import_method="LIVE_SOURCE_FETCH"
+        )
+        return {
+            "message": f"Tender {tender_record.get('tender_number') or tender_record.get('id')} imported successfully from CPPP.",
+            "tender": tender_record,
+            "is_new": tender_record.get("is_new", True),
+            "is_updated": tender_record.get("is_updated", False)
+        }
+    except (CPPPCaptchaBlockedError, CPPPAccessBlockedError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPPP_REQUIRES_HUMAN_VERIFICATION: {str(e)}"
+        )
+    except CPPPSSRFBlockedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Security Error (SSRF Protection): {str(e)}"
+        )
+    except CPPPNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except CPPPError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPPP Import Error: {str(e)}"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.post("/{tender_id}/sync-cppp", response_model=Dict[str, Any])
+async def sync_tender_from_cppp(
+    tender_id: str,
+    current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
+):
+    """
+    Officer-triggered sync to check CPPP for corrigenda, schedule extensions, or updated metadata.
+    RESTRICTED: Officer role only.
+    """
+    service = CPPPIntegrationService()
+    try:
+        sync_result = service.sync_tender(tender_id=tender_id, officer_user=current_user)
+        return sync_result.model_dump()
+    except CPPPNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except (CPPPCaptchaBlockedError, CPPPAccessBlockedError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPPP_REQUIRES_HUMAN_VERIFICATION: {str(e)}"
+        )
+    except CPPPError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"CPPP Sync Error: {str(e)}"
+        )
 
 @router.post("/import-cppp", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def import_cppp_tender(

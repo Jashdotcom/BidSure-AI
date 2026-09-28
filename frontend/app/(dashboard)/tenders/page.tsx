@@ -125,11 +125,21 @@ export default function TendersPage() {
 
   // Tender Import Modal
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importType, setImportType] = useState<"CPPP" | "MANUAL">("CPPP");
+  const [importType, setImportType] = useState<"BROWSE" | "CPPP" | "MANUAL">("BROWSE");
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [cpppUrl, setCpppUrl] = useState("");
+  const [downloadDocsOption, setDownloadDocsOption] = useState(true);
   const [manualFile, setManualFile] = useState<File | null>(null);
+
+  // CPPP Browse State
+  const [cpppBrowseQuery, setCpppBrowseQuery] = useState("");
+  const [cpppBrowseResults, setCpppBrowseResults] = useState<any[]>([]);
+  const [cpppBrowseLoading, setCpppBrowseLoading] = useState(false);
+  const [cpppBrowseError, setCpppBrowseError] = useState<string | null>(null);
+
+  // Syncing state for tender cards
+  const [syncingTenderId, setSyncingTenderId] = useState<string | null>(null);
 
   // New Requirement Form State
   const [newReq, setNewReq] = useState({
@@ -572,7 +582,88 @@ export default function TendersPage() {
     }
   }
 
-  // Handle Import Tender (CPPP URL or Manual PDF Upload)
+  // Browse CPPP Public Tenders
+  async function handleBrowseCppp(query?: string) {
+    setCpppBrowseLoading(true);
+    setCpppBrowseError(null);
+    try {
+      const q = query !== undefined ? query : cpppBrowseQuery;
+      const qParam = q.trim() ? `?query=${encodeURIComponent(q.trim())}` : "";
+      const res = await apiRequest<any[]>(`/tenders/cppp/browse${qParam}`);
+      if (res && Array.isArray(res)) {
+        setCpppBrowseResults(res);
+        if (res.length === 0) {
+          setCpppBrowseError("No active public tenders found on CPPP matching your criteria.");
+        }
+      } else {
+        setCpppBrowseResults([]);
+      }
+    } catch (err: any) {
+      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to fetch live tenders from CPPP portal.";
+      setCpppBrowseError(typeof msg === "string" ? msg : "Unable to reach CPPP portal.");
+      setCpppBrowseResults([]);
+    } finally {
+      setCpppBrowseLoading(false);
+    }
+  }
+
+  // Import Selected Tender from CPPP Browse Listing
+  async function handleImportFromListing(item: any) {
+    setImportLoading(true);
+    setImportError(null);
+    try {
+      const res = await apiRequest<{ message: string; tender: Tender; is_new: boolean; is_updated: boolean }>(
+        "/tenders/cppp/import",
+        {
+          method: "POST",
+          body: {
+            url_or_id: item.detail_url || item.source_tender_id,
+            download_documents: downloadDocsOption,
+          },
+        }
+      );
+
+      setIsImportModalOpen(false);
+      await fetchTenders();
+      setPageToast({
+        type: "SUCCESS",
+        message: res.message || `Tender ${item.source_tender_id} successfully imported from CPPP.`,
+      });
+    } catch (err: any) {
+      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to import tender from CPPP.";
+      setImportError(typeof msg === "string" ? msg : "Failed to import tender from CPPP.");
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
+  // Officer-Triggered CPPP Sync for Existing Tender
+  async function handleSyncTender(tenderId: string) {
+    setSyncingTenderId(tenderId);
+    try {
+      const res = await apiRequest<{ message: string; updated: boolean; changes: string[] }>(
+        `/tenders/${encodeURIComponent(tenderId)}/sync-cppp`,
+        {
+          method: "POST",
+        }
+      );
+      await fetchTenders();
+      setPageToast({
+        type: "SUCCESS",
+        message: res.message || `Tender ${tenderId} synchronized with CPPP.`,
+      });
+    } catch (err: any) {
+      const msg = err?.detail?.message || err?.detail || err?.message || "Failed to sync tender with CPPP.";
+      setPageToast({
+        type: "ERROR",
+        message: typeof msg === "string" ? msg : "Failed to sync tender with CPPP.",
+      });
+    } finally {
+      setSyncingTenderId(null);
+    }
+  }
+
+  // Handle Import Tender (CPPP URL/ID or Manual PDF Upload)
   async function handleImportTender(e: React.FormEvent) {
     e.preventDefault();
     setImportError(null);
@@ -581,17 +672,18 @@ export default function TendersPage() {
     try {
       if (importType === "CPPP") {
         if (!cpppUrl || !cpppUrl.trim()) {
-          setImportError("Please enter a valid CPPP / eProcurement public URL.");
+          setImportError("Please enter a valid CPPP Tender URL or official Tender ID (e.g. 2026_IITG_925833_1).");
           setImportLoading(false);
           return;
         }
 
         const res = await apiRequest<{ message: string; tender: Tender }>(
-          "/tenders/import-cppp",
+          "/tenders/cppp/import",
           {
             method: "POST",
             body: {
-              url: cpppUrl.trim(),
+              url_or_id: cpppUrl.trim(),
+              download_documents: downloadDocsOption,
             },
           }
         );
@@ -1238,6 +1330,29 @@ export default function TendersPage() {
                               </span>
                             )}
 
+                            {(tender.source === "CPPP" || tender.is_live_synced) && (
+                              <span
+                                className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-800 border border-emerald-200 flex items-center gap-1"
+                                title={`Sourced from Central Public Procurement Portal (CPPP)${tender.last_synced_at ? ` • Synced: ${formatDeadlineDisplay(tender.last_synced_at)}` : ""}`}
+                              >
+                                <ShieldCheckIcon className="size-2.5 text-emerald-600" />
+                                CPPP Source
+                              </span>
+                            )}
+
+                            {tender.is_real_public_tender && (
+                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800 border border-blue-200">
+                                Public Portal Ingestion
+                              </span>
+                            )}
+
+                            {(tender.file_name || (tender.documents && tender.documents.length > 0)) && (
+                              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-800 border border-indigo-200 flex items-center gap-1">
+                                <FileTextIcon className="size-2.5 text-indigo-600" />
+                                NIT PDF
+                              </span>
+                            )}
+
                             {amendmentsCount > 0 && (
                               <span
                                 onClick={() => setAmendmentHistoryModalTender(tender)}
@@ -1353,6 +1468,32 @@ export default function TendersPage() {
                                 View Bids ({tender.bids_count ?? 0}) →
                               </Button>
                             </Link>
+
+                            {(tender.source === "CPPP" || tender.is_live_synced) && (
+                              <button
+                                type="button"
+                                onClick={() => handleSyncTender(tender.tender_number || tender.id)}
+                                disabled={syncingTenderId === (tender.tender_number || tender.id)}
+                                className="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-1 shadow-2xs disabled:opacity-50"
+                                title="Fetch latest amendments and status from official CPPP portal"
+                              >
+                                <RefreshCwIcon className={`size-3 text-emerald-600 ${syncingTenderId === (tender.tender_number || tender.id) ? "animate-spin" : ""}`} />
+                                {syncingTenderId === (tender.tender_number || tender.id) ? "Syncing..." : "Sync CPPP"}
+                              </button>
+                            )}
+
+                            {(tender.file_name || (tender.documents && tender.documents.length > 0)) && (
+                              <Link href={`/ai-tender-analyze?tender_id=${encodeURIComponent(tender.tender_number || tender.id)}`}>
+                                <button
+                                  type="button"
+                                  className="rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-bold text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-colors flex items-center gap-1 shadow-2xs"
+                                  title="Analyze official tender document in AI Studio"
+                                >
+                                  <SparklesIcon className="size-3 text-indigo-600" />
+                                  AI Studio
+                                </button>
+                              </Link>
+                            )}
                           </>
                         )}
 
@@ -2432,7 +2573,7 @@ export default function TendersPage() {
       {/* IMPORT TENDER MODAL */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col">
+          <div className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             {/* Modal Header */}
             <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 flex items-center justify-between">
               <div>
@@ -2440,7 +2581,7 @@ export default function TendersPage() {
                   Procurement Ingestion Gateway
                 </span>
                 <h3 className="text-base font-extrabold text-slate-900 mt-0.5">
-                  Import Tender Notice
+                  Import Public Tender Notice
                 </h3>
               </div>
               <button
@@ -2457,21 +2598,40 @@ export default function TendersPage() {
             </div>
 
             {/* Ingestion Source Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-100/60 px-6 pt-2 gap-2">
+            <div className="flex border-b border-slate-200 bg-slate-100/60 px-6 pt-2 gap-2 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setImportType("BROWSE");
+                  setImportError(null);
+                  if (cpppBrowseResults.length === 0) {
+                    handleBrowseCppp();
+                  }
+                }}
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
+                  importType === "BROWSE"
+                    ? "border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-2xs"
+                    : "border-transparent text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <SearchIcon className="size-3.5 text-blue-600" />
+                Browse & Search CPPP
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
                   setImportType("CPPP");
                   setImportError(null);
                 }}
-                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
                   importType === "CPPP"
                     ? "border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-2xs"
                     : "border-transparent text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <FileCheckIcon className="size-3.5 text-blue-600" />
-                CPPP / eProcurement URL
+                <FileCheckIcon className="size-3.5 text-emerald-600" />
+                Import by URL or Tender ID
               </button>
 
               <button
@@ -2480,7 +2640,7 @@ export default function TendersPage() {
                   setImportType("MANUAL");
                   setImportError(null);
                 }}
-                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
+                className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-all whitespace-nowrap ${
                   importType === "MANUAL"
                     ? "border-blue-600 text-blue-700 bg-white rounded-t-lg shadow-2xs"
                     : "border-transparent text-slate-600 hover:text-slate-900"
@@ -2491,42 +2651,217 @@ export default function TendersPage() {
               </button>
             </div>
 
-            {/* Modal Form */}
-            <form onSubmit={handleImportTender} className="p-6 space-y-4 text-xs">
-              {importType === "CPPP" ? (
-                <div className="space-y-3.5">
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
+              {importType === "BROWSE" && (
+                <div className="space-y-4">
                   <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 flex items-start gap-2.5">
                     <InfoIcon className="size-4 text-blue-700 shrink-0 mt-0.5" />
                     <div className="text-[11px] text-blue-900 leading-relaxed">
-                      <strong className="font-bold block">Secure CPPP / eProcurement Ingestion:</strong>
-                      Enter an official tender URL from allowlisted portals (<code className="font-mono font-bold">eprocure.gov.in</code>, <code className="font-mono font-bold">cppp.gov.in</code>, <code className="font-mono font-bold">cpcl.co.in</code>). Enforces SSRF prevention, IP domain allowlist validation, and SHA-256 cryptographic duplicate detection. Zero automatic AI execution on import.
+                      <strong className="font-bold block">Live CPPP Public Directory Search:</strong>
+                      Discover and ingest official public tenders directly from the Central Public Procurement Portal (<code className="font-mono font-bold">eprocure.gov.in</code>). Ingests published specifications, critical dates, and official NIT PDF documents into your workspace with zero synthetic data.
+                    </div>
+                  </div>
+
+                  {/* Search Toolbar */}
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <SearchIcon className="size-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search by CPPP Tender ID, Keyword, or Organization (e.g. 2026_IITG or Refinery)..."
+                        value={cpppBrowseQuery}
+                        onChange={(e) => setCpppBrowseQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleBrowseCppp();
+                          }
+                        }}
+                        className="w-full rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-xs font-medium text-slate-900 focus:border-blue-600 focus:outline-none"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleBrowseCppp()}
+                      disabled={cpppBrowseLoading}
+                      loading={cpppBrowseLoading}
+                      className="bg-blue-700 hover:bg-blue-800 text-white font-bold"
+                    >
+                      Search Portal
+                    </Button>
+                  </div>
+
+                  {/* Download Docs Toggle */}
+                  <div className="flex items-center gap-2 px-1">
+                    <input
+                      id="browse-download-docs"
+                      type="checkbox"
+                      checked={downloadDocsOption}
+                      onChange={(e) => setDownloadDocsOption(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 size-3.5"
+                    />
+                    <label htmlFor="browse-download-docs" className="text-xs text-slate-700 font-medium cursor-pointer">
+                      Automatically download and store official tender documents (NIT PDF) for AI Clause Analysis
+                    </label>
+                  </div>
+
+                  {/* Error / Feedback Message */}
+                  {cpppBrowseError && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 flex items-start gap-2">
+                      <AlertTriangleIcon className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="font-bold block">Notice:</strong>
+                        <span>{cpppBrowseError}</span>
+                        <span className="block mt-1 text-[11px] text-amber-800">
+                          If the portal requires CAPTCHA verification, switch to the <strong>&quot;Import by URL or Tender ID&quot;</strong> tab or use <strong>&quot;Manual PDF Upload&quot;</strong>.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Browse Results Table / Cards */}
+                  {cpppBrowseLoading ? (
+                    <div className="py-12 text-center text-slate-400 space-y-2">
+                      <RefreshCwIcon className="size-6 animate-spin mx-auto text-blue-600" />
+                      <p className="text-xs font-semibold text-slate-600">Connecting to CPPP and fetching public listings...</p>
+                    </div>
+                  ) : cpppBrowseResults.length > 0 ? (
+                    <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200 bg-white">
+                      {cpppBrowseResults.map((item, idx) => (
+                        <div key={item.source_tender_id || idx} className="p-3.5 hover:bg-slate-50 transition-colors flex items-start justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                {item.source_tender_id}
+                              </span>
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
+                                {item.tender_category || "Goods"}
+                              </span>
+                              {item.closing_date && (
+                                <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+                                  <ClockIcon className="size-3 text-slate-400" />
+                                  Closes: {formatDeadlineDisplay(item.closing_date)}
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-xs font-bold text-slate-900 leading-snug">
+                              {item.title}
+                            </h4>
+                            <p className="text-[11px] text-slate-600">
+                              {item.organization} {item.department ? `• ${item.department}` : ""}
+                            </p>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              type="button"
+                              onClick={() => handleImportFromListing(item)}
+                              disabled={importLoading}
+                              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs"
+                            >
+                              Import Tender
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : !cpppBrowseError ? (
+                    <div className="py-8 text-center text-slate-500 rounded-xl border border-dashed border-slate-200 bg-slate-50/50">
+                      <SearchIcon className="size-6 text-slate-400 mx-auto mb-1.5" />
+                      <p className="font-bold text-slate-700">No tenders loaded</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5">Click &quot;Search Portal&quot; to fetch active listings from CPPP.</p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              {importType === "CPPP" && (
+                <form onSubmit={handleImportTender} className="space-y-4">
+                  <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3.5 flex items-start gap-2.5">
+                    <InfoIcon className="size-4 text-blue-700 shrink-0 mt-0.5" />
+                    <div className="text-[11px] text-blue-900 leading-relaxed">
+                      <strong className="font-bold block">Direct CPPP Tender ID or URL Ingestion:</strong>
+                      Enter an official Tender ID (e.g. <code className="font-mono font-bold">2026_IITG_925833_1</code>) or full CPPP URL. The backend enforces strict SSRF protections, IP address allowlists, non-destructive deduplication, and corrigenda tracking.
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="font-bold text-slate-800 block text-xs">
-                      CPPP Tender Public URL <span className="text-red-500">*</span>
+                      CPPP Tender ID or Official URL <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       required
-                      placeholder="https://eprocure.gov.in/eprocure/app?component=... or https://www.cpcl.co.in/tenders/..."
+                      placeholder="e.g. 2026_IITG_925833_1 or https://eprocure.gov.in/eprocure/app?page=FrontEndTenderDetails&service=page&tenderId=..."
                       value={cpppUrl}
                       onChange={(e) => setCpppUrl(e.target.value)}
                       className="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-medium text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-100"
                     />
                     <span className="text-[10px] text-slate-500 block">
-                      Example: <code className="font-mono text-blue-700">https://eprocure.gov.in/eprocure/app?tenderId=CPCL_2026_9021</code>
+                      Accepted formats: Official CPPP Tender ID (e.g. <code className="font-mono text-blue-700">2026_IITG_925833_1</code>) or authorized procurement URLs (<code className="font-mono text-slate-600">eprocure.gov.in</code>, <code className="font-mono text-slate-600">cppp.gov.in</code>, <code className="font-mono text-slate-600">cpcl.co.in</code>).
                     </span>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-3.5">
+
+                  {/* Document Download Checkbox */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      id="direct-download-docs"
+                      type="checkbox"
+                      checked={downloadDocsOption}
+                      onChange={(e) => setDownloadDocsOption(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 size-3.5"
+                    />
+                    <label htmlFor="direct-download-docs" className="text-xs text-slate-700 font-medium cursor-pointer">
+                      Download official tender PDF documents and compute cryptographic SHA-256 hash for AI analysis
+                    </label>
+                  </div>
+
+                  {/* Error Banner */}
+                  {importError && (
+                    <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
+                      <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+                      <span>{importError}</span>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsImportModalOpen(false);
+                        setImportError(null);
+                      }}
+                      disabled={importLoading}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={importLoading}
+                      loading={importLoading}
+                      className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[160px]"
+                    >
+                      {importLoading ? "Ingesting Tender..." : "Import Tender"}
+                    </Button>
+                  </div>
+                </form>
+              )}
+
+              {importType === "MANUAL" && (
+                <form onSubmit={handleImportTender} className="space-y-4">
                   <div className="rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 flex items-start gap-2.5">
                     <InfoIcon className="size-4 text-amber-700 shrink-0 mt-0.5" />
                     <div className="text-[11px] text-amber-900 leading-relaxed">
                       <strong className="font-bold block">Manual PDF Tender Document Upload:</strong>
-                      Upload official PDF tender documents. The system calculates cryptographic SHA-256 file hashes, checks for duplicate submissions, and structures normalized procurement criteria.
+                      Upload official PDF tender documents directly. The system computes cryptographic SHA-256 file hashes, detects duplicates, and ingests the document into the durable document store for AI Tender Analyze.
                     </div>
                   </div>
 
@@ -2565,43 +2900,43 @@ export default function TendersPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+
+                  {/* Error Banner */}
+                  {importError && (
+                    <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
+                      <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+                      <span>{importError}</span>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsImportModalOpen(false);
+                        setImportError(null);
+                      }}
+                      disabled={importLoading}
+                    >
+                      Cancel
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={importLoading}
+                      loading={importLoading}
+                      className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[160px]"
+                    >
+                      {importLoading ? "Uploading & Ingesting..." : "Upload & Ingest"}
+                    </Button>
+                  </div>
+                </form>
               )}
-
-              {/* Error Banner */}
-              {importError && (
-                <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
-                  <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
-                  <span>{importError}</span>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsImportModalOpen(false);
-                    setImportError(null);
-                  }}
-                  disabled={importLoading}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={importLoading}
-                  loading={importLoading}
-                  className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[160px]"
-                >
-                  {importLoading ? "Processing Ingestion..." : "Import Tender"}
-                </Button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
