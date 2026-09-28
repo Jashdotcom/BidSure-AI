@@ -89,12 +89,7 @@ export function Navbar() {
     return "Automated Statutory Pre-Qualification & Verification System";
   };
 
-  const initials = (user?.name || "RK")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = "OF";
 
   return (
     <header className="sticky top-8 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-6 shadow-xs select-none">
@@ -167,12 +162,10 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:block text-right">
             <p className="text-xs font-bold text-slate-900 leading-tight">
-              {user?.name || "Rajesh Kumar"}
+              Officer
             </p>
             <p className="text-[10px] text-slate-500 font-medium">
-              {user?.role === "SENIOR_PROCUREMENT_OFFICER"
-                ? "Chief Procurement Officer (CPO)"
-                : "Procurement Officer"}
+              Procurement Officer
             </p>
           </div>
 
