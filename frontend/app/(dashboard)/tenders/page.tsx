@@ -710,14 +710,14 @@ export default function TendersPage() {
         });
       } else {
         // Manual Upload
-        if (!manualFile) {
-          setImportError("Please select a PDF tender document to upload.");
+        if (manualFiles.length === 0) {
+          setImportError("Please select at least one PDF tender document to upload.");
           setImportLoading(false);
           return;
         }
 
         const formData = new FormData();
-        formData.append("file", manualFile);
+        manualFiles.forEach((file) => formData.append("files", file));
 
         if (isManualReviewFallback) {
           if (!reviewTenderNumber.trim() || !reviewTitle.trim() || !reviewOrganization.trim()) {
@@ -733,7 +733,7 @@ export default function TendersPage() {
             formData.append("estimated_value", reviewEstimatedValue);
           }
         } else {
-          formData.append("title", manualFile.name.replace(".pdf", "").replace(/_/g, " "));
+          formData.append("title", manualFiles[0].name.replace(".pdf", "").replace(/_/g, " "));
         }
 
         try {
@@ -746,19 +746,19 @@ export default function TendersPage() {
           );
 
           setIsImportModalOpen(false);
-          setManualFile(null);
+          setManualFiles([]);
           setIsManualReviewFallback(false);
           await fetchTenders();
           setPageToast({
             type: "SUCCESS",
-            message: res.message || "Manual tender document imported successfully.",
+            message: res.message || "Manual tender document(s) imported successfully.",
           });
         } catch (err: any) {
           const detail = err?.detail;
           if (detail && typeof detail === "object" && detail.needs_manual_review) {
             setIsManualReviewFallback(true);
             setReviewTenderNumber(detail.suggested_tender_number || "2026/MBPT/925738");
-            setReviewTitle(detail.suggested_title || manualFile.name.replace(".pdf", "").replace(/_/g, " "));
+            setReviewTitle(detail.suggested_title || manualFiles[0].name.replace(".pdf", "").replace(/_/g, " "));
             setReviewOrganization(detail.suggested_organization || "Mumbai Port Authority");
             setImportError(detail.message || "Automatic extraction incomplete. Please review and complete the metadata fields below.");
           } else {
@@ -2923,23 +2923,34 @@ export default function TendersPage() {
                               id="tender-file-upload"
                               type="file"
                               accept=".pdf,application/pdf"
+                              multiple
                               className="sr-only"
                               onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  setManualFile(e.target.files[0]);
+                                if (e.target.files && e.target.files.length > 0) {
+                                  setManualFiles(Array.from(e.target.files));
                                   setImportError(null);
                                 }
                               }}
                             />
                           </label>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            {manualFile ? manualFile.name : "or drag and drop PDF document here (Max 50MB)"}
+                            {manualFiles.length > 0 ? `${manualFiles.length} file(s) selected` : "or drag and drop PDF documents here (Max 50MB each)"}
                           </p>
                         </div>
-                        {manualFile && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold text-blue-800">
-                            ✓ {manualFile.name} ({(manualFile.size / 1024).toFixed(1)} KB)
-                          </span>
+                        {manualFiles.length > 0 && (
+                          <div className="mt-4 w-full space-y-1 max-h-40 overflow-y-auto">
+                            {manualFiles.map((f, idx) => (
+                              <div key={idx} className="flex items-center justify-between gap-2 rounded-lg bg-blue-50 px-2 py-1 text-[10px]">
+                                <span className="font-bold text-blue-800 truncate">{f.name}</span>
+                                <button type="button" onClick={() => setManualFiles(prev => prev.filter((_, i) => i !== idx))} className="text-red-500 hover:text-red-700">
+                                  <XIcon className="size-3" />
+                                </button>
+                              </div>
+                            ))}
+                            <button type="button" onClick={() => setManualFiles([])} className="text-[10px] font-bold text-slate-500 hover:text-slate-700 w-full text-center mt-2">
+                              Clear All
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -2980,7 +2991,46 @@ export default function TendersPage() {
                   </div>
                 </form>
               )}
+<<<<<<< HEAD
             </div>
+=======
+
+              {/* Error Banner */}
+              {importError && (
+                <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
+                  <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsImportModalOpen(false);
+                    setImportError(null);
+                    setManualFiles([]);
+                  }}
+                  disabled={importLoading}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={importLoading || manualFiles.length === 0}
+                  loading={importLoading}
+                  className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[160px]"
+                >
+                  {importLoading ? "Processing Ingestion..." : `Import ${manualFiles.length} Tender(s)`}
+                </Button>
+              </div>
+            </form>
+>>>>>>> 9392f13 (feat(tenders): support multi-document tender uploads)
           </div>
         </div>
       )}
