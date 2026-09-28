@@ -129,8 +129,13 @@ export default function TendersPage() {
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [cpppUrl, setCpppUrl] = useState("");
+<<<<<<< HEAD
   const [downloadDocsOption, setDownloadDocsOption] = useState(true);
   const [manualFile, setManualFile] = useState<File | null>(null);
+=======
+  const [manualFiles, setManualFiles] = useState<File[]>([]);
+  const [isManualDragActive, setIsManualDragActive] = useState(false);
+>>>>>>> 95edd31 (feat(tenders): support multi-document tender uploads)
 
   // CPPP Browse State
   const [cpppBrowseQuery, setCpppBrowseQuery] = useState("");

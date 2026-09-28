@@ -273,7 +273,8 @@ async def import_cppp_tender(
 
 @router.post("/import-manual", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def import_manual_tender(
-    file: UploadFile = File(...),
+    files: Optional[List[UploadFile]] = File(None),
+    file: Optional[UploadFile] = File(None),
     title: Optional[str] = Form(None),
     tender_number: Optional[str] = Form(None),
     organization: Optional[str] = Form(None),
@@ -282,28 +283,40 @@ async def import_manual_tender(
     current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
 ):
     """
-    Ingests a tender via manual PDF document upload with cryptographic SHA-256 hashing
-    and duplicate detection. Supports manual metadata fallback review.
+    Ingests a tender via manual PDF document upload (single or multi-document package) with cryptographic SHA-256 hashing
+    and duplicate detection. Supports manual metadata fallback review and document attachment to existing tenders.
     RESTRICTED: Officer role only.
     """
-    raw_filename = file.filename or "uploaded_tender.pdf"
-    if not raw_filename.lower().endswith(".pdf"):
+    upload_files = files or ([file] if file else [])
+    if not upload_files:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF (.pdf) documents are supported for manual tender import."
+            detail="No PDF document(s) provided for manual tender import."
         )
 
-    file_bytes = await file.read()
-    if not file_bytes:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded PDF file is empty (0 bytes)."
-        )
+    files_data = []
+    for f in upload_files:
+        raw_filename = f.filename or "uploaded_tender.pdf"
+        if not raw_filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Only PDF (.pdf) documents are supported for manual tender import (invalid file: {raw_filename})."
+            )
+        f_bytes = await f.read()
+        if not f_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Uploaded PDF file is empty (0 bytes): {raw_filename}."
+            )
+        files_data.append({
+            "filename": raw_filename,
+            "file_bytes": f_bytes,
+            "hash": hashlib.sha256(f_bytes).hexdigest()
+        })
 
     adapter = ManualTenderAdapter()
     metadata = {
-        "filename": raw_filename,
-        "file_bytes": file_bytes,
+        "files_data": files_data,
         "title": title,
         "tender_number": tender_number,
         "organization": organization,
@@ -312,75 +325,113 @@ async def import_manual_tender(
     }
 
     try:
-        tender_record = await adapter.fetch_tender(raw_filename, metadata=metadata)
+        tender_record = await adapter.fetch_tender(files_data[0]["filename"], metadata=metadata)
     except ValueError as e:
         err_msg = str(e)
         if "TENDER_METADATA_EXTRACTION_FAILED" in err_msg:
+            primary_name = files_data[0]["filename"]
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={
                     "error_code": "TENDER_METADATA_EXTRACTION_FAILED",
                     "message": err_msg,
                     "needs_manual_review": True,
-                    "filename": raw_filename,
-                    "suggested_tender_number": f"2026/MBPT/{int(time.time()) % 100000}" if "MBPT" in raw_filename.upper() else f"2026/PROC/{int(time.time()) % 10000}",
-                    "suggested_title": raw_filename.replace(".pdf", "").replace(".PDF", "").replace("_", " ").strip(),
-                    "suggested_organization": "Mumbai Port Authority" if "MBPT" in raw_filename.upper() else "Procuring Entity"
+                    "filename": primary_name,
+                    "suggested_tender_number": f"2026/MBPT/{int(time.time()) % 100000}" if any("MBPT" in f["filename"].upper() for f in files_data) else f"2026/PROC/{int(time.time()) % 10000}",
+                    "suggested_title": primary_name.replace(".pdf", "").replace(".PDF", "").replace("_", " ").strip(),
+                    "suggested_organization": "Mumbai Port Authority" if any("MBPT" in f["filename"].upper() for f in files_data) else "Procuring Entity"
                 }
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=err_msg
         )
-    doc_hash = tender_record.get("document_hash_sha256")
 
-    # Duplicate check
+    target_tender_number = tender_record.get("tender_number")
+
+    # Check if tender already exists -> safely attach documents or prevent duplicate
     existing_tenders = get_all_tenders()
-    for t in existing_tenders:
-        if t.get("document_hash_sha256") and t.get("document_hash_sha256") == doc_hash:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Duplicate Tender Detected: Document SHA-256 hash '{doc_hash[:16]}...' "
-                       f"already exists in tender registry ({t.get('tender_number') or t.get('id')})."
-            )
+    existing_tender = next((t for t in existing_tenders if t.get("tender_number") == target_tender_number or t.get("id") == target_tender_number), None)
 
+    saved_documents = []
+    if existing_tender:
+        target_tender_id = existing_tender.get("tender_number") or existing_tender.get("id")
+        for f_item in files_data:
+            try:
+                doc_record = save_document(
+                    file_bytes=f_item["file_bytes"],
+                    filename=f_item["filename"],
+                    tender_id=target_tender_id,
+                    uploaded_by=current_user.get("email", "officer@cpcl.gov.in"),
+                    source="MANUAL_IMPORT_ATTACHMENT",
+                    metadata={
+                        "title": existing_tender.get("title"),
+                        "organization": existing_tender.get("organization"),
+                        "estimated_value": existing_tender.get("estimated_value"),
+                    }
+                )
+                saved_documents.append(doc_record)
+            except Exception:
+                pass
+
+        if "documents" not in existing_tender:
+            existing_tender["documents"] = []
+        existing_tender["documents"].extend(saved_documents)
+
+        add_audit_log({
+            "user_email": current_user.get("email", "officer@cpcl.gov.in"),
+            "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
+            "action": "TENDER_DOCUMENTS_ATTACHED",
+            "entity_type": "TENDER",
+            "entity_id": target_tender_id,
+            "details": f"Attached {len(files_data)} document(s) to existing tender '{target_tender_id}'.",
+            "status": "SUCCESS"
+        })
+
+        return {
+            "message": f"Successfully attached {len(files_data)} document(s) to existing tender {target_tender_id}.",
+            "tender": existing_tender
+        }
+
+    # Otherwise create new tender record
     created = add_tender(tender_record)
-
-    # Persist document to durable store and associate with tender
     target_tender_id = created.get("tender_number") or created.get("id")
-    try:
-        doc_record = save_document(
-            file_bytes=file_bytes,
-            filename=raw_filename,
-            tender_id=target_tender_id,
-            uploaded_by=current_user.get("email", "officer@cpcl.gov.in"),
-            source="MANUAL_IMPORT",
-            metadata={
-                "title": created.get("title"),
-                "organization": created.get("organization"),
-                "estimated_value": created.get("estimated_value"),
-            }
-        )
-        created["documents"] = [doc_record]
-        created["file_name"] = doc_record["filename"]
-    except Exception:
-        pass
+
+    for f_item in files_data:
+        try:
+            doc_record = save_document(
+                file_bytes=f_item["file_bytes"],
+                filename=f_item["filename"],
+                tender_id=target_tender_id,
+                uploaded_by=current_user.get("email", "officer@cpcl.gov.in"),
+                source="MANUAL_IMPORT",
+                metadata={
+                    "title": created.get("title"),
+                    "organization": created.get("organization"),
+                    "estimated_value": created.get("estimated_value"),
+                }
+            )
+            saved_documents.append(doc_record)
+        except Exception:
+            pass
+
+    created["documents"] = saved_documents
+    created["file_name"] = saved_documents[0]["filename"] if saved_documents else files_data[0]["filename"]
 
     add_audit_log({
         "user_email": current_user.get("email", "officer@cpcl.gov.in"),
         "user_role": current_user.get("role", "PROCUREMENT_OFFICER"),
         "action": "TENDER_IMPORTED",
         "entity_type": "TENDER",
-        "entity_id": created.get("tender_number") or created.get("id"),
+        "entity_id": target_tender_id,
         "details": (
-            f"Manual tender '{created['title']}' ({created.get('tender_number')}) imported via PDF upload "
-            f"('{raw_filename}', SHA-256: {doc_hash[:16]}...). Zero automatic AI execution."
+            f"Manual tender '{created['title']}' ({target_tender_id}) imported with {len(saved_documents)} document(s) via secure officer upload portal."
         ),
         "status": "SUCCESS"
     })
 
     return {
-        "message": f"Tender {created.get('tender_number')} imported successfully via document upload.",
+        "message": f"Tender {target_tender_id} imported successfully with {len(saved_documents)} document(s).",
         "tender": created
     }
 
