@@ -87,17 +87,6 @@ export default function AITenderAnalyzePage() {
 
   const [demoMode, setDemoMode] = useState<boolean>(false);
   const [isLoadingTenders, setIsLoadingTenders] = useState<boolean>(true);
-  const [aiConfig, setAiConfig] = useState<{
-    ai_provider: string;
-    ai_model: string | null;
-    ai_status: string;
-    ai_message: string;
-  }>({
-    ai_provider: "ollama",
-    ai_model: "gemma3:4b",
-    ai_status: "checking",
-    ai_message: "Checking local AI provider...",
-  });
 
   // Fetch system config and tenders list on mount
   useEffect(() => {
@@ -119,15 +108,6 @@ export default function AITenderAnalyzePage() {
             ? configRes.demo_mode
             : false;
         setDemoMode(isDemo);
-
-        if (configRes && configRes.ai_provider) {
-          setAiConfig({
-            ai_provider: configRes.ai_provider,
-            ai_model: configRes.ai_model || null,
-            ai_status: configRes.ai_status || "connected",
-            ai_message: configRes.ai_message || "",
-          });
-        }
 
         if (Array.isArray(tendersRes)) {
           setTendersList(tendersRes);
@@ -522,51 +502,6 @@ export default function AITenderAnalyzePage() {
             <UploadIcon className="w-4 h-4" /> Upload & Presets
           </button>
         </div>
-      </div>
-
-      {/* AI Provider & LLM Engine Connectivity Status Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-slate-300">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-slate-400">AI Provider:</span>
-          <span className="px-2.5 py-0.5 rounded-md bg-slate-800 font-mono text-amber-300 uppercase font-bold tracking-wider">
-            {aiConfig.ai_provider} {aiConfig.ai_model ? `(${aiConfig.ai_model})` : ""}
-          </span>
-          <span className="flex items-center gap-1.5 font-medium">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${
-                aiConfig.ai_status === "connected"
-                  ? "bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400"
-                  : aiConfig.ai_status === "mock_mode"
-                  ? "bg-cyan-400"
-                  : "bg-rose-500"
-              }`}
-            />
-            <span
-              className={
-                aiConfig.ai_status === "connected"
-                  ? "text-emerald-400 font-semibold"
-                  : aiConfig.ai_status === "mock_mode"
-                  ? "text-cyan-400 font-semibold"
-                  : aiConfig.ai_status === "model_unavailable"
-                  ? "text-amber-400 font-semibold"
-                  : "text-rose-400 font-semibold"
-              }
-            >
-              {aiConfig.ai_status === "connected"
-                ? "Connected & Ready"
-                : aiConfig.ai_status === "mock_mode"
-                ? "Deterministic Provider Active"
-                : aiConfig.ai_status === "model_unavailable"
-                ? `Model '${aiConfig.ai_model}' Unavailable`
-                : "Local AI Unavailable"}
-            </span>
-          </span>
-        </div>
-        {aiConfig.ai_status !== "connected" && aiConfig.ai_provider === "ollama" && (
-          <span className="text-rose-300/90 text-xs font-mono">
-            {aiConfig.ai_message || "Ensure Ollama is running at http://localhost:11434 with your configured model."}
-          </span>
-        )}
       </div>
 
       {successMsg && (
