@@ -66,7 +66,8 @@ export default function BiddersPage() {
   const initialStatus = searchParams.get("status") || "ALL";
   const initialCompliance = searchParams.get("compliance") || "ALL";
   const initialRisk = searchParams.get("risk") || "ALL";
-  const initialTenderId = searchParams.get("tender_id") || "";
+  // Always open in a genuine empty selection state.
+  const initialTenderId = "";
 
   // Tenders state
   const [tenders, setTenders] = useState<Tender[]>([]);
@@ -74,6 +75,11 @@ export default function BiddersPage() {
 
   // Active Selection & Filter State
   const [selectedTenderId, setSelectedTenderId] = useState<string>(initialTenderId);
+  const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
+  const [submittedBids, setSubmittedBids] = useState<Bidder[]>([]);
+  const [loadingBids, setLoadingBids] = useState(false);
+  const [loadingEvaluation, setLoadingEvaluation] = useState(false);
+  const selectionRequest = React.useRef(0);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [activeStatus, setActiveStatus] = useState(initialStatus);
   const [activeCompliance, setActiveCompliance] = useState(initialCompliance);
@@ -83,8 +89,6 @@ export default function BiddersPage() {
   // Comparison & Ranking Data State
   const [comparisonData, setComparisonData] = useState<TenderComparisonData | null>(null);
   const [rankingData, setRankingData] = useState<TenderRankingResponse | null>(null);
-  const [loadingComparison, setLoadingComparison] = useState(false);
-  const [loadingRanking, setLoadingRanking] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Evidence Modal State
@@ -141,12 +145,6 @@ export default function BiddersPage() {
         const res = await apiRequest<Tender[]>("/tenders");
         if (res && Array.isArray(res)) {
           setTenders(res);
-          // If no initial tender from URL, default to first tender with bids if available, or first tender
-          if (!initialTenderId && res.length > 0) {
-            const firstWithBids = res.find((t) => (t.bids_count || 0) > 0) || res[0];
-            const chosenId = firstWithBids.id || firstWithBids.tender_number || "";
-            setSelectedTenderId(chosenId);
-          }
         }
       } catch (err) {
         console.error("Failed to load tenders", err);
@@ -157,55 +155,78 @@ export default function BiddersPage() {
     loadTenders();
   }, [initialTenderId]);
 
-  // Fetch tender comparison & ranking data when selectedTenderId changes
-  const fetchTenderData = useCallback(async (tenderId: string) => {
+  // Load submission identifiers first. Evaluation data is deferred until bid selection.
+  const fetchTenderBids = useCallback(async (tenderId: string) => {
+    const requestId = ++selectionRequest.current;
     if (!tenderId) {
+      setLoadingBids(false);
+      setSubmittedBids([]);
       setComparisonData(null);
       setRankingData(null);
       setErrorMsg(null);
       return;
     }
-
-    setLoadingComparison(true);
-    setLoadingRanking(true);
+    setLoadingBids(true);
     setErrorMsg(null);
+    setSubmittedBids([]);
     setComparisonData(null);
     setRankingData(null);
-
     try {
-      const encodedId = encodeURIComponent(tenderId);
-      const [compRes, rankRes] = await Promise.all([
-        apiRequest<TenderComparisonData>(`/bidders/comparison?tender_id=${encodedId}`),
-        apiRequest<TenderRankingResponse>(`/bidders/ranking?tender_id=${encodedId}`),
-      ]);
-
-      if (compRes && compRes.tender) {
-        setComparisonData(compRes);
-      } else {
-        setComparisonData(null);
-      }
-
-      if (rankRes) {
-        setRankingData(rankRes);
-      } else {
-        setRankingData(null);
-      }
+      const bids = await apiRequest<Bidder[]>(`/bidders?tender_id=${encodeURIComponent(tenderId)}`);
+      if (requestId === selectionRequest.current) setSubmittedBids(Array.isArray(bids) ? bids : []);
     } catch (err: any) {
-      console.error("Failed to load tender data", err);
-      setErrorMsg(err?.message || "Unable to load bids for this tender. Please try again.");
-      setComparisonData(null);
-      setRankingData(null);
+      if (requestId === selectionRequest.current) {
+        console.error("Failed to load tender bids", err);
+        setErrorMsg(err?.message || "Unable to load bids for this tender. Please try again.");
+      }
     } finally {
-      setLoadingComparison(false);
-      setLoadingRanking(false);
+      if (requestId === selectionRequest.current) setLoadingBids(false);
     }
   }, []);
 
   useEffect(() => {
-    if (selectedTenderId) {
-      fetchTenderData(selectedTenderId);
+    setSelectedBidId(null);
+    setComparisonData(null);
+    setRankingData(null);
+    fetchTenderBids(selectedTenderId);
+  }, [selectedTenderId, fetchTenderBids]);
+
+  const fetchTenderData = useCallback(async (tenderId: string, bidId: string) => {
+    const requestId = ++selectionRequest.current;
+    setLoadingEvaluation(true);
+    setErrorMsg(null);
+    setComparisonData(null);
+    setRankingData(null);
+    try {
+      const [compRes, rankRes] = await Promise.all([
+        apiRequest<TenderComparisonData>(`/bidders/comparison?tender_id=${encodeURIComponent(tenderId)}`),
+        apiRequest<TenderRankingResponse>(`/bidders/ranking?tender_id=${encodeURIComponent(tenderId)}`),
+      ]);
+      if (requestId !== selectionRequest.current) return;
+      const bid = submittedBids.find((item) => item.id === bidId || item.bid_submission_id === bidId);
+      const tender = tenders.find((item) => [item.id, item.tender_number, item.ref, item.tender_id].some((id) => id && String(id) === tenderId));
+      const validTenderIds = new Set([tenderId, tender?.id, tender?.tender_number, tender?.ref, tender?.tender_id].filter(Boolean).map(String));
+      if (!bid || !validTenderIds.has(String(bid.tender_id)) && !validTenderIds.has(String(bid.tender_number))) {
+        throw new Error("Selected bid does not belong to this tender.");
+      }
+      if (!compRes?.bidders?.some((item) => item.id === bid.id || item.bid_submission_id === bid.bid_submission_id)) {
+        throw new Error("The selected bid could not be verified for this tender.");
+      }
+      setComparisonData(compRes);
+      setRankingData(rankRes || null);
+    } catch (err: any) {
+      if (requestId === selectionRequest.current) {
+        console.error("Failed to load selected bid evaluation", err);
+        setErrorMsg(err?.message || "Unable to load this bid evaluation. Please try again.");
+      }
+    } finally {
+      if (requestId === selectionRequest.current) setLoadingEvaluation(false);
     }
-  }, [selectedTenderId, fetchTenderData]);
+  }, [submittedBids, tenders]);
+
+  useEffect(() => {
+    if (selectedTenderId && selectedBidId) fetchTenderData(selectedTenderId, selectedBidId);
+  }, [selectedTenderId, selectedBidId, fetchTenderData]);
 
   const activeTender = useMemo(() => {
     return (
@@ -293,6 +314,11 @@ export default function BiddersPage() {
 
   function handleTenderSelect(e: React.ChangeEvent<HTMLSelectElement>) {
     const val = e.target.value;
+    selectionRequest.current += 1;
+    setSelectedBidId(null);
+    setSubmittedBids([]);
+    setComparisonData(null);
+    setRankingData(null);
     setSelectedTenderId(val);
     setSearchTerm("");
     setActiveStatus("ALL");
@@ -318,8 +344,6 @@ export default function BiddersPage() {
     setExplanationActiveTab("overview");
     setIsWhyThisRankOpen(true);
   }
-
-  const isLoading = loadingComparison || loadingRanking;
 
   return (
     <div className="space-y-6">
@@ -365,7 +389,7 @@ export default function BiddersPage() {
           <div className="space-y-1">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <BuildingIcon className="size-4 text-blue-600" />
-              Select Active Tender
+              Select Tender
             </label>
             <p className="text-xs text-slate-500 font-medium">
               Choose a published tender to inspect its submitted vendor proposals, ranking order, and dynamic criteria matrix.
@@ -379,8 +403,8 @@ export default function BiddersPage() {
               disabled={loadingTenders}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs transition-all"
             >
-              <option value="" disabled>
-                -- Select Active Tender --
+              <option value="">
+                -- Select Tender --
               </option>
               {tenders.map((t) => {
                 const tid = t.id || t.tender_number || "";
@@ -438,33 +462,20 @@ export default function BiddersPage() {
           <div className="flex size-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-4 shadow-xs">
             <ScaleIcon className="size-7" />
           </div>
-          <h3 className="text-base font-bold text-slate-900">Please Select an Active Tender</h3>
+          <h3 className="text-base font-bold text-slate-900">Please select a tender</h3>
           <p className="mt-1.5 max-w-md text-xs text-slate-500 leading-relaxed">
-            Select a tender from the dropdown above to load its participating bidders, deterministic rankings,
-            scorecards, and complete requirement-by-requirement comparison matrix.
+            Please select a tender to view its submitted bids and evaluations.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-xl">
-            {tenders.slice(0, 4).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setSelectedTenderId(t.id || t.tender_number || "")}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-all text-left"
-              >
-                <span className="font-mono text-[10px] block text-slate-400">{t.tender_number || t.id}</span>
-                {t.title.length > 32 ? t.title.slice(0, 32) + "..." : t.title}
-              </button>
-            ))}
-          </div>
         </div>
-      ) : isLoading ? (
+      ) : loadingBids ? (
         /* Loading State */
         <div className="flex flex-col items-center justify-center p-16 bg-white rounded-2xl border border-slate-200 text-slate-600 shadow-sm">
           <RefreshCwIcon className="size-8 animate-spin text-blue-600 mb-3" />
           <h3 className="text-sm font-bold text-slate-900">
-            Evaluating and ranking bids for {activeTender?.tender_number || selectedTenderId}...
+            Loading submitted bids for {activeTender?.tender_number || selectedTenderId}...
           </h3>
           <p className="text-xs text-slate-400 font-medium mt-1">
-            Calculating deterministic criteria scores, verification status, and mathematical ranking explanations.
+            Retrieving submissions for the selected tender.
           </p>
         </div>
       ) : errorMsg ? (
@@ -478,27 +489,23 @@ export default function BiddersPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchTenderData(selectedTenderId)}
+            onClick={() => fetchTenderBids(selectedTenderId)}
             className="mt-4 text-xs font-semibold border-red-300 text-red-800 hover:bg-red-100"
           >
             <RefreshCwIcon className="size-3.5 mr-1.5" /> Retry
           </Button>
         </div>
-      ) : !comparisonData || comparisonData.bidders.length === 0 ? (
+      ) : submittedBids.length === 0 ? (
         /* Empty State: No Submitted Bids */
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white p-14 text-center">
           <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 mb-4">
             <UsersIcon className="size-7" />
           </div>
           <h3 className="text-base font-bold text-slate-900">
-            {comparisonData?.metrics?.draft_bids_count && comparisonData.metrics.draft_bids_count > 0
-              ? "Bid submissions are still in progress"
-              : "No submitted bids for this tender yet"}
+            No bids have been submitted for this tender.
           </h3>
           <p className="mt-1.5 max-w-md text-xs text-slate-500 leading-relaxed">
-            {comparisonData?.metrics?.draft_bids_count && comparisonData.metrics.draft_bids_count > 0
-              ? `${comparisonData.metrics.draft_bids_count} draft vendor proposal(s) are currently being prepared. Once formally submitted, they will appear in this evaluation workspace.`
-              : "No vendor proposals have been submitted for this tender yet. Once vendors submit bids, the ranking and comparison matrix will populate automatically."}
+            Select another tender or check back after a bid has been submitted.
           </p>
           <div className="mt-5 flex items-center gap-3">
             <Link href="/tenders">
@@ -508,16 +515,34 @@ export default function BiddersPage() {
             </Link>
             <Button
               size="sm"
-              onClick={() => fetchTenderData(selectedTenderId)}
+              onClick={() => fetchTenderBids(selectedTenderId)}
               className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
             >
               <RefreshCwIcon className="size-3.5 mr-1.5" /> Refresh Submissions
             </Button>
           </div>
         </div>
-      ) : (
+      ) : !selectedBidId ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-bold text-slate-900">Submitted Bids</h2>
+          <p className="mt-1 mb-4 text-xs text-slate-500">Select a bid to view its full evaluation.</p>
+          <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="border-b text-slate-500"><tr><th className="p-3">Bid ID</th><th className="p-3">Company</th><th className="p-3">Submission Date</th><th className="p-3">Bid Status</th><th className="p-3"></th></tr></thead><tbody>
+            {submittedBids.map((bid) => <tr key={bid.id} className="border-b last:border-0"><td className="p-3 font-mono font-semibold">{bid.bid_submission_id || bid.id}</td><td className="p-3 font-semibold">{bid.company_name || bid.name}</td><td className="p-3">{bid.submitted_at ? new Date(bid.submitted_at).toLocaleString() : "—"}</td><td className="p-3">{bid.status || "SUBMITTED"}</td><td className="p-3 text-right"><Button size="sm" onClick={() => setSelectedBidId(bid.id || bid.bid_submission_id || "")}>View Evaluation</Button></td></tr>)}
+          </tbody></table></div>
+        </section>
+      ) : loadingEvaluation ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-600"><RefreshCwIcon className="mx-auto mb-3 size-7 animate-spin text-blue-600" />Loading selected bid evaluation...</div>
+      ) : errorMsg ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm text-red-800">{errorMsg}<div><Button className="mt-4" onClick={() => selectedBidId && fetchTenderData(selectedTenderId, selectedBidId)}>Retry</Button><Button variant="outline" className="ml-2 mt-4" onClick={() => setSelectedBidId(null)}>Back to bids</Button></div></div>
+      ) : comparisonData && rankingData ? (
         /* Populated Tender Workspace */
         <div className="space-y-6">
+          <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs">
+            <span className="font-semibold text-blue-900">Evaluation for bid {submittedBids.find((bid) => bid.id === selectedBidId || bid.bid_submission_id === selectedBidId)?.bid_submission_id || selectedBidId}</span>
+            <Button variant="outline" size="sm" onClick={() => { selectionRequest.current += 1; setSelectedBidId(null); setComparisonData(null); setRankingData(null); setErrorMsg(null); }}>
+              Back to submitted bids
+            </Button>
+          </div>
           {/* Comparison & Ranking Metrics Bar (High Contrast Solid Styling) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
@@ -1547,7 +1572,7 @@ export default function BiddersPage() {
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* "WHY THIS RANK?" GRANULAR EXPLAINABILITY MODAL */}
       {isWhyThisRankOpen && selectedRankedBidder && (
