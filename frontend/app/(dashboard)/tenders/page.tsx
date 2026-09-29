@@ -132,7 +132,6 @@ export default function TendersPage() {
   const [downloadDocsOption, setDownloadDocsOption] = useState(true);
   const [manualFile, setManualFile] = useState<File | null>(null);
 
-<<<<<<< HEAD
   // CPPP Browse State
   const [cpppBrowseQuery, setCpppBrowseQuery] = useState("");
   const [cpppBrowseResults, setCpppBrowseResults] = useState<any[]>([]);
@@ -141,7 +140,7 @@ export default function TendersPage() {
 
   // Syncing state for tender cards
   const [syncingTenderId, setSyncingTenderId] = useState<string | null>(null);
-=======
+
   // Metadata Review Fallback State
   const [isManualReviewFallback, setIsManualReviewFallback] = useState(false);
   const [reviewTenderNumber, setReviewTenderNumber] = useState("");
@@ -149,7 +148,6 @@ export default function TendersPage() {
   const [reviewOrganization, setReviewOrganization] = useState("");
   const [reviewCategory, setReviewCategory] = useState("Goods & Materials");
   const [reviewEstimatedValue, setReviewEstimatedValue] = useState("");
->>>>>>> f2f975c (fix(tenders): improve PDF metadata extraction and simplify upload modal)
 
   // New Requirement Form State
   const [newReq, setNewReq] = useState({

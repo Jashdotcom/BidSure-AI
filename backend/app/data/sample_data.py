@@ -4,6 +4,7 @@ Provides realistic user credentials and dynamic in-memory data store for procure
 """
 from typing import Dict, List, Any, Optional
 import os
+import json
 import copy
 import time
 import hashlib
@@ -705,168 +706,17 @@ def _load_or_generate_persisted_state():
             tender_record["document_count"] = 1
             tenders.append(tender_record)
 
-        synthetic_bidders_config = [
-            ("BID-DEMO-001", "Apex Secure Systems Pvt. Ltd.", "demo001@bidsure.local", "COMPLIANT"),
-            ("BID-DEMO-002", "Vertex Industrial Technologies Pvt. Ltd.", "demo002@bidsure.local", "MISSING_EXPERIENCE"),
-            ("BID-DEMO-003", "Nova Infra Solutions Pvt. Ltd.", "demo003@bidsure.local", "TURNOVER_LOW"),
-            ("BID-DEMO-004", "BluePeak Engineering Pvt. Ltd.", "demo004@bidsure.local", "COMPLIANT"),
-            ("BID-DEMO-005", "Orion Technical Systems Pvt. Ltd.", "demo005@bidsure.local", "MISSING_OEM"),
-            ("BID-DEMO-006", "Pragati Electrical Solutions Pvt. Ltd.", "demo006@bidsure.local", "GST_MISMATCH"),
-            ("BID-DEMO-007", "Quantum Facility Technologies Pvt. Ltd.", "demo007@bidsure.local", "COMPLIANT"),
-            ("BID-DEMO-008", "NexGen Scientific Instruments Pvt. Ltd.", "demo008@bidsure.local", "LOCAL_CONTENT_LOW"),
-            ("BID-DEMO-009", "Trident Civil Projects Pvt. Ltd.", "demo009@bidsure.local", "COMPLIANT"),
-            ("BID-DEMO-010", "Arya Infrastructure Systems Pvt. Ltd.", "demo010@bidsure.local", "BLACKLIST_ISSUE"),
-            ("BID-DEMO-011", "Crestline Automation Pvt. Ltd.", "demo011@bidsure.local", "MISSING_DOCS"),
-            ("BID-DEMO-012", "Bharat Integrated Engineering Pvt. Ltd.", "demo012@bidsure.local", "COMPLIANT")
-        ]
+        # Ensure we have at least 12 tenders
+        if len(tenders) < 12:
+            raise Exception(f"Only {len(tenders)} tenders found, expected 12.")
 
+        # Initialize other structures as empty or default
         bidders = []
         bidder_profiles = {}
         bidder_documents = []
+        bidder_bids = []
         audit_logs = []
         users_list = []
-
-        for idx, (b_id, b_name, b_email, profile_variant) in enumerate(synthetic_bidders_config, start=1):
-            user_record = {
-                "id": f"USR-DEMO-{idx:03d}",
-                "name": f"Director {b_name.split()[0]}",
-                "email": b_email,
-                "role": "BIDDER",
-                "bidder_id": b_id,
-                "company_name": b_name
-            }
-            users_list.append(user_record)
-
-            profile = {
-                "id": b_id,
-                "legal_business_name": b_name,
-                "entity_type": "Private Limited Company",
-                "registered_address": f"Plot {idx*12}, Industrial Area, Phase-{idx}, Sector {idx*5}",
-                "city": ["Mumbai", "Bengaluru", "Chennai", "Hyderabad", "Pune", "Delhi", "Kolkata", "Ahmedabad", "Gurugram", "Noida", "Nagpur", "Indore"][idx-1],
-                "state": ["Maharashtra", "Karnataka", "Tamil Nadu", "Telangana", "Maharashtra", "Delhi", "West Bengal", "Gujarat", "Haryana", "Uttar Pradesh", "Maharashtra", "Madhya Pradesh"][idx-1],
-                "pincode": f"4000{idx:02d}",
-                "contact_person": f"Managing Director {idx}",
-                "business_email": b_email,
-                "phone": f"+91 98200{idx:05d}",
-                "pan": f"DEMO{idx:04d}X",
-                "gstin": f"27DEMO{idx:04d}F1Z{idx}",
-                "udyam": f"UDYAM-MH-01-{idx:07d}",
-                "company_registration": f"U74999MH2020PTC{idx:06d}",
-                "epfo_number": f"MH/BAN/00{idx:04d}/000",
-                "esic_number": f"31000{idx:05d}0001099",
-                "profile_completion": 90 if profile_variant != "MISSING_DOCS" else 60,
-                "verification_status": "SYNTHETIC_DEMO",
-                "variant": profile_variant
-            }
-            bidder_profiles[b_id] = profile
-            bidders.append({
-                "id": b_id,
-                "name": b_name,
-                "email": b_email,
-                "status": "ACTIVE",
-                "rating": 4.5,
-                "is_synthetic_demo": True
-            })
-
-            doc_types = [
-                ("01_PAN.pdf", "PAN"),
-                ("02_GST.pdf", "GST"),
-                ("03_Company_Registration.pdf", "COMPANY_REGISTRATION"),
-                ("04_Udyam.pdf", "UDYAM_MSME"),
-                ("05_Experience_Certificate.pdf", "EXPERIENCE_CERTIFICATE"),
-                ("06_OEM_Authorization.pdf", "OEM_AUTHORIZATION"),
-                ("07_Local_Content_Declaration.pdf", "LOCAL_CONTENT_DECLARATION"),
-                ("08_EPFO_ESIC.pdf", "EPFO_ESIC"),
-                ("09_Blacklisting_Declaration.pdf", "BLACKLISTING_DECLARATION")
-            ]
-
-            for fname, dtype in doc_types:
-                doc_id = f"DOC-{b_id}-{dtype}"
-                bidder_documents.append({
-                    "id": doc_id,
-                    "bidder_id": b_id,
-                    "name": dtype.replace("_", " "),
-                    "category": "PROFILE_DOCUMENT",
-                    "document_type": dtype,
-                    "status": "SYNTHETIC_DEMO",
-                    "verification_status": "SYNTHETIC_DEMO",
-                    "file_name": fname,
-                    "file_size_kb": 180,
-                    "is_synthetic_demo": True,
-                    "demo_watermark": "DEMO DOCUMENT — SYNTHETIC DATA — NOT A REAL GOVERNMENT CERTIFICATE"
-                })
-
-            audit_logs.append({
-                "id": f"AUDIT-BIDDER-{b_id}",
-                "event_type": "BIDDER_REGISTERED_DEMO",
-                "description": f"Synthetic demo bidder registered: {b_name} ({b_id})",
-                "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "actor": b_email,
-                "data_source": "BIDSURE_DEMO_DATA",
-                "bidder_id": b_id
-            })
-
-        statuses = ["SUBMITTED", "UNDER_VERIFICATION", "PENDING_REVIEW", "COMPLIANT", "NON_COMPLIANT", "REQUIRES_REVIEW"]
-        bid_counter = 1
-        bidder_bids = []
-
-        for tender_idx, tender in enumerate(tenders):
-            tender_id = tender["id"]
-            bidders_for_tender = [
-                bidders[tender_idx % 12],
-                bidders[(tender_idx + 3) % 12],
-                bidders[(tender_idx + 7) % 12]
-            ]
-
-            for bidder in bidders_for_tender:
-                b_id = bidder["id"]
-                profile = bidder_profiles[b_id]
-                variant = profile["variant"]
-
-                if variant == "COMPLIANT":
-                    comp_status = "COMPLIANT"
-                    risk_level = "LOW"
-                    eval_status = "PASSED"
-                elif variant in ("MISSING_EXPERIENCE", "TURNOVER_LOW", "LOCAL_CONTENT_LOW"):
-                    comp_status = "NON_COMPLIANT"
-                    risk_level = "HIGH"
-                    eval_status = "FAILED"
-                else:
-                    comp_status = "REQUIRES_REVIEW"
-                    risk_level = "MEDIUM"
-                    eval_status = "REVIEW_REQUIRED"
-
-                bid_id = f"BID-SUB-{bid_counter:03d}"
-                bid_record = {
-                    "id": bid_id,
-                    "tender_id": tender_id,
-                    "tender_number": tender["tender_number"],
-                    "bidder_id": b_id,
-                    "bidder_name": bidder["name"],
-                    "submitted_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "status": statuses[(bid_counter - 1) % len(statuses)],
-                    "compliance_status": comp_status,
-                    "evaluation_result": eval_status,
-                    "risk_level": risk_level,
-                    "bid_source": "BIDSURE_DEMO",
-                    "is_synthetic_demo": True,
-                    "quoted_amount": tender["estimated_value"] * (0.92 + (bid_counter % 10) * 0.01),
-                    "documents": [f"DOC-{b_id}-PAN", f"DOC-{b_id}-GST", f"DOC-{b_id}-EXPERIENCE_CERTIFICATE"],
-                    "requirements_breakdown": []
-                }
-                bidder_bids.append(bid_record)
-                bid_counter += 1
-
-                audit_logs.append({
-                    "id": f"AUDIT-BIDSUB-{bid_id}",
-                    "event_type": "BID_SUBMITTED_DEMO",
-                    "description": f"Demo bid {bid_id} submitted by {bidder['name']} for tender {tender_id}",
-                    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    "actor": bidder["email"],
-                    "data_source": "BIDSURE_DEMO_DATA",
-                    "tender_id": tender_id,
-                    "bid_id": bid_id
-                })
 
         state_data = {
             "tenders": tenders,
@@ -883,6 +733,7 @@ def _load_or_generate_persisted_state():
             json.dump(state_data, f, indent=2)
         return state_data
     except Exception as e:
+        print(f"Error auto-generating demo dataset: {e}")
         pass
 
     return None
