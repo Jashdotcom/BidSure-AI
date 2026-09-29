@@ -1811,7 +1811,7 @@ def add_audit_log(entry: Dict[str, Any]) -> Dict[str, Any]:
             entry["id"] = f"LOG-{uuid.uuid4().hex}"
         if not entry.get("timestamp"):
             entry["timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            if not entry.get("integrity_hash"):
+        if not entry.get("integrity_hash"):
             h_src = f"{entry.get('id')}:{entry.get('action')}:{entry.get('entity_id')}:{entry.get('timestamp')}"
             entry["integrity_hash"] = hashlib.sha256(h_src.encode()).hexdigest()
         if not entry.get("actor") and entry.get("user_email"):
