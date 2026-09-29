@@ -244,6 +244,11 @@ export interface Tender {
   performance_security?: string;
   file_name?: string;
   file_size_kb?: number;
+  source?: string;
+  is_live_synced?: boolean;
+  last_synced_at?: string;
+  is_real_public_tender?: boolean;
+  documents?: Array<Record<string, unknown>>;
   bids_count?: number;
   bidders_count?: number;
   verified_count?: number;
@@ -500,4 +505,3 @@ export interface TenderRankingResponse {
   disclaimer: string;
   generated_at: string;
 }
-

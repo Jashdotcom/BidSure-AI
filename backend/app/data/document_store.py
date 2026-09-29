@@ -117,6 +117,22 @@ def save_document(
         doc_hash = hashlib.sha256(file_bytes).hexdigest()
         doc_id = f"DOC-{doc_hash[:12]}"
 
+        prior = _in_memory_index.get(doc_id)
+        if prior:
+            if prior.get("document_hash_sha256") != doc_hash:
+                raise ValueError("Document ID hash collision detected.")
+            prior_tender = str(prior.get("tender_id") or "")
+            requested_tender = str(tender_id or "")
+            aliases = set(prior.get("tender_ids") or ([prior_tender] if prior_tender else []))
+            if requested_tender and requested_tender not in aliases:
+                aliases.add(requested_tender)
+                prior["tender_ids"] = sorted(aliases)
+            if not prior_tender and requested_tender:
+                prior["tender_id"] = requested_tender
+            if requested_tender and requested_tender in aliases:
+                _save_index()
+            return dict(prior)
+
         # Physical file storage path
         storage_filename = f"{doc_id}_{clean_filename}"
         storage_path = os.path.join(DOCUMENTS_STORAGE_DIR, storage_filename)
@@ -130,6 +146,7 @@ def save_document(
         doc_record = {
             "document_id": doc_id,
             "tender_id": str(tender_id).strip() if tender_id else None,
+            "tender_ids": [str(tender_id).strip()] if tender_id else [],
             "filename": clean_filename,
             "storage_filename": storage_filename,
             "file_size_bytes": len(file_bytes),
@@ -146,6 +163,21 @@ def save_document(
         _in_memory_index[doc_id] = doc_record
         _save_index()
         return doc_record
+
+
+def delete_document(document_id: str) -> bool:
+    """Remove a newly staged document when its enclosing tender import fails."""
+    with _doc_lock:
+        if not _is_initialized:
+            _load_index()
+        record = _in_memory_index.pop(document_id, None)
+        if not record:
+            return False
+        storage_path = record.get("storage_path")
+        if storage_path and os.path.isfile(storage_path):
+            os.remove(storage_path)
+        _save_index()
+        return True
 
 
 def get_document_bytes(document_id_or_hash_or_filename: str) -> Optional[bytes]:
@@ -221,7 +253,7 @@ def get_document_bytes_by_tender(
         t_key = str(tender_id).strip()
         matched_records = []
         for rec in _in_memory_index.values():
-            if rec.get("tender_id") and str(rec.get("tender_id")).strip() == t_key:
+            if t_key in {str(x).strip() for x in (rec.get("tender_ids") or [rec.get("tender_id")]) if x}:
                 matched_records.append(rec)
 
         if not matched_records:
@@ -282,7 +314,7 @@ def list_documents_for_tender(tender_id: str) -> List[Dict[str, Any]]:
         t_key = str(tender_id).strip()
         results = [
             dict(r) for r in _in_memory_index.values()
-            if r.get("tender_id") and str(r.get("tender_id")).strip() == t_key
+            if t_key in {str(x).strip() for x in (r.get("tender_ids") or [r.get("tender_id")]) if x}
         ]
         return sorted(results, key=lambda x: str(x.get("uploaded_at") or ""), reverse=True)
 
@@ -309,7 +341,12 @@ def associate_document_with_tender(document_id: str, tender_id: str) -> Optional
                     break
 
         if doc_record:
-            doc_record["tender_id"] = str(tender_id).strip()
+            tender_key = str(tender_id).strip()
+            aliases = set(doc_record.get("tender_ids") or ([doc_record.get("tender_id")] if doc_record.get("tender_id") else []))
+            aliases.add(tender_key)
+            doc_record["tender_ids"] = sorted(aliases)
+            if not doc_record.get("tender_id"):
+                doc_record["tender_id"] = tender_key
             _save_index()
             return dict(doc_record)
         return None

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, Button } from "@/components/ui";
@@ -39,7 +39,7 @@ const EVALUATION_METHODS = [
   "Custom / Tender Defined",
 ];
 
-export default function CreateTenderPage() {
+function CreateTenderPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit") || searchParams.get("draft");
@@ -872,4 +872,8 @@ export default function CreateTenderPage() {
       )}
     </div>
   );
+}
+
+export default function CreateTenderPage() {
+  return <Suspense fallback={null}><CreateTenderPageContent /></Suspense>;
 }

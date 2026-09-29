@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Card,
@@ -45,17 +45,16 @@ import {
 } from "@/lib/types";
 
 export default function CompliancePage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-
-  const initialTenderParam = searchParams.get("tender_id") || searchParams.get("tender") || "";
-  const initialBidderParam = searchParams.get("bidder_id") || searchParams.get("bidder") || "";
+  const bidderRequest = React.useRef(0);
+  const evaluationRequest = React.useRef(0);
+  const reportRequest = React.useRef(0);
 
   // Data states
   const [tenders, setTenders] = useState<Tender[]>([]);
-  const [selectedTenderId, setSelectedTenderId] = useState<string>(initialTenderParam);
+  const [selectedTenderId, setSelectedTenderId] = useState<string>("");
   const [bidders, setBidders] = useState<Bidder[]>([]);
-  const [selectedBidderId, setSelectedBidderId] = useState<string>(initialBidderParam);
+  const [selectedBidderId, setSelectedBidderId] = useState<string>("");
   const [complianceDetail, setComplianceDetail] = useState<BidderComplianceDetailResponse | null>(null);
 
   // UI & Filter states
@@ -87,11 +86,6 @@ export default function CompliancePage() {
         const data = await apiRequest<Tender[]>("/tenders/");
         if (Array.isArray(data) && data.length > 0) {
           setTenders(data);
-          // If no tender selected yet or initial parameter doesn't match, pick first active/published
-          if (!selectedTenderId) {
-            const defaultTender = data.find((t) => t.status === "PUBLISHED" || t.status === "ACTIVE") || data[0];
-            setSelectedTenderId(defaultTender.id || defaultTender.tender_number);
-          }
         }
       } catch (err: any) {
         console.error("Failed to load tenders for compliance studio:", err);
@@ -104,35 +98,34 @@ export default function CompliancePage() {
 
   // 2. Load submitted bidders when selectedTenderId changes
   useEffect(() => {
-    if (!selectedTenderId) return;
+    const requestId = ++bidderRequest.current;
+    evaluationRequest.current += 1;
+    setBidders([]);
+    setSelectedBidderId("");
+    setComplianceDetail(null);
+    if (!selectedTenderId) {
+      setLoadingBidders(false);
+      return;
+    }
 
     async function loadBiddersForTender() {
       setLoadingBidders(true);
       setError(null);
       try {
         // Use dedicated compliance submitted bidders endpoint
-        const data = await apiRequest<Bidder[]>(`/compliance/tender/${selectedTenderId}/bidders`);
+        const data = await apiRequest<Bidder[]>(`/compliance/tender/${encodeURIComponent(selectedTenderId)}/bidders`);
+        if (requestId !== bidderRequest.current) return;
         const submittedBidders = Array.isArray(data) ? data : [];
         setBidders(submittedBidders);
-
-        // Auto-select first submitted bidder if none selected or if current selected bidder is not in this tender
-        if (submittedBidders.length > 0) {
-          const currentBidderExists = submittedBidders.some((b) => b.id === selectedBidderId);
-          if (!selectedBidderId || !currentBidderExists) {
-            setSelectedBidderId(submittedBidders[0].id);
-          }
-        } else {
-          setSelectedBidderId("");
-          setComplianceDetail(null);
-        }
       } catch (err: any) {
+        if (requestId !== bidderRequest.current) return;
         console.error("Failed to load bidders for tender:", err);
         setError("Unable to load submitted bidders for this tender.");
         setBidders([]);
         setSelectedBidderId("");
         setComplianceDetail(null);
       } finally {
-        setLoadingBidders(false);
+        if (requestId === bidderRequest.current) setLoadingBidders(false);
       }
     }
 
@@ -142,21 +135,25 @@ export default function CompliancePage() {
   // 3. Load full compliance evaluation when selectedTenderId and selectedBidderId are valid
   const loadComplianceEvaluation = useCallback(async (tenderId: string, bidderId: string) => {
     if (!tenderId || !bidderId) return;
-
+    const requestId = ++evaluationRequest.current;
     setLoadingEvaluation(true);
     setError(null);
+    setComplianceDetail(null);
     try {
       const res = await apiRequest<BidderComplianceDetailResponse>(
-        `/compliance/tender/${tenderId}/bidder/${bidderId}`
+        `/compliance/tender/${encodeURIComponent(tenderId)}/bidder/${encodeURIComponent(bidderId)}`
       );
+      if (requestId !== evaluationRequest.current) return;
+      if (res?.bidder?.id !== bidderId) throw new Error("The returned evaluation does not match the selected bidder.");
       if (res && res.summary) {
         setComplianceDetail(res);
       }
     } catch (err: any) {
+      if (requestId !== evaluationRequest.current) return;
       console.error("Failed to load compliance detail:", err);
       setError(err?.message || "Failed to load detailed compliance evaluation.");
     } finally {
-      setLoadingEvaluation(false);
+      if (requestId === evaluationRequest.current) setLoadingEvaluation(false);
     }
   }, []);
 
@@ -198,7 +195,11 @@ export default function CompliancePage() {
 
   // Handle PDF report downloads (Compliance & Audit)
   const handleDownloadReport = async (reportType: "compliance" | "audit") => {
-    if (!selectedTenderId || !selectedBidderId) return;
+    if (!selectedTenderId || !selectedBidderId || !complianceDetail) return;
+
+    const requestId = ++reportRequest.current;
+    const tenderId = selectedTenderId;
+    const bidderId = selectedBidderId;
 
     setDownloadingReport(reportType);
     setError(null);
@@ -208,8 +209,8 @@ export default function CompliancePage() {
       const token = getToken();
       const endpoint =
         reportType === "compliance"
-          ? `/compliance/tender/${selectedTenderId}/bidder/${selectedBidderId}/report/pdf`
-          : `/compliance/tender/${selectedTenderId}/bidder/${selectedBidderId}/audit/pdf`;
+          ? `/compliance/tender/${encodeURIComponent(tenderId)}/bidder/${encodeURIComponent(bidderId)}/report/pdf`
+          : `/compliance/tender/${encodeURIComponent(tenderId)}/bidder/${encodeURIComponent(bidderId)}/audit/pdf`;
 
       const API_BASE =
         process.env.NEXT_PUBLIC_API_URL ||
@@ -247,13 +248,14 @@ export default function CompliancePage() {
       }
 
       const blob = await res.blob();
+      if (requestId !== reportRequest.current) return;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
 
       // Resolve filename from Content-Disposition header if available
       const disposition = res.headers.get("Content-Disposition");
-      let filename = `BidSure_${reportType === "compliance" ? "Compliance" : "Audit"}_${selectedTenderId}_${selectedBidderId}.pdf`;
+      let filename = `BidSure_${reportType === "compliance" ? "Compliance" : "Audit"}_${tenderId}_${bidderId}.pdf`;
       if (disposition && disposition.includes("filename=")) {
         const match = disposition.match(/filename=["']?([^"';]+)["']?/);
         if (match && match[1]) {
@@ -270,10 +272,11 @@ export default function CompliancePage() {
       setDownloadSuccess(`Successfully generated and downloaded ${filename}`);
       setTimeout(() => setDownloadSuccess(null), 6000);
     } catch (err: any) {
+      if (requestId !== reportRequest.current) return;
       console.error(`Error downloading ${reportType} report:`, err);
       setError(err?.message || `Unable to download ${reportType} report. Please try again.`);
     } finally {
-      setDownloadingReport(null);
+      if (requestId === reportRequest.current) setDownloadingReport(null);
     }
   };
 
@@ -413,7 +416,7 @@ export default function CompliancePage() {
             </Link>
           )}
 
-          {selectedTenderId && selectedBidderId && (
+          {complianceDetail && selectedTenderId && selectedBidderId && (
             <>
               <Button
                 size="sm"
@@ -501,13 +504,21 @@ export default function CompliancePage() {
               value={selectedTenderId}
               onChange={(e) => {
                 const newTid = e.target.value;
+                bidderRequest.current += 1;
+                evaluationRequest.current += 1;
+                reportRequest.current += 1;
                 setSelectedTenderId(newTid);
+                setBidders([]);
                 setSelectedBidderId("");
                 setComplianceDetail(null);
+                setLoadingEvaluation(false);
+                setDownloadSuccess(null);
+                setError(null);
               }}
               disabled={loadingTenders}
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-900 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
+              <option value="">-- Select Tender --</option>
               {tenders.length === 0 ? (
                 <option value="">{loadingTenders ? "Loading tenders..." : "No tenders found"}</option>
               ) : (
@@ -526,7 +537,7 @@ export default function CompliancePage() {
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Estimated Budget</span>
                 <span className="font-extrabold text-slate-800">
                   {currentTender.estimated_value_display ||
-                    (currentTender.estimated_value ? `₹ ${(currentTender.estimated_value / 10000000).toFixed(2)} Cr` : "N/A")}
+                    (currentTender.estimated_value ? `₹ ${(Number(currentTender.estimated_value) / 10000000).toFixed(2)} Cr` : "N/A")}
                 </span>
               </div>
               <div>
@@ -549,7 +560,9 @@ export default function CompliancePage() {
       </Card>
 
       {/* STEP 2: Bidder Selection Switcher */}
-      <div className="space-y-3">
+      {!selectedTenderId ? (
+        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-8 text-center text-sm font-medium text-slate-600">Select a tender to view its submitted bidders and compliance reports.</div>
+      ) : <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <UsersIcon className="size-4 text-blue-600" />
@@ -562,6 +575,16 @@ export default function CompliancePage() {
           </span>
         </div>
 
+        {!loadingBidders && bidders.length > 0 && (
+          <div className="max-w-2xl">
+            <label htmlFor="bidder-select" className="mb-1.5 block text-xs font-bold text-slate-700">Select Bidder</label>
+            <select id="bidder-select" value={selectedBidderId} onChange={(e) => { evaluationRequest.current += 1; reportRequest.current += 1; setSelectedBidderId(e.target.value); setComplianceDetail(null); setLoadingEvaluation(false); setDownloadSuccess(null); setError(null); }} className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-xs font-semibold text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100">
+              <option value="">-- Select Bidder --</option>
+              {bidders.map((bid) => <option key={bid.id} value={bid.id}>{bid.name} ({bid.bid_submission_id || bid.id})</option>)}
+            </select>
+            {!selectedBidderId && <p className="mt-2 text-xs text-slate-500">Select a bidder to load its actual compliance evaluation.</p>}
+          </div>
+        )}
         {loadingBidders ? (
           <div className="flex items-center justify-center p-6 bg-white rounded-xl border border-slate-200">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
@@ -582,7 +605,7 @@ export default function CompliancePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-            {bidders.map((b) => {
+            {bidders.filter((b) => b.id === selectedBidderId).map((b) => {
               const isSelected = selectedBidderId === b.id;
               return (
                 <button
@@ -629,7 +652,7 @@ export default function CompliancePage() {
             })}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* STEP 3 & 4: Selected Bidder Summary Card & Interactive Metric Chips */}
       {complianceDetail && currentBidder && summary && (
@@ -689,9 +712,6 @@ export default function CompliancePage() {
                     )}
                   </p>
 
-                  <p className="text-xs text-blue-800 bg-blue-50/80 rounded-md px-3 py-1.5 border border-blue-200 mt-2 font-medium">
-                    <strong>Evaluation Formula:</strong> {summary.formula_explanation}
-                  </p>
                 </div>
               </div>
 

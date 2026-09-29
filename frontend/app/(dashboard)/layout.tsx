@@ -17,7 +17,7 @@ export default function DashboardLayout({
         <Sidebar />
         <div className="pl-64">
           <Navbar />
-          <main className="p-6 sm:p-8 max-w-[1440px] mx-auto">{children}</main>
+          <main className="p-6 pb-40 sm:p-8 sm:pb-40 max-w-[1440px] mx-auto">{children}</main>
         </div>
         <AIAssistant portal="officer" title="BidSure AI Assistant" />
       </div>

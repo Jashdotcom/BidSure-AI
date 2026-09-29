@@ -27,6 +27,7 @@ from app.data.sample_data import (
     extend_tender_deadline,
     close_tender,
     SAMPLE_TENDERS,
+    persist_operational_state,
     create_analysis_job,
     get_analysis_job,
     verify_analysis_requirement,
@@ -66,6 +67,9 @@ from app.data.document_store import (
     get_document_bytes_by_tender,
     get_document_meta,
     list_documents_for_tender,
+    list_all_documents,
+    delete_document,
+    validate_pdf_bytes,
     associate_document_with_tender,
 )
 from pydantic import BaseModel, Field
@@ -306,13 +310,25 @@ async def import_manual_tender(
         if not f_bytes:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Uploaded PDF file is empty (0 bytes): {raw_filename}."
-            )
+            detail=f"Uploaded PDF file is empty (0 bytes): {raw_filename}."
+        )
+        valid_pdf, validation_error = validate_pdf_bytes(f_bytes)
+        if not valid_pdf:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=validation_error or "Invalid PDF document.")
         files_data.append({
             "filename": raw_filename,
             "file_bytes": f_bytes,
             "hash": hashlib.sha256(f_bytes).hexdigest()
         })
+
+    prior_documents = list_all_documents()
+    prior_by_hash = {doc.get("document_hash_sha256"): doc for doc in prior_documents if doc.get("document_hash_sha256")}
+    if all(item["hash"] in prior_by_hash for item in files_data):
+        prior_tender_ids = {str(prior_by_hash[item["hash"]].get("tender_id") or "") for item in files_data}
+        if len(prior_tender_ids) == 1 and next(iter(prior_tender_ids)):
+            prior_tender = get_tender_by_id(next(iter(prior_tender_ids)))
+            if prior_tender:
+                return {"message": "These document(s) are already imported and linked to this tender.", "tender": prior_tender}
 
     adapter = ManualTenderAdapter()
     metadata = {
@@ -326,6 +342,8 @@ async def import_manual_tender(
 
     try:
         tender_record = await adapter.fetch_tender(files_data[0]["filename"], metadata=metadata)
+    except (AIProviderUnavailableError, AIModelUnavailableError, AIExtractionError) as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Tender AI extraction is unavailable: {str(e)}")
     except ValueError as e:
         err_msg = str(e)
         if "TENDER_METADATA_EXTRACTION_FAILED" in err_msg:
@@ -337,15 +355,17 @@ async def import_manual_tender(
                     "message": err_msg,
                     "needs_manual_review": True,
                     "filename": primary_name,
-                    "suggested_tender_number": f"2026/MBPT/{int(time.time()) % 100000}" if any("MBPT" in f["filename"].upper() for f in files_data) else f"2026/PROC/{int(time.time()) % 10000}",
-                    "suggested_title": primary_name.replace(".pdf", "").replace(".PDF", "").replace("_", " ").strip(),
-                    "suggested_organization": "Mumbai Port Authority" if any("MBPT" in f["filename"].upper() for f in files_data) else "Procuring Entity"
+                    "suggested_tender_number": "",
+                    "suggested_title": "",
+                    "suggested_organization": ""
                 }
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=err_msg
         )
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Manual tender PDF processing failed: {str(e)}")
 
     target_tender_number = tender_record.get("tender_number")
 
@@ -354,10 +374,11 @@ async def import_manual_tender(
     existing_tender = next((t for t in existing_tenders if t.get("tender_number") == target_tender_number or t.get("id") == target_tender_number), None)
 
     saved_documents = []
+    existing_document_ids = {doc.get("document_id") for doc in list_all_documents()}
     if existing_tender:
         target_tender_id = existing_tender.get("tender_number") or existing_tender.get("id")
-        for f_item in files_data:
-            try:
+        try:
+            for f_item in files_data:
                 doc_record = save_document(
                     file_bytes=f_item["file_bytes"],
                     filename=f_item["filename"],
@@ -371,12 +392,19 @@ async def import_manual_tender(
                     }
                 )
                 saved_documents.append(doc_record)
-            except Exception:
-                pass
+        except Exception as exc:
+            for doc in saved_documents:
+                if doc.get("document_id") not in existing_document_ids:
+                    delete_document(doc["document_id"])
+            raise HTTPException(status_code=409 if isinstance(exc, ValueError) else 500, detail=f"Tender document storage failed: {exc}")
 
         if "documents" not in existing_tender:
             existing_tender["documents"] = []
-        existing_tender["documents"].extend(saved_documents)
+        canonical_id = existing_tender.get("id") or target_tender_id
+        saved_documents = [associate_document_with_tender(doc["document_id"], canonical_id) or doc for doc in saved_documents]
+        existing_ids = {doc.get("document_id") for doc in existing_tender["documents"]}
+        existing_tender["documents"].extend(doc for doc in saved_documents if doc.get("document_id") not in existing_ids)
+        persist_operational_state()
 
         add_audit_log({
             "user_email": current_user.get("email", "officer@cpcl.gov.in"),
@@ -393,12 +421,10 @@ async def import_manual_tender(
             "tender": existing_tender
         }
 
-    # Otherwise create new tender record
-    created = add_tender(tender_record)
-    target_tender_id = created.get("tender_number") or created.get("id")
-
-    for f_item in files_data:
-        try:
+    # Stage every PDF before creating the canonical tender record.
+    target_tender_id = target_tender_number
+    try:
+        for f_item in files_data:
             doc_record = save_document(
                 file_bytes=f_item["file_bytes"],
                 filename=f_item["filename"],
@@ -406,17 +432,31 @@ async def import_manual_tender(
                 uploaded_by=current_user.get("email", "officer@cpcl.gov.in"),
                 source="MANUAL_IMPORT",
                 metadata={
-                    "title": created.get("title"),
-                    "organization": created.get("organization"),
-                    "estimated_value": created.get("estimated_value"),
+                    "title": tender_record.get("title"),
+                    "organization": tender_record.get("organization"),
+                    "estimated_value": tender_record.get("estimated_value"),
                 }
             )
             saved_documents.append(doc_record)
-        except Exception:
-            pass
+    except Exception as exc:
+        for doc in saved_documents:
+            if doc.get("document_id") not in existing_document_ids:
+                delete_document(doc["document_id"])
+        raise HTTPException(status_code=409 if isinstance(exc, ValueError) else 500, detail=f"Tender document storage failed: {exc}")
 
+    try:
+        created = add_tender(tender_record)
+    except Exception as exc:
+        for doc in saved_documents:
+            if doc.get("document_id") not in existing_document_ids:
+                delete_document(doc["document_id"])
+        raise HTTPException(status_code=409, detail=f"Tender record could not be created: {exc}")
+    target_tender_id = created.get("tender_number") or created.get("id")
+
+    saved_documents = [associate_document_with_tender(doc["document_id"], created.get("id") or target_tender_id) or doc for doc in saved_documents]
     created["documents"] = saved_documents
     created["file_name"] = saved_documents[0]["filename"] if saved_documents else files_data[0]["filename"]
+    persist_operational_state()
 
     add_audit_log({
         "user_email": current_user.get("email", "officer@cpcl.gov.in"),

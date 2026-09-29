@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useTransition, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { Card, Button, RiskBadge, ScoreDisplay } from "@/components/ui";
@@ -56,7 +56,7 @@ const RISK_FILTERS = [
   { id: "HIGH", label: "High Risk" },
 ];
 
-export default function BiddersPage() {
+function BiddersPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -80,15 +80,17 @@ export default function BiddersPage() {
   const [loadingBids, setLoadingBids] = useState(false);
   const [loadingEvaluation, setLoadingEvaluation] = useState(false);
   const selectionRequest = React.useRef(0);
+  const rankingRequest = React.useRef(0);
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [activeStatus, setActiveStatus] = useState(initialStatus);
   const [activeCompliance, setActiveCompliance] = useState(initialCompliance);
   const [activeRisk, setActiveRisk] = useState(initialRisk);
-  const [viewMode, setViewMode] = useState<"ranking" | "matrix" | "table" | "cards">("ranking");
+  const [viewMode, setViewMode] = useState<"ranking" | "matrix" | "table" | "cards">("cards");
 
   // Comparison & Ranking Data State
   const [comparisonData, setComparisonData] = useState<TenderComparisonData | null>(null);
   const [rankingData, setRankingData] = useState<TenderRankingResponse | null>(null);
+  const [loadingRanking, setLoadingRanking] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Evidence Modal State
@@ -198,10 +200,7 @@ export default function BiddersPage() {
     setComparisonData(null);
     setRankingData(null);
     try {
-      const [compRes, rankRes] = await Promise.all([
-        apiRequest<TenderComparisonData>(`/bidders/comparison?tender_id=${encodeURIComponent(tenderId)}`),
-        apiRequest<TenderRankingResponse>(`/bidders/ranking?tender_id=${encodeURIComponent(tenderId)}`),
-      ]);
+      const compRes = await apiRequest<TenderComparisonData>(`/bidders/comparison?tender_id=${encodeURIComponent(tenderId)}`);
       if (requestId !== selectionRequest.current) return;
       const bid = submittedBids.find((item) => item.id === bidId || item.bid_submission_id === bidId);
       const tender = tenders.find((item) => [item.id, item.tender_number, item.ref, item.tender_id].some((id) => id && String(id) === tenderId));
@@ -213,7 +212,6 @@ export default function BiddersPage() {
         throw new Error("The selected bid could not be verified for this tender.");
       }
       setComparisonData(compRes);
-      setRankingData(rankRes || null);
     } catch (err: any) {
       if (requestId === selectionRequest.current) {
         console.error("Failed to load selected bid evaluation", err);
@@ -227,6 +225,30 @@ export default function BiddersPage() {
   useEffect(() => {
     if (selectedTenderId && selectedBidId) fetchTenderData(selectedTenderId, selectedBidId);
   }, [selectedTenderId, selectedBidId, fetchTenderData]);
+
+  useEffect(() => {
+    const requestId = ++rankingRequest.current;
+    setRankingData(null);
+    if (viewMode !== "ranking" || !selectedTenderId || !selectedBidId) {
+      setLoadingRanking(false);
+      return;
+    }
+    setLoadingRanking(true);
+    apiRequest<TenderRankingResponse>(`/bidders/ranking?tender_id=${encodeURIComponent(selectedTenderId)}`)
+      .then((result) => {
+        if (requestId !== rankingRequest.current) return;
+        if (!result.ranked_bidders.some((bid) => bid.bidder_id === selectedBidId || bid.bid_submission_id === selectedBidId)) {
+          throw new Error("The selected bid is not present in this tender's ranking.");
+        }
+        setRankingData(result);
+      })
+      .catch((err: any) => {
+        if (requestId === rankingRequest.current) setErrorMsg(err?.message || "Unable to load the tender ranking.");
+      })
+      .finally(() => {
+        if (requestId === rankingRequest.current) setLoadingRanking(false);
+      });
+  }, [viewMode, selectedTenderId, selectedBidId]);
 
   const activeTender = useMemo(() => {
     return (
@@ -245,6 +267,7 @@ export default function BiddersPage() {
   const filteredBidders = useMemo(() => {
     if (!comparisonData?.bidders) return [];
     return comparisonData.bidders.filter((b) => {
+      if (b.id !== selectedBidId && b.bid_submission_id !== selectedBidId) return false;
       // 1. Search Query
       const q = searchTerm.trim().toLowerCase();
       const matchSearch =
@@ -275,7 +298,7 @@ export default function BiddersPage() {
 
       return matchSearch && matchStatus && matchCompliance && matchRisk;
     });
-  }, [comparisonData?.bidders, searchTerm, activeStatus, activeCompliance, activeRisk]);
+  }, [comparisonData?.bidders, selectedBidId, searchTerm, activeStatus, activeCompliance, activeRisk]);
 
   // Filtered Ranked Bidders for Bid Ranking View
   const filteredRankedBidders = useMemo(() => {
@@ -315,6 +338,7 @@ export default function BiddersPage() {
   function handleTenderSelect(e: React.ChangeEvent<HTMLSelectElement>) {
     const val = e.target.value;
     selectionRequest.current += 1;
+    rankingRequest.current += 1;
     setSelectedBidId(null);
     setSubmittedBids([]);
     setComparisonData(null);
@@ -532,9 +556,11 @@ export default function BiddersPage() {
         </section>
       ) : loadingEvaluation ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-600"><RefreshCwIcon className="mx-auto mb-3 size-7 animate-spin text-blue-600" />Loading selected bid evaluation...</div>
+      ) : viewMode === "ranking" && loadingRanking ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-600"><RefreshCwIcon className="mx-auto mb-3 size-7 animate-spin text-blue-600" />Loading tender ranking...</div>
       ) : errorMsg ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-sm text-red-800">{errorMsg}<div><Button className="mt-4" onClick={() => selectedBidId && fetchTenderData(selectedTenderId, selectedBidId)}>Retry</Button><Button variant="outline" className="ml-2 mt-4" onClick={() => setSelectedBidId(null)}>Back to bids</Button></div></div>
-      ) : comparisonData && rankingData ? (
+      ) : comparisonData && (viewMode !== "ranking" || rankingData) ? (
         /* Populated Tender Workspace */
         <div className="space-y-6">
           <div className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs">
@@ -2066,4 +2092,8 @@ export default function BiddersPage() {
       />
     </div>
   );
+}
+
+export default function BiddersPage() {
+  return <Suspense fallback={null}><BiddersPageContent /></Suspense>;
 }

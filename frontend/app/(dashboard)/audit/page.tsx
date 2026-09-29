@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, Button, StatusBadge } from "@/components/ui";
 import {
@@ -15,22 +15,28 @@ import { apiRequest } from "@/lib/api";
 interface AuditLogEntry {
   id: string;
   timestamp: string;
-  user_email: string;
-  user_role: string;
+  user_email?: string;
+  actor?: string;
+  user_role?: string;
   action: string;
   entity_type: string;
   entity_id: string;
-  details: string;
+  details: string | Record<string, unknown>;
   status: "SUCCESS" | "WARNING" | "FAILURE";
 }
 
-export default function AuditPage() {
+function AuditPageContent() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("query") || searchParams.get("entity_id") || searchParams.get("search") || "";
 
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch);
+  const [actionFilter, setActionFilter] = useState("");
+  const [userFilter, setUserFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = searchParams.get("query") || searchParams.get("entity_id") || searchParams.get("search") || "";
@@ -47,21 +53,26 @@ export default function AuditPage() {
       const res = await apiRequest<AuditLogEntry[]>("/audit/logs");
       if (Array.isArray(res)) setLogs(res);
       else setLogs([]);
-    } catch {
+      setLoadError(null);
+    } catch (err: any) {
       setLogs([]);
+      setLoadError(err?.message || "Unable to load audit records.");
     } finally {
       setLoading(false);
     }
   }
 
-  const filteredLogs = logs.filter(
-    (l) =>
-      l.user_email.toLowerCase().includes(search.toLowerCase()) ||
-      l.action.toLowerCase().includes(search.toLowerCase()) ||
-      l.details.toLowerCase().includes(search.toLowerCase()) ||
-      (l.entity_id && l.entity_id.toLowerCase().includes(search.toLowerCase())) ||
-      (l.id && l.id.toLowerCase().includes(search.toLowerCase()))
-  );
+  const actions = Array.from(new Set(logs.map((log) => log.action).filter(Boolean))).sort();
+  const users = Array.from(new Set(logs.map((log) => log.user_email || log.actor).filter((user): user is string => Boolean(user)))).sort();
+  const filteredLogs = logs.filter((l) => {
+    const details = typeof l.details === "string" ? l.details : JSON.stringify(l.details ?? "");
+    const q = search.toLowerCase();
+    const actor = l.user_email || l.actor || "";
+    const matchesSearch = !q || [actor, l.action, details, l.entity_id, l.id].some((v) => String(v || "").toLowerCase().includes(q));
+    const day = String(l.timestamp || "").slice(0, 10);
+    return matchesSearch && (!actionFilter || l.action === actionFilter) &&
+      (!userFilter || actor === userFilter) && (!dateFrom || day >= dateFrom) && (!dateTo || day <= dateTo);
+  });
 
   return (
     <div className="space-y-6">
@@ -91,7 +102,7 @@ export default function AuditPage() {
       </div>
 
       {/* Search Filter */}
-      <Card className="p-4">
+      <Card className="p-4 space-y-3">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
           <input
@@ -102,7 +113,15 @@ export default function AuditPage() {
             className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-xs focus:border-blue-500 focus:outline-none"
           />
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <select aria-label="Filter by action" value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All actions</option>{actions.map((action) => <option key={action} value={action}>{action}</option>)}</select>
+          <select aria-label="Filter by user" value={userFilter} onChange={(e) => setUserFilter(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs"><option value="">All users</option>{users.map((user) => <option key={user} value={user}>{user}</option>)}</select>
+          <input aria-label="From date" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" />
+          <input aria-label="To date" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" />
+        </div>
       </Card>
+
+      {loadError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-800">{loadError}</div>}
 
       {/* Table */}
       <Card className="overflow-hidden">
@@ -148,8 +167,8 @@ export default function AuditPage() {
                       })}
                     </td>
                     <td className="px-4 py-3.5">
-                      <p className="font-bold text-slate-900">{log.user_email}</p>
-                      <span className="text-[10px] text-slate-500 font-medium">{log.user_role}</span>
+                      <p className="font-bold text-slate-900">{log.user_email || log.actor || "System"}</p>
+                      <span className="text-[10px] text-slate-500 font-medium">{log.user_role || "SYSTEM"}</span>
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 font-mono">
@@ -159,8 +178,8 @@ export default function AuditPage() {
                     <td className="px-4 py-3.5 font-mono text-slate-600">
                       <span className="text-slate-400">{log.entity_type}:</span> {log.entity_id}
                     </td>
-                    <td className="px-4 py-3.5 text-slate-600 max-w-xs truncate" title={log.details}>
-                      {log.details}
+                    <td className="px-4 py-3.5 text-slate-600 max-w-xs truncate" title={typeof log.details === "string" ? log.details : JSON.stringify(log.details ?? "")}>
+                      {typeof log.details === "string" ? log.details : JSON.stringify(log.details ?? "")}
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <span
@@ -189,4 +208,8 @@ export default function AuditPage() {
       </Card>
     </div>
   );
+}
+
+export default function AuditPage() {
+  return <Suspense fallback={null}><AuditPageContent /></Suspense>;
 }

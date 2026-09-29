@@ -80,5 +80,6 @@ export function getAuthToken(): string | null {
 }
 
 export function logout(): void {
+  void apiRequest<{ status: string }>("/auth/logout", { method: "POST" }).catch(() => undefined);
   clearToken();
 }

@@ -11,8 +11,10 @@ import time
 import hashlib
 import threading
 import re
+import uuid
 from datetime import datetime, timezone
 from app.config import load_project_env
+from app.data.audit_store import save_audit_event, get_audit_events
 load_project_env()
 
 # Centralized Demo Mode Switch (default: false)
@@ -680,13 +682,14 @@ SEED_BIDDER_DOCUMENTS: List[Dict[str, Any]] = [
 
 # Live Mutable Operational Data Stores with Disk Persistence & Auto-Generation Support
 STATE_FILE_PATH = os.path.join(os.path.dirname(__file__), "demo_dataset_state.json")
+_audit_log_lock = threading.RLock()
 
 def _load_or_generate_persisted_state():
     if os.path.exists(STATE_FILE_PATH):
         try:
             with open(STATE_FILE_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                if data and len(data.get("bidder_bids", [])) > 0:
+                if data and any(data.get(key) for key in ("tenders", "bidders", "bidder_bids", "audit_logs")):
                     return data
         except Exception:
             pass
@@ -876,6 +879,28 @@ sync_bids_and_bidders()
 
 SAMPLE_NOTIFICATIONS: List[Dict[str, Any]] = []
 SAMPLE_ANALYSIS_JOBS: Dict[str, Dict[str, Any]] = {}
+
+def persist_operational_state() -> None:
+    """Atomically persist canonical procurement state shared by application roles."""
+    state = {
+        "tenders": SAMPLE_TENDERS,
+        "bidders": SAMPLE_BIDDERS,
+        "bidder_profiles": SAMPLE_BIDDER_PROFILES,
+        "bidder_bids": SAMPLE_BIDDER_BIDS,
+        "bidder_documents": SAMPLE_BIDDER_DOCUMENTS,
+        "audit_logs": SAMPLE_AUDIT_LOGS,
+    }
+    try:
+        with open(STATE_FILE_PATH, "r", encoding="utf-8") as f:
+            previous = json.load(f)
+        state["users"] = previous.get("users", [])
+    except (OSError, ValueError, TypeError):
+        state["users"] = []
+    os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
+    temp_path = f"{STATE_FILE_PATH}.tmp"
+    with open(temp_path, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2, default=str)
+    os.replace(temp_path, STATE_FILE_PATH)
 
 _tender_number_lock = threading.RLock()
 
@@ -1194,6 +1219,11 @@ def add_tender(tender_data: Dict[str, Any]) -> Dict[str, Any]:
             tender_data["status"] = "DRAFT"
 
         SAMPLE_TENDERS.insert(0, tender_data)
+        try:
+            persist_operational_state()
+        except Exception:
+            SAMPLE_TENDERS.remove(tender_data)
+            raise
         return tender_data
 
 def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -1213,6 +1243,7 @@ def update_tender(tender_id: str, patch_data: Dict[str, Any]) -> Optional[Dict[s
             if new_num and new_num != tender.get("tender_number") and check_tender_id_exists(new_num, exclude_id=tender.get("id")):
                 raise ValueError(f"Tender ID '{new_num}' already exists in the registry.")
             tender.update(patch_data)
+            persist_operational_state()
             return compute_tender_bid_counts(tender)
         return None
 
@@ -1662,6 +1693,8 @@ def add_bid_for_bidder(bid_data: Dict[str, Any]) -> Dict[str, Any]:
         }
         SAMPLE_BIDDERS.append(new_bidder_entry)
 
+    persist_operational_state()
+
     if not is_draft:
         add_audit_log({
             "user_email": bid_data.get("email", "bidder@vendor.com"),
@@ -1756,32 +1789,42 @@ def get_notifications_for_bidder(bidder_id: str) -> List[Dict[str, Any]]:
     return notifs
 
 def get_all_audit_logs(query: Optional[str] = None) -> List[Dict[str, Any]]:
+    records_by_id = {str(log.get("id")): log for log in SAMPLE_AUDIT_LOGS if log.get("action")}
+    records_by_id.update({str(log.get("id")): log for log in get_audit_events()})
+    records = list(records_by_id.values())
+    records.sort(key=lambda log: str(log.get("timestamp", "")), reverse=True)
     if not query:
-        return list(SAMPLE_AUDIT_LOGS)
+        return records
     q = query.strip().lower()
     return [
-        log for log in SAMPLE_AUDIT_LOGS
-        if q in log.get("id", "").lower()
-        or q in log.get("user_email", "").lower()
-        or q in log.get("action", "").lower()
-        or q in log.get("entity_id", "").lower()
-        or q in log.get("details", "").lower()
+        log for log in records
+        if q in str(log.get("id", "")).lower()
+        or q in str(log.get("user_email", log.get("actor", ""))).lower()
+        or q in str(log.get("action", "")).lower()
+        or q in str(log.get("entity_id", log.get("target", ""))).lower()
+        or q in str(log.get("details", "")).lower()
     ]
 
 def add_audit_log(entry: Dict[str, Any]) -> Dict[str, Any]:
-    if not entry.get("id"):
-        entry["id"] = f"LOG-{len(SAMPLE_AUDIT_LOGS) + 1:03d}"
-    if not entry.get("timestamp"):
-        entry["timestamp"] = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-    if not entry.get("integrity_hash"):
-        h_src = f"{entry.get('id')}:{entry.get('action')}:{entry.get('entity_id')}:{time.time()}"
-        entry["integrity_hash"] = hashlib.sha256(h_src.encode()).hexdigest()
-    if not entry.get("actor") and entry.get("user_email"):
-        entry["actor"] = entry["user_email"]
-    if not entry.get("target") and entry.get("entity_id"):
-        entry["target"] = entry["entity_id"]
-    SAMPLE_AUDIT_LOGS.insert(0, entry)
-    return entry
+    with _audit_log_lock:
+        if not entry.get("id"):
+            entry["id"] = f"LOG-{uuid.uuid4().hex}"
+        if not entry.get("timestamp"):
+            entry["timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            if not entry.get("integrity_hash"):
+            h_src = f"{entry.get('id')}:{entry.get('action')}:{entry.get('entity_id')}:{entry.get('timestamp')}"
+            entry["integrity_hash"] = hashlib.sha256(h_src.encode()).hexdigest()
+        if not entry.get("actor") and entry.get("user_email"):
+            entry["actor"] = entry["user_email"]
+        if not entry.get("user_email") and entry.get("actor"):
+            entry["user_email"] = entry["actor"]
+        if not entry.get("target") and entry.get("entity_id"):
+            entry["target"] = entry["entity_id"]
+        entry.setdefault("user_role", "UNKNOWN")
+        entry.setdefault("status", "SUCCESS")
+        entry = save_audit_event(entry)
+        SAMPLE_AUDIT_LOGS.insert(0, entry)
+        return entry
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -8,11 +8,13 @@ const API_BASE =
 
 export class ApiError extends Error {
   readonly status: number;
+  readonly detail?: unknown;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, detail?: unknown) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -94,11 +96,13 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     let message = "";
+    let detail: unknown;
 
     try {
       const contentType = response.headers.get("content-type") || "";
       if (contentType.includes("application/json")) {
         const payload = (await response.json()) as Record<string, any>;
+        detail = payload.detail;
 
         if (typeof payload.detail === "string") {
           message = payload.detail;
@@ -156,7 +160,7 @@ export async function apiRequest<T>(
       message = "Your session has expired or authentication is required. Please sign in again.";
     }
 
-    throw new ApiError(response.status, message);
+    throw new ApiError(response.status, message, detail);
   }
 
   if (response.status === 204) return undefined as T;

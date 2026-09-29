@@ -225,12 +225,14 @@ async def login(credentials: LoginRequest):
     user = find_user_by_email(email_clean)
 
     if not user:
+        add_audit_log({"user_email": email_clean, "user_role": "UNKNOWN", "action": "AUTH_LOGIN_FAILED", "entity_type": "USER", "entity_id": email_clean, "details": "Login failed: account not found.", "status": "FAILURE"})
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
     if not verify_password(credentials.password, user.get("password_hash", "")):
+        add_audit_log({"user_email": email_clean, "user_role": user.get("role", "UNKNOWN"), "action": "AUTH_LOGIN_FAILED", "entity_type": "USER", "entity_id": user.get("id", email_clean), "details": "Login failed: invalid credentials.", "status": "FAILURE"})
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
@@ -247,6 +249,16 @@ async def login(credentials: LoginRequest):
 
     access_token = create_jwt_token(token_payload)
 
+    add_audit_log({
+        "user_email": user["email"],
+        "user_role": user["role"],
+        "action": "AUTH_LOGIN_SUCCESS",
+        "entity_type": "USER",
+        "entity_id": user["id"],
+        "details": "User logged in successfully.",
+        "status": "SUCCESS",
+    })
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -261,6 +273,21 @@ async def login(credentials: LoginRequest):
             "bidder_id": user.get("bidder_id")
         }
     }
+
+
+@router.post("/logout", response_model=Dict[str, str])
+async def logout(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Record client sign-out. JWTs remain stateless and expire normally."""
+    add_audit_log({
+        "user_email": current_user.get("email", ""),
+        "user_role": current_user.get("role", "UNKNOWN"),
+        "action": "AUTH_LOGOUT",
+        "entity_type": "USER",
+        "entity_id": current_user.get("id", ""),
+        "details": "User signed out.",
+        "status": "SUCCESS",
+    })
+    return {"status": "SUCCESS"}
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -699,4 +726,3 @@ async def get_bidder_verification_status(current_user: Dict[str, Any] = Depends(
         "verification_status": bidder.get("verification_status", "IDENTITY_CONSISTENT"),
         "government_verifications": bidder.get("government_verifications", {})
     }
-

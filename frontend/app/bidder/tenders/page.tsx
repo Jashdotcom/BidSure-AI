@@ -18,8 +18,6 @@ import {
   EyeIcon,
   ArrowRightIcon,
   BuildingIcon,
-  CalendarIcon,
-  BriefcaseIcon,
 } from "@/components/icons";
 import { apiRequest } from "@/lib/api";
 
@@ -132,6 +130,7 @@ export default function BidderTendersPage() {
   const [preCheckTender, setPreCheckTender] = useState<PublicTender | null>(null);
   const [runningPreCheck, setRunningPreCheck] = useState(false);
   const [preCheckResult, setPreCheckResult] = useState<PreCheckResult | null>(null);
+  const [preCheckError, setPreCheckError] = useState<string | null>(null);
 
   const [applyTender, setApplyTender] = useState<PublicTender | null>(null);
   const [loadingApplication, setLoadingApplication] = useState(false);
@@ -261,11 +260,12 @@ export default function BidderTendersPage() {
     setPreCheckTender(tender);
     setRunningPreCheck(true);
     setPreCheckResult(null);
+    setPreCheckError(null);
 
     try {
       const res = await apiRequest<any>("/bidder-portal/pre-check", {
         method: "POST",
-        body: JSON.stringify({ tender_id: tender.id }),
+        body: { tender_id: tender.id },
       });
 
       if (res && res.pre_check_evaluation) {
@@ -296,81 +296,10 @@ export default function BidderTendersPage() {
           recommendations: res.recommendations || []
         });
       } else {
-        // Fallback pre-check result
-        setPreCheckResult({
-          status: "SUCCESS",
-          readiness: "READY TO APPLY",
-          total_required: 5,
-          satisfied_count: 5,
-          missing_count: 0,
-          fail_count: 0,
-          readiness_percentage: 100,
-          requirements_breakdown: [
-            {
-              name: "GST Registration & PAN",
-              clause: "Clause 2.1",
-              mandatory: true,
-              status: "PASS",
-              detail: "Available and authenticated via government verification gateway.",
-              bidder_evidence: "GSTIN: 33AABCA1234F1Z5"
-            },
-            {
-              name: "Annual Turnover",
-              clause: "Clause 5.1",
-              mandatory: true,
-              status: "PASS",
-              detail: "Required: ₹10 Crore minimum. Bidder evidence: ₹12.5 Crore.",
-              bidder_evidence: "UDIN Verified Balance Sheet"
-            },
-            {
-              name: "OEM Authorization",
-              clause: "Clause 4.2",
-              mandatory: true,
-              status: "PASS",
-              detail: "Direct OEM authorization letter verified.",
-              bidder_evidence: "Manufacturer Authorization Form (MAF)"
-            },
-            {
-              name: "Past Experience",
-              clause: "Clause 6.3",
-              mandatory: true,
-              status: "PASS",
-              detail: "Similar works criteria met successfully.",
-              bidder_evidence: "Client Completion Certificate"
-            },
-            {
-              name: "Make in India Local Content",
-              clause: "Clause 8.1",
-              mandatory: true,
-              status: "PASS",
-              detail: "Class-I local supplier declaration verified (65%).",
-              bidder_evidence: "Self-Certification"
-            }
-          ],
-          recommendations: ["All pre-check rules passed successfully."]
-        });
+        setPreCheckError("The server did not return a pre-check evaluation. Please try again.");
       }
-    } catch {
-      setPreCheckResult({
-        status: "ERROR",
-        readiness: "PARTIALLY READY",
-        total_required: 5,
-        satisfied_count: 4,
-        missing_count: 1,
-        fail_count: 0,
-        readiness_percentage: 80,
-        requirements_breakdown: [
-          {
-            name: "Statutory GSTIN & PAN",
-            clause: "Clause 2.1",
-            mandatory: true,
-            status: "PASS",
-            detail: "Available and authenticated.",
-            bidder_evidence: "Active"
-          }
-        ],
-        recommendations: ["Please check your document repository."]
-      });
+    } catch (err: any) {
+      setPreCheckError(err?.message || "Unable to run the readiness pre-check. Please try again.");
     } finally {
       setRunningPreCheck(false);
     }
@@ -1038,6 +967,8 @@ export default function BidderTendersPage() {
                   </Button>
                 </div>
               </div>
+            ) : preCheckError ? (
+              <div role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{preCheckError}</div>
             ) : null}
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useTransition, useCallback, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import { Card, Button, StatusBadge, TenderStatusBadge } from "@/components/ui";
@@ -29,6 +29,15 @@ import {
 import { apiRequest } from "@/lib/api";
 import { Tender, Requirement, TenderAmendment } from "@/lib/types";
 
+function normalizeTenderRequirements(requirements: Tender["requirements"]): Requirement[] {
+  return (requirements || []).map((requirement) => ({
+    ...requirement,
+    code: "code" in requirement ? requirement.code : requirement.id,
+    name: "name" in requirement ? requirement.name : requirement.title,
+    weight: "weight" in requirement ? requirement.weight : ("scoring_weight" in requirement ? requirement.scoring_weight : undefined),
+  } as Requirement));
+}
+
 type LifecycleTab = "ACTIVE" | "INACTIVE" | "DRAFT" | "ALL";
 
 export type StatusFilterOption =
@@ -52,7 +61,7 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilterOption; label: string }[] = [
   { value: "DRAFT", label: "Drafts" },
 ];
 
-export default function TendersPage() {
+function TendersPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -728,8 +737,6 @@ export default function TendersPage() {
           if (reviewEstimatedValue) {
             formData.append("estimated_value", reviewEstimatedValue);
           }
-        } else {
-          formData.append("title", manualFiles[0].name.replace(".pdf", "").replace(/_/g, " "));
         }
 
         try {
@@ -738,6 +745,7 @@ export default function TendersPage() {
             {
               method: "POST",
               body: formData,
+              timeout: 180000,
             }
           );
 
@@ -753,9 +761,9 @@ export default function TendersPage() {
           const detail = err?.detail;
           if (detail && typeof detail === "object" && detail.needs_manual_review) {
             setIsManualReviewFallback(true);
-            setReviewTenderNumber(detail.suggested_tender_number || "2026/MBPT/925738");
-            setReviewTitle(detail.suggested_title || manualFiles[0].name.replace(".pdf", "").replace(/_/g, " "));
-            setReviewOrganization(detail.suggested_organization || "Mumbai Port Authority");
+            setReviewTenderNumber(detail.suggested_tender_number || "");
+            setReviewTitle(detail.suggested_title || "");
+            setReviewOrganization(detail.suggested_organization || "");
             setImportError(detail.message || "Automatic extraction incomplete. Please review and complete the metadata fields below.");
           } else {
             const msg = detail?.message || detail || err?.message || "Failed to import tender.";
@@ -774,7 +782,7 @@ export default function TendersPage() {
   // Lifecycle Transition 1: DRAFT -> ANALYZING -> REQUIREMENTS_REVIEW
   async function handleAnalyzeTender(tender: Tender) {
     setSelectedTender(tender);
-    setRequirements(tender.requirements || []);
+    setRequirements(normalizeTenderRequirements(tender.requirements));
     setActiveView("CLAUSE_SCRUTINY");
     setAnalyzing(true);
     setIsApproved(false);
@@ -1544,7 +1552,7 @@ export default function TendersPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedTender(tender);
-                                setRequirements(tender.requirements || []);
+                                setRequirements(normalizeTenderRequirements(tender.requirements));
                                 setActiveView("CLAUSE_SCRUTINY");
                               }}
                               className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors"
@@ -1644,7 +1652,7 @@ export default function TendersPage() {
                               type="button"
                               onClick={() => {
                                 setSelectedTender(tender);
-                                setRequirements(tender.requirements || []);
+                                setRequirements(normalizeTenderRequirements(tender.requirements));
                                 setActiveView("CLAUSE_SCRUTINY");
                               }}
                               className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 border border-amber-300 hover:bg-amber-100 transition-colors flex items-center gap-1"
@@ -2993,4 +3001,8 @@ export default function TendersPage() {
       )}
     </div>
   );
+}
+
+export default function TendersPage() {
+  return <Suspense fallback={null}><TendersPageContent /></Suspense>;
 }

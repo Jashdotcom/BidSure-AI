@@ -6,12 +6,10 @@ and structures normalized tender records.
 """
 from typing import Dict, Any, Optional, List
 import hashlib
-import time
 from datetime import datetime, timedelta
 from app.services.tender_sources.base import BaseTenderSourceAdapter
 from app.services.ocr_service import OCRService
 from app.services.ai_service import AIService
-from app.data.sample_data import is_demo_mode
 
 class ManualTenderAdapter(BaseTenderSourceAdapter):
     """
@@ -88,22 +86,7 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
             if reqs:
                 all_requirements.extend(reqs)
 
-        # Fallback title from first filename if missing
-        if not best_title and files_data:
-            first_fname = files_data[0]["filename"]
-            clean_name = first_fname.replace(".pdf", "").replace(".PDF", "").replace("_", " ").strip()
-            if clean_name and not clean_name.lower().startswith("tender"):
-                best_title = clean_name
-            else:
-                best_title = "Manual Tender Notice Package"
-
-        if not best_tender_number:
-            best_tender_number = f"2026/PROC/{int(time.time()) % 10000}"
-
-        if not best_org:
-            best_org = "Mumbai Port Authority" if any("MBPT" in f["filename"].upper() for f in files_data) else "Procuring Entity"
-
-        # Validate extracted metadata - reject if essential metadata could not be extracted
+        # Require extracted or officer-entered metadata; never invent tender identity.
         if not best_tender_number or best_tender_number in ("Tender", "Details", "Notice") or not best_title or not best_org:
             raise ValueError(
                 "TENDER_METADATA_EXTRACTION_FAILED: Could not extract valid Tender ID, Title, or Organization from uploaded documents. "
@@ -121,22 +104,7 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
         closing_date = (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%dT23:59:59Z")
         deadline = (datetime.utcnow() + timedelta(days=30)).strftime("%d %b %Y")
 
-        if not all_requirements and is_demo_mode():
-            all_requirements = [
-                {
-                    "id": "REQ-001",
-                    "code": "TURNOVER",
-                    "clause_reference": "Section II, Clause 3.1",
-                    "category": "FINANCIAL",
-                    "title": "Minimum Annual Financial Turnover",
-                    "description": "Bidder must meet minimum average annual financial turnover requirement.",
-                    "threshold_value": ">= ₹ 3.00 Cr",
-                    "mandatory": True,
-                    "weight": 25
-                }
-            ]
-        elif not all_requirements:
-            all_requirements = []
+        all_requirements = all_requirements or []
 
         # Normalized tender record
         normalized_tender = {

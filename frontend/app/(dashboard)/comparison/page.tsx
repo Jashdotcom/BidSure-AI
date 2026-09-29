@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, Button, StatusBadge, RiskBadge, ScoreDisplay, Input } from "@/components/ui";
@@ -22,7 +22,7 @@ import { apiRequest } from "@/lib/api";
 import { getToken } from "@/lib/session";
 import { Bidder, Tender } from "@/lib/types";
 
-export default function ComparisonPage() {
+function ComparisonPageContent() {
   const searchParams = useSearchParams();
   const initialTenderId = searchParams.get("tender_id") || "";
 
@@ -687,4 +687,8 @@ export default function ComparisonPage() {
       </Card>
     </div>
   );
+}
+
+export default function ComparisonPage() {
+  return <Suspense fallback={null}><ComparisonPageContent /></Suspense>;
 }
