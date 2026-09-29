@@ -134,18 +134,41 @@ export function Input({ label, error, hint, className = "", id, ...props }: Inpu
   );
 }
 
-// Tender Lifecycle Status Badge (DRAFT / ANALYZING / REQUIREMENTS_REVIEW / PUBLISHED / CLOSED)
+// Tender lifecycle badge, with Closing Soon derived from a published tender's deadline.
 export function TenderStatusBadge({
   status,
+  closingDate,
 }: {
   status: "DRAFT" | "ANALYZING" | "REQUIREMENTS_REVIEW" | "PUBLISHED" | "CLOSED" | string;
+  closingDate?: string | null;
 }) {
   const normalized = status?.toUpperCase().replace(/\s+/g, "_");
+  const dateOnly = Boolean(closingDate && /^\d{4}-\d{2}-\d{2}$/.test(closingDate));
+  const parsedClosingDate = closingDate
+    ? new Date(dateOnly ? `${closingDate}T23:59:59Z` : closingDate)
+    : null;
+  const daysUntilClosing = parsedClosingDate && !Number.isNaN(parsedClosingDate.getTime())
+    ? (parsedClosingDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    : null;
+  const isClosingSoon =
+    (normalized === "PUBLISHED" || normalized === "OPEN" || normalized === "ACTIVE") &&
+    daysUntilClosing !== null &&
+    daysUntilClosing >= -2 &&
+    daysUntilClosing <= 30;
+
+  if (normalized === "CLOSING_SOON" || isClosingSoon) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-800 border border-orange-300">
+        <span className="size-1.5 rounded-full bg-orange-500" />
+        Closing Soon
+      </span>
+    );
+  }
 
   if (normalized === "DRAFT") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-700 border border-[#D5DFED]">
-        <span className="size-1.5 rounded-full bg-slate-500" />
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-50 px-2.5 py-1 text-[11px] font-bold text-gray-600 border border-gray-200">
+        <span className="size-1.5 rounded-full bg-gray-400" />
         Draft
       </span>
     );
@@ -165,13 +188,30 @@ export function TenderStatusBadge({
 
   if (
     normalized === "REQUIREMENTS_REVIEW" ||
-    normalized === "REQUIREMENT_REVIEW" ||
-    normalized === "UNDER_REVIEW"
+    normalized === "REQUIREMENT_REVIEW"
   ) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-300">
         <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
         Requirements Review
+      </span>
+    );
+  }
+
+  if (normalized === "UNDER_REVIEW" || normalized === "UNDER_EVALUATION" || normalized === "EVALUATING") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-800 border border-blue-200">
+        <span className="size-1.5 rounded-full bg-blue-500" />
+        Under Evaluation
+      </span>
+    );
+  }
+
+  if (normalized === "AWARDED") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800 border border-purple-200">
+        <span className="size-1.5 rounded-full bg-purple-500" />
+        Awarded
       </span>
     );
   }
@@ -310,4 +350,3 @@ export function DocumentStatusBadge({ status }: { status: string }) {
     </span>
   );
 }
-

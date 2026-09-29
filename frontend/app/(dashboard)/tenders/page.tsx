@@ -1418,7 +1418,10 @@ function TendersPageContent() {
                           </h2>
                         </div>
 
-                        <TenderStatusBadge status={tender.status} />
+                        <TenderStatusBadge
+                          status={tender.status}
+                          closingDate={tender.closing_date || tender.submission_deadline || tender.deadline}
+                        />
                       </div>
 
                       {/* Organization & Department */}
@@ -1695,7 +1698,10 @@ function TendersPageContent() {
                   <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                     {selectedTender.tender_number || selectedTender.ref || selectedTender.id}
                   </span>
-                  <TenderStatusBadge status={selectedTender.status} />
+                  <TenderStatusBadge
+                    status={selectedTender.status}
+                    closingDate={selectedTender.closing_date || selectedTender.submission_deadline || selectedTender.deadline}
+                  />
                   <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                     OCR INGESTED
                   </span>
@@ -1884,7 +1890,10 @@ function TendersPageContent() {
                   <span className="font-mono text-xs font-extrabold text-blue-800 bg-blue-100/70 px-2.5 py-0.5 rounded border border-blue-200">
                     {manageModalTender.tender_number || manageModalTender.ref || manageModalTender.id}
                   </span>
-                  <TenderStatusBadge status={manageModalTender.status} />
+                  <TenderStatusBadge
+                    status={manageModalTender.status}
+                    closingDate={manageModalTender.closing_date || manageModalTender.submission_deadline || manageModalTender.deadline}
+                  />
                   <span className="text-xs text-slate-500 font-medium">
                     {manageModalTender.organization}
                   </span>
