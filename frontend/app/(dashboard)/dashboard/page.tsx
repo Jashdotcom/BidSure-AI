@@ -258,7 +258,7 @@ export default function OfficerDashboardPage() {
           </div>
 
           <h1 className="mt-1 text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-            Good morning, {officerName}
+            Good morning, Procurement Officer
           </h1>
 
           <p className="mt-0.5 text-xs text-slate-500 font-medium">

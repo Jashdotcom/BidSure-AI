@@ -69,9 +69,9 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="fixed top-8 bottom-0 left-0 z-20 flex w-64 flex-col border-r border-slate-200 bg-white text-slate-700 shadow-sm font-sans select-none">
+      <aside className="fixed top-8 bottom-0 left-0 z-20 flex w-64 flex-col border-r border-[#D5DFED] bg-[#F4F7FC] text-slate-700 shadow-sm font-sans select-none">
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
+        <div className="flex h-16 items-center justify-between border-b border-[#D5DFED] px-5 bg-[#F4F7FC]">
           <Logo />
         </div>
 
@@ -94,14 +94,14 @@ export function Sidebar() {
                     href={item.href}
                     className={`group flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-blue-50/90 text-blue-700 font-bold border border-blue-200/80 shadow-xs"
-                        : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+                        ? "bg-blue-50/90 text-[#2155D9] font-bold border border-blue-200/80 shadow-xs"
+                        : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900"
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Icon
                         className={`size-4 transition-colors ${
-                          isActive ? "text-blue-700" : "text-slate-400 group-hover:text-slate-700"
+                          isActive ? "text-[#2155D9]" : "text-slate-400 group-hover:text-slate-700"
                         }`}
                       />
                       <span>{item.name}</span>
@@ -127,13 +127,13 @@ export function Sidebar() {
                     href={item.href}
                     className={`group flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
                       isActive
-                        ? "bg-blue-50/90 text-blue-700 font-bold border border-blue-200/80 shadow-xs"
-                        : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+                        ? "bg-blue-50/90 text-[#2155D9] font-bold border border-blue-200/80 shadow-xs"
+                        : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900"
                     }`}
                   >
                     <Icon
                       className={`size-4 transition-colors ${
-                        isActive ? "text-blue-700" : "text-slate-400 group-hover:text-slate-700"
+                        isActive ? "text-[#2155D9]" : "text-slate-400 group-hover:text-slate-700"
                       }`}
                     />
                     <span>{item.name}</span>
@@ -145,10 +145,10 @@ export function Sidebar() {
         </div>
 
         {/* Bottom Officer Profile & Logout */}
-        <div className="border-t border-slate-200/90 bg-slate-50/60 p-3">
-          <div className="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 border border-slate-200/80 shadow-xs">
+        <div className="border-t border-[#D5DFED] bg-[#F4F7FC] p-3">
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-white p-2.5 border border-[#D5DFED] shadow-subtle">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-700 text-[11px] font-bold text-white shadow-xs">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#2155D9] text-[11px] font-bold text-white shadow-xs">
                 {initials}
               </div>
               <div className="min-w-0 flex-1">

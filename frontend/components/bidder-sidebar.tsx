@@ -61,14 +61,14 @@ export function BidderSidebar() {
   }, []);
 
   return (
-    <aside className="fixed top-8 bottom-0 left-0 z-20 flex w-64 flex-col border-r border-slate-200 bg-white text-slate-700">
+    <aside className="fixed top-8 bottom-0 left-0 z-20 flex w-64 flex-col border-r border-[#D5DFED] bg-[#F4F7FC] text-slate-700 shadow-sm font-sans select-none">
       {/* Brand Header */}
-      <div className="flex h-16 items-center border-b border-slate-100 px-5">
+      <div className="flex h-16 items-center border-b border-[#D5DFED] px-5 bg-[#F4F7FC]">
         <Logo />
       </div>
 
       {/* Vendor Context Banner */}
-      <div className="mx-3 my-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+      <div className="mx-3 my-3 rounded-lg border border-[#D5DFED] bg-white p-3 shadow-subtle">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
             Bidder Portal
@@ -108,13 +108,13 @@ export function BidderSidebar() {
               href={item.href}
               className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
                 isActive
-                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-blue-50/90 text-[#2155D9] border border-blue-200/80 font-bold shadow-xs"
+                  : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-900"
               }`}
             >
               <Icon
                 className={`size-4 transition-colors ${
-                  isActive ? "text-emerald-700" : "text-slate-400 group-hover:text-slate-700"
+                  isActive ? "text-[#2155D9]" : "text-slate-400 group-hover:text-slate-700"
                 }`}
               />
               <span className="flex-1">{item.name}</span>
@@ -124,7 +124,7 @@ export function BidderSidebar() {
       </nav>
 
       {/* Footer Info */}
-      <div className="border-t border-slate-100 p-4 text-[11px] text-slate-500 bg-slate-50/50">
+      <div className="border-t border-[#D5DFED] p-4 text-[11px] text-slate-500 bg-[#F4F7FC]">
         <div className="flex items-center justify-between">
           <span className="font-bold text-slate-700">CPCL e-Procurement</span>
           <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-800">

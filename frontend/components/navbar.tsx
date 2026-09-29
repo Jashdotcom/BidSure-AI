@@ -92,7 +92,7 @@ export function Navbar() {
   const initials = "OF";
 
   return (
-    <header className="sticky top-8 z-10 flex h-16 w-full items-center justify-between border-b border-slate-200 bg-white px-6 shadow-xs select-none">
+    <header className="sticky top-8 z-10 flex h-16 w-full items-center justify-between border-b border-[#D5DFED] bg-[#F4F7FC] px-6 shadow-subtle select-none">
       {/* Left: Page Title & Subtitle */}
       <div className="flex items-center gap-3">
         <div>
@@ -112,25 +112,25 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => setShowNotifications(!showNotifications)}
-            className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors focus:outline-none"
+            className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-200/60 hover:text-slate-800 transition-colors focus:outline-none"
             title="Notifications"
           >
             <BellIcon className="size-4" />
             {notifications.length > 0 && (
               <span className="absolute top-1.5 right-1.5 flex size-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-blue-600" />
+                <span className="relative inline-flex size-2 rounded-full bg-[#2155D9]" />
               </span>
             )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-3 shadow-xl z-30 animate-in fade-in duration-150">
+            <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[#D5DFED] bg-white p-3 shadow-xl z-30 animate-in fade-in duration-150">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
                 <span className="text-xs font-bold text-slate-900">
                   Procurement Notifications
                 </span>
-                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#2155D9]">
                   {notifications.length} New
                 </span>
               </div>
@@ -156,7 +156,7 @@ export function Navbar() {
         </div>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-slate-200" />
+        <div className="h-6 w-px bg-[#D5DFED]" />
 
         {/* Officer Profile & Details */}
         <div className="flex items-center gap-3">
@@ -169,14 +169,14 @@ export function Navbar() {
             </p>
           </div>
 
-          <div className="flex size-9 items-center justify-center rounded-lg bg-blue-700 text-xs font-bold text-white shadow-xs">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-[#2155D9] text-xs font-bold text-white shadow-xs">
             {initials}
           </div>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-xs"
+            className="rounded-lg border border-[#D5DFED] bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-xs"
           >
             Sign out
           </button>

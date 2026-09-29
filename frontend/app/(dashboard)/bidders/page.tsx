@@ -844,7 +844,7 @@ export default function BiddersPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                        <tr className="bg-[#F1F5FB] border-b border-[#D5DFED] text-slate-700 font-bold uppercase text-[10px] tracking-wider">
                           <th className="p-3.5 text-center w-28">Rank</th>
                           <th className="p-3.5">Bidder / Company</th>
                           <th className="p-3.5">Eligibility Status</th>

@@ -12,7 +12,7 @@ export default function DashboardLayout({
 }) {
   return (
     <OfficerRouteGuard>
-      <div className="min-h-screen bg-[#f8fafc]">
+      <div className="min-h-screen bg-app-bg">
         <GovTopBar />
         <Sidebar />
         <div className="pl-64">

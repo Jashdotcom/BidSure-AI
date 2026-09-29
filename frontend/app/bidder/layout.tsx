@@ -11,7 +11,7 @@ export default function BidderLayout({
 }) {
   return (
     <BidderRouteGuard>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-app-bg">
         <GovTopBar />
         <BidderSidebar />
         <div className="pl-64">
