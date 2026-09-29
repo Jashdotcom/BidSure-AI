@@ -315,6 +315,50 @@ def associate_document_with_tender(document_id: str, tender_id: str) -> Optional
         return None
 
 
+def clear_demo_documents() -> int:
+    """
+    Selectively removes only synthetic demo documents from disk and index,
+    preserving all real officer uploads, manual CPPP imports, and authentic tender documents.
+    Returns the count of removed demo documents.
+    """
+    global _in_memory_index
+    with _doc_lock:
+        if not _is_initialized:
+            _load_index()
+
+        removed_count = 0
+        to_delete = []
+
+        for doc_id, record in _in_memory_index.items():
+            meta = record.get("metadata") or {}
+            is_demo = (
+                record.get("is_synthetic_demo") is True
+                or meta.get("is_synthetic_demo") is True
+                or record.get("source") == "SYNTHETIC_UPLOAD"
+                or str(record.get("document_id", "")).startswith("DOC-DEMO-")
+                or str(record.get("bidder_id", "")).startswith("BID-DEMO-")
+                or str(record.get("tender_id", "")).startswith("TND-DEMO-")
+            )
+            if is_demo:
+                to_delete.append(doc_id)
+
+        for doc_id in to_delete:
+            record = _in_memory_index.pop(doc_id, None)
+            if record:
+                removed_count += 1
+                path = record.get("storage_path")
+                if path and os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+
+        if removed_count > 0:
+            _save_index()
+
+        return removed_count
+
+
 def clear_all_documents() -> None:
     """Clears all stored documents and resets the index."""
     global _in_memory_index

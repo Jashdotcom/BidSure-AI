@@ -31,10 +31,10 @@ def run_demo_dataset_loader():
     print("Starting BidSure AI Realistic Demo Dataset Loader")
     print("==================================================")
 
-    # 1. Clear existing procurement data and documents
-    sample_data.clear_all_procurement_data()
-    document_store.clear_all_documents()
-    print("  ✓ Cleared existing procurement stores and document storage.")
+    # 1. Clear existing demo procurement data and demo documents (non-destructive to real officer data)
+    sample_data.clear_demo_procurement_data()
+    document_store.clear_demo_documents()
+    print("  ✓ Cleared existing demo procurement stores and synthetic document storage (retaining real officer data).")
 
     # 2. Load 12 Real CPPP Tenders
     cppp_adapter = CPPPTenderAdapter()
@@ -122,6 +122,7 @@ Source: CPPP Government Public Data (eprocure.gov.in)
             "id": f"USR-DEMO-{idx:03d}",
             "name": f"Director {b_name.split()[0]}",
             "email": b_email,
+            "password_hash": sample_data._bidder_pwd_hash,
             "role": "BIDDER",
             "bidder_id": b_id,
             "company_name": b_name

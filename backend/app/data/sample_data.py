@@ -908,6 +908,20 @@ else:
     SAMPLE_BIDDER_DOCUMENTS: List[Dict[str, Any]] = copy.deepcopy(SEED_BIDDER_DOCUMENTS) if DEMO_MODE else []
     SAMPLE_AUDIT_LOGS: List[Dict[str, Any]] = []
 
+def clear_demo_procurement_data() -> None:
+    """
+    Safely removes synthetic demo procurement data, preserving real officer-imported data.
+    """
+    with _tender_number_lock:
+        global SAMPLE_TENDERS, SAMPLE_BIDDERS, SAMPLE_BIDDER_BIDS, SAMPLE_BIDDER_DOCUMENTS, SAMPLE_AUDIT_LOGS
+
+        # Use slice assignment to modify lists in place
+        SAMPLE_TENDERS[:] = [t for t in SAMPLE_TENDERS if not t.get("is_synthetic_demo")]
+        SAMPLE_BIDDERS[:] = [b for b in SAMPLE_BIDDERS if not b.get("is_synthetic_demo")]
+        SAMPLE_BIDDER_BIDS[:] = [b for b in SAMPLE_BIDDER_BIDS if not b.get("is_synthetic_demo")]
+        SAMPLE_BIDDER_DOCUMENTS[:] = [d for d in SAMPLE_BIDDER_DOCUMENTS if not d.get("is_synthetic_demo")]
+        SAMPLE_AUDIT_LOGS[:] = [a for a in SAMPLE_AUDIT_LOGS if a.get("data_source") != "BIDSURE_DEMO_DATA"]
+
 def sync_bids_and_bidders():
     """
     Ensures SAMPLE_BIDDERS contains submission entries corresponding to all bids in SAMPLE_BIDDER_BIDS.
