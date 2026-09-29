@@ -132,6 +132,7 @@ export default function TendersPage() {
   const [downloadDocsOption, setDownloadDocsOption] = useState(true);
   const [manualFile, setManualFile] = useState<File | null>(null);
 
+<<<<<<< HEAD
   // CPPP Browse State
   const [cpppBrowseQuery, setCpppBrowseQuery] = useState("");
   const [cpppBrowseResults, setCpppBrowseResults] = useState<any[]>([]);
@@ -140,6 +141,15 @@ export default function TendersPage() {
 
   // Syncing state for tender cards
   const [syncingTenderId, setSyncingTenderId] = useState<string | null>(null);
+=======
+  // Metadata Review Fallback State
+  const [isManualReviewFallback, setIsManualReviewFallback] = useState(false);
+  const [reviewTenderNumber, setReviewTenderNumber] = useState("");
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewOrganization, setReviewOrganization] = useState("");
+  const [reviewCategory, setReviewCategory] = useState("Goods & Materials");
+  const [reviewEstimatedValue, setReviewEstimatedValue] = useState("");
+>>>>>>> f2f975c (fix(tenders): improve PDF metadata extraction and simplify upload modal)
 
   // New Requirement Form State
   const [newReq, setNewReq] = useState({
@@ -705,23 +715,54 @@ export default function TendersPage() {
 
         const formData = new FormData();
         formData.append("file", manualFile);
-        formData.append("title", manualFile.name.replace(".pdf", "").replace(/_/g, " "));
 
-        const res = await apiRequest<{ message: string; tender: Tender }>(
-          "/tenders/import-manual",
-          {
-            method: "POST",
-            body: formData,
+        if (isManualReviewFallback) {
+          if (!reviewTenderNumber.trim() || !reviewTitle.trim() || !reviewOrganization.trim()) {
+            setImportError("Please fill in all required metadata fields (Tender ID, Title, Organization).");
+            setImportLoading(false);
+            return;
           }
-        );
+          formData.append("tender_number", reviewTenderNumber.trim());
+          formData.append("title", reviewTitle.trim());
+          formData.append("organization", reviewOrganization.trim());
+          formData.append("category", reviewCategory);
+          if (reviewEstimatedValue) {
+            formData.append("estimated_value", reviewEstimatedValue);
+          }
+        } else {
+          formData.append("title", manualFile.name.replace(".pdf", "").replace(/_/g, " "));
+        }
 
-        setIsImportModalOpen(false);
-        setManualFile(null);
-        await fetchTenders();
-        setPageToast({
-          type: "SUCCESS",
-          message: res.message || "Manual tender document imported successfully.",
-        });
+        try {
+          const res = await apiRequest<{ message: string; tender: Tender }>(
+            "/tenders/import-manual",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          setIsImportModalOpen(false);
+          setManualFile(null);
+          setIsManualReviewFallback(false);
+          await fetchTenders();
+          setPageToast({
+            type: "SUCCESS",
+            message: res.message || "Manual tender document imported successfully.",
+          });
+        } catch (err: any) {
+          const detail = err?.detail;
+          if (detail && typeof detail === "object" && detail.needs_manual_review) {
+            setIsManualReviewFallback(true);
+            setReviewTenderNumber(detail.suggested_tender_number || "2026/MBPT/925738");
+            setReviewTitle(detail.suggested_title || manualFile.name.replace(".pdf", "").replace(/_/g, " "));
+            setReviewOrganization(detail.suggested_organization || "Mumbai Port Authority");
+            setImportError(detail.message || "Automatic extraction incomplete. Please review and complete the metadata fields below.");
+          } else {
+            const msg = detail?.message || detail || err?.message || "Failed to import tender.";
+            setImportError(typeof msg === "string" ? msg : "Failed to import tender.");
+          }
+        }
       }
     } catch (err: any) {
       const msg = err?.detail?.message || err?.detail || err?.message || "Failed to import tender. Please check the URL or file and try again.";

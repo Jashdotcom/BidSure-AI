@@ -275,13 +275,15 @@ async def import_cppp_tender(
 async def import_manual_tender(
     file: UploadFile = File(...),
     title: Optional[str] = Form(None),
-    estimated_value: Optional[float] = Form(None),
+    tender_number: Optional[str] = Form(None),
+    organization: Optional[str] = Form(None),
     category: Optional[str] = Form(None),
+    estimated_value: Optional[float] = Form(None),
     current_user: Dict[str, Any] = Depends(require_roles(["PROCUREMENT_OFFICER", "SENIOR_PROCUREMENT_OFFICER"]))
 ):
     """
     Ingests a tender via manual PDF document upload with cryptographic SHA-256 hashing
-    and duplicate detection.
+    and duplicate detection. Supports manual metadata fallback review.
     RESTRICTED: Officer role only.
     """
     raw_filename = file.filename or "uploaded_tender.pdf"
@@ -303,6 +305,8 @@ async def import_manual_tender(
         "filename": raw_filename,
         "file_bytes": file_bytes,
         "title": title,
+        "tender_number": tender_number,
+        "organization": organization,
         "estimated_value": estimated_value,
         "category": category
     }
@@ -310,9 +314,23 @@ async def import_manual_tender(
     try:
         tender_record = await adapter.fetch_tender(raw_filename, metadata=metadata)
     except ValueError as e:
+        err_msg = str(e)
+        if "TENDER_METADATA_EXTRACTION_FAILED" in err_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error_code": "TENDER_METADATA_EXTRACTION_FAILED",
+                    "message": err_msg,
+                    "needs_manual_review": True,
+                    "filename": raw_filename,
+                    "suggested_tender_number": f"2026/MBPT/{int(time.time()) % 100000}" if "MBPT" in raw_filename.upper() else f"2026/PROC/{int(time.time()) % 10000}",
+                    "suggested_title": raw_filename.replace(".pdf", "").replace(".PDF", "").replace("_", " ").strip(),
+                    "suggested_organization": "Mumbai Port Authority" if "MBPT" in raw_filename.upper() else "Procuring Entity"
+                }
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail=err_msg
         )
     doc_hash = tender_record.get("document_hash_sha256")
 

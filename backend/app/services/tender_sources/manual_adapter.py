@@ -30,23 +30,33 @@ class ManualTenderAdapter(BaseTenderSourceAdapter):
 
         # Use OCRService to extract metadata from the document
         ocr_service = OCRService()
-        extracted_data = await ocr_service.process_document(file_bytes=file_bytes, filename=filename)
+        try:
+            extracted_data = await ocr_service.process_document(file_bytes=file_bytes, filename=filename)
+        except Exception:
+            extracted_data = {}
 
-        tender_number = extracted_data.get("tender_number")
-        title = extracted_data.get("title")
-        org = extracted_data.get("organization")
+        # Allow officer overrides from metadata to take precedence or fill missing fields
+        override_tender_number = metadata.get("tender_number") if metadata else None
+        override_title = metadata.get("title") if metadata else None
+        override_org = metadata.get("organization") if metadata else None
+        override_category = metadata.get("category") if metadata else None
+        override_est_val = metadata.get("estimated_value") if metadata else None
 
-        # Fallback to metadata title only if extracted title is missing
-        if not title and metadata and metadata.get("title"):
-            cand = metadata.get("title").strip()
-            if cand and not cand.lower().startswith("tender"):
-                title = cand
+        tender_number = override_tender_number or extracted_data.get("tender_number")
+        title = override_title or extracted_data.get("title")
+        org = override_org or extracted_data.get("organization")
+
+        # Fallback title from filename if missing
+        if not title and filename:
+            clean_name = filename.replace(".pdf", "").replace(".PDF", "").replace("_", " ").strip()
+            if clean_name and not clean_name.lower().startswith("tender"):
+                title = clean_name
 
         # Validate extracted metadata - reject if essential metadata could not be extracted
         if not tender_number or tender_number in ("Tender", "Details", "Notice") or not title or not org:
             raise ValueError(
                 "TENDER_METADATA_EXTRACTION_FAILED: Could not extract valid Tender ID, Title, or Organization from uploaded document. "
-                "Please verify that the uploaded PDF is an authentic NIT / Tender document with legible metadata."
+                "Please review and provide the required metadata fields."
             )
 
         if "CPCL/MAN" in tender_number:
