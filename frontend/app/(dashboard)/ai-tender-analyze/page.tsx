@@ -135,7 +135,6 @@ export default function AITenderAnalyzePage() {
   const validateAndSelectFile = (file: File): boolean => {
     setErrorMsg(null);
 
-    // 1. Validate file extension and MIME type
     const isPdf =
       file.name.toLowerCase().endsWith(".pdf") ||
       file.type === "application/pdf" ||
@@ -146,13 +145,11 @@ export default function AITenderAnalyzePage() {
       return false;
     }
 
-    // 2. Validate empty file (0 bytes)
     if (file.size === 0) {
       setErrorMsg("The selected PDF file is empty (0 bytes). Please upload a valid document.");
       return false;
     }
 
-    // 3. Validate maximum size (50 MB)
     const MAX_FILE_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
@@ -218,7 +215,6 @@ export default function AITenderAnalyzePage() {
     setProcessingStep(1);
 
     try {
-      // Simulate IDP processing steps visually
       setTimeout(() => setProcessingStep(2), 1200);
       setTimeout(() => setProcessingStep(3), 2600);
       setTimeout(() => setProcessingStep(4), 4000);
@@ -226,7 +222,6 @@ export default function AITenderAnalyzePage() {
       let dataPromise: Promise<TenderAnalysisJob>;
 
       if (customFile) {
-        // Upload custom PDF via multipart FormData
         const formData = new FormData();
         formData.append("file", customFile);
         if (targetTenderId) {
@@ -237,7 +232,6 @@ export default function AITenderAnalyzePage() {
           body: formData
         });
       } else {
-        // Analyze preloaded preset document
         const filenameToUse = filenameOverride || selectedPreset;
         dataPromise = apiRequest<TenderAnalysisJob>("/tenders/analyze-document", {
           method: "POST",
@@ -333,7 +327,6 @@ export default function AITenderAnalyzePage() {
           }
         }
       );
-      // Update local state
       setAnalysisJob({
         ...analysisJob,
         requirements: analysisJob.requirements.map((r) =>
@@ -446,7 +439,6 @@ export default function AITenderAnalyzePage() {
     setAnalysisJob({ ...analysisJob, requirements: updated });
   };
 
-  // Filtered requirements
   const filteredRequirements = analysisJob?.requirements.filter((r) => {
     const matchesSearch =
       r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -461,7 +453,6 @@ export default function AITenderAnalyzePage() {
     return matchesSearch && matchesCategory && matchesStatus && matchesMandatory;
   }) || [];
 
-  // Metrics counters
   const totalCount = analysisJob?.requirements.length || 0;
   const verifiedCount = analysisJob?.requirements.filter((r) => r.review_status === "VERIFIED").length || 0;
   const needsReviewCount = analysisJob?.requirements.filter((r) => r.review_status === "NEEDS_REVIEW").length || 0;
@@ -470,15 +461,15 @@ export default function AITenderAnalyzePage() {
   const rejectedCount = analysisJob?.requirements.filter((r) => r.review_status === "REJECTED").length || 0;
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-16 font-sans">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-xl border border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-xl shadow-subtle border border-[#D5DFED]">
         <div>
-          <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs tracking-wider uppercase mb-1">
-            <SparklesIcon className="w-4 h-4" /> CPCL Intelligent Document Processing (IDP) Studio
+          <div className="flex items-center gap-2 text-[#2155D9] font-bold text-xs tracking-wider uppercase mb-1">
+            <SparklesIcon className="w-4 h-4 text-[#2155D9]" /> CPCL Intelligent Document Processing (IDP) Studio
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Tender Analyze & Clause Studio</h1>
-          <p className="text-slate-400 text-sm mt-1 max-w-2xl">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-[#17243B] tracking-tight">AI Tender Analyze & Clause Studio</h1>
+          <p className="text-slate-600 text-xs mt-1 max-w-2xl font-medium">
             Ingest tender PDFs, execute multi-layer Smart OCR & layout segmentation, and review AI-extracted procurement criteria before linking them to the deterministic RulesEngine.
           </p>
         </div>
@@ -486,8 +477,8 @@ export default function AITenderAnalyzePage() {
           {analysisJob && (
             <button
               onClick={() => setActiveTab("review")}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 ${
-                activeTab === "review" ? "bg-amber-500 text-slate-950 font-bold shadow-lg" : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 shadow-xs ${
+                activeTab === "review" ? "bg-[#2155D9] text-white font-bold shadow-sm" : "border border-[#D5DFED] bg-white text-slate-700 hover:bg-slate-50"
               }`}
             >
               <LayersIcon className="w-4 h-4" /> Review Studio ({totalCount})
@@ -495,8 +486,8 @@ export default function AITenderAnalyzePage() {
           )}
           <button
             onClick={() => setActiveTab("upload")}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 ${
-              activeTab === "upload" ? "bg-amber-500 text-slate-950 font-bold shadow-lg" : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 shadow-xs ${
+              activeTab === "upload" ? "bg-[#2155D9] text-white font-bold shadow-sm" : "border border-[#D5DFED] bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
             <UploadIcon className="w-4 h-4" /> Upload & Presets
@@ -505,24 +496,24 @@ export default function AITenderAnalyzePage() {
       </div>
 
       {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <CheckCircle2Icon className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span className="font-medium">{successMsg}</span>
+            <span className="font-semibold text-xs">{successMsg}</span>
           </div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-900 text-sm font-semibold">
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-700 hover:text-emerald-900 text-xs font-semibold">
             Dismiss
           </button>
         </div>
       )}
 
       {errorMsg && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center justify-between">
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <XCircleIcon className="w-5 h-5 text-rose-600 shrink-0" />
-            <span className="font-medium">{errorMsg}</span>
+            <span className="font-semibold text-xs">{errorMsg}</span>
           </div>
-          <button onClick={() => setErrorMsg(null)} className="text-rose-700 hover:text-rose-900 text-sm font-semibold">
+          <button onClick={() => setErrorMsg(null)} className="text-rose-700 hover:text-rose-900 text-xs font-semibold">
             Dismiss
           </button>
         </div>
@@ -533,12 +524,12 @@ export default function AITenderAnalyzePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left 2 Cols: Preset Tender Documents & Drag Drop */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+            <div className="bg-white p-6 rounded-xl border border-[#D5DFED] shadow-subtle space-y-6">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileTextIcon className="w-5 h-5 text-amber-500" /> Operational Tender Documents
+                <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <FileTextIcon className="w-5 h-5 text-[#2155D9]" /> Operational Tender Documents
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {tendersList.length > 0
                     ? "Select from available operational tenders in the database for AI requirement extraction."
                     : "No tender documents available for analysis. Upload an operational tender PDF document below."}
@@ -546,17 +537,17 @@ export default function AITenderAnalyzePage() {
               </div>
 
               {isLoadingTenders ? (
-                <div className="py-12 px-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex flex-col items-center justify-center text-center space-y-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                    <FileTextIcon className="w-5 h-5 text-amber-500" />
+                <div className="py-12 px-6 rounded-xl border border-[#D5DFED] bg-slate-50/50 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-[#2155D9]">
+                    <FileTextIcon className="w-5 h-5 text-[#2155D9]" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Loader2Icon className="w-4 h-4 text-amber-500 animate-spin" />
-                    <p className="font-semibold text-slate-900 dark:text-white text-sm">
+                    <Loader2Icon className="w-4 h-4 text-[#2155D9] animate-spin" />
+                    <p className="font-semibold text-slate-900 text-xs">
                       Loading tender documents...
                     </p>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                     Retrieving available tender documents from the database.
                   </p>
                 </div>
@@ -565,6 +556,7 @@ export default function AITenderAnalyzePage() {
                   {tendersList.map((tender) => {
                     const tenderRef = tender.tender_number || tender.id;
                     const filename = tender.file_name || `${tenderRef.replace(/\//g, "_")}_Tender.pdf`;
+                    const isSelected = selectedPreset === filename && !customFile;
                     return (
                       <div
                         key={tender.id || tender.tender_id}
@@ -573,37 +565,37 @@ export default function AITenderAnalyzePage() {
                           setTargetTenderId(tender.id || tender.tender_id || "");
                           setCustomFile(null);
                         }}
-                        className={`p-5 rounded-2xl border-2 cursor-pointer transition flex flex-col justify-between ${
-                          selectedPreset === filename && !customFile
-                            ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/20 shadow-md"
-                            : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition flex flex-col justify-between ${
+                          isSelected
+                            ? "border-[#2155D9] bg-blue-50/50 shadow-sm ring-1 ring-blue-300"
+                            : "border-[#D5DFED] hover:border-slate-300 bg-white"
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                               {tenderRef}
                             </span>
-                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="text-xs font-bold text-emerald-700">
                               {tender.estimated_value_display || (tender.estimated_value ? `₹${tender.estimated_value}` : "Active")}
                             </span>
                           </div>
-                          <h3 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2">{tender.title}</h3>
+                          <h3 className="font-bold text-slate-900 text-xs line-clamp-2">{tender.title}</h3>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 mt-4 pt-3 border-t border-slate-100">
                           <span>{tender.file_size_kb ? `${(tender.file_size_kb / 1024).toFixed(1)} MB` : "PDF RFP"}</span>
-                          <span className="font-medium text-amber-600 dark:text-amber-400">{tender.category || "Procurement"}</span>
+                          <span className="font-semibold text-[#2155D9]">{tender.category || "Procurement"}</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="p-8 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
-                  <FileTextIcon className="w-10 h-10 text-slate-400 mx-auto" />
+                <div className="p-6 bg-slate-50 rounded-xl border border-[#D5DFED] text-center space-y-3">
+                  <FileTextIcon className="w-8 h-8 text-slate-400 mx-auto" />
                   <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">No tender documents available</h3>
-                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    <h3 className="font-bold text-slate-800 text-xs">No tender documents available</h3>
+                    <p className="text-[11px] text-slate-500 max-w-md mx-auto">
                       Import a tender or upload a tender PDF to begin AI analysis.
                     </p>
                   </div>
@@ -611,15 +603,15 @@ export default function AITenderAnalyzePage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition inline-flex items-center gap-1.5 shadow-sm"
+                      className="px-3.5 py-1.5 bg-[#2155D9] hover:bg-blue-700 text-white font-bold rounded-lg text-xs transition inline-flex items-center gap-1.5 shadow-xs"
                     >
-                      <UploadIcon className="w-4 h-4" /> Upload Tender PDF
+                      <UploadIcon className="w-3.5 h-3.5" /> Upload Tender PDF
                     </button>
                     <a
                       href="/tenders/create"
-                      className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs transition inline-flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 bg-white border border-[#D5DFED] hover:bg-slate-50 text-slate-700 font-semibold rounded-lg text-xs transition inline-flex items-center gap-1.5 shadow-xs"
                     >
-                      <PlusIcon className="w-4 h-4" /> Create / Import Tender
+                      <PlusIcon className="w-3.5 h-3.5" /> Create / Import Tender
                     </a>
                   </div>
                 </div>
@@ -632,12 +624,12 @@ export default function AITenderAnalyzePage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-6 text-center transition cursor-pointer relative ${
+                className={`border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer relative ${
                   isDragging
-                    ? "border-amber-500 bg-amber-500/10 scale-[1.01]"
+                    ? "border-[#2155D9] bg-blue-50/50 scale-[1.01]"
                     : customFile
-                    ? "border-emerald-500/60 bg-emerald-50/30 dark:bg-emerald-950/20"
-                    : "border-slate-300 dark:border-slate-700 hover:border-amber-500 bg-slate-50 dark:bg-slate-950"
+                    ? "border-emerald-400 bg-emerald-50/30"
+                    : "border-[#D5DFED] hover:border-[#2155D9] bg-slate-50/50"
                 }`}
               >
                 <input
@@ -654,21 +646,21 @@ export default function AITenderAnalyzePage() {
                 />
 
                 {customFile ? (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl border border-emerald-300 dark:border-emerald-800 shadow-sm text-left">
-                    <div className="flex items-center gap-3.5 overflow-hidden">
-                      <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
-                        <FileTextIcon className="w-6 h-6" />
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 bg-white rounded-lg border border-emerald-200 shadow-xs text-left">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-10 h-10 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
+                        <FileTextIcon className="w-5 h-5" />
                       </div>
                       <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-900 dark:text-white text-sm truncate max-w-xs md:max-w-md">
+                          <h4 className="font-bold text-slate-900 text-xs truncate max-w-xs">
                             {customFile.name}
                           </h4>
-                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 shrink-0">
+                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 text-emerald-800 shrink-0">
                             Custom PDF
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        <p className="text-[11px] text-slate-500 mt-0.5">
                           {(customFile.size / (1024 * 1024)).toFixed(2)} MB • Ready for Intelligent Document Processing
                         </p>
                       </div>
@@ -680,14 +672,14 @@ export default function AITenderAnalyzePage() {
                           e.stopPropagation();
                           fileInputRef.current?.click();
                         }}
-                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold transition"
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[11px] font-semibold transition"
                       >
-                        Change File
+                        Change
                       </button>
                       <button
                         type="button"
                         onClick={handleClearCustomFile}
-                        className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg transition"
+                        className="p-1 text-red-600 hover:bg-red-50 rounded-md transition"
                         title="Remove Custom File"
                       >
                         <Trash2Icon className="w-4 h-4" />
@@ -696,11 +688,11 @@ export default function AITenderAnalyzePage() {
                   </div>
                 ) : (
                   <>
-                    <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <UploadIcon className="w-7 h-7" />
+                    <div className="w-12 h-12 bg-blue-50 text-[#2155D9] rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <UploadIcon className="w-6 h-6" />
                     </div>
-                    <h4 className="font-bold text-slate-900 dark:text-white text-base">Drag & Drop custom tender PDF here</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                    <h4 className="font-bold text-slate-900 text-xs">Drag & Drop custom tender PDF here</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       Supports scanned or native text PDFs up to 50 MB with 99%+ OCR accuracy
                     </p>
                     <button
@@ -709,9 +701,9 @@ export default function AITenderAnalyzePage() {
                         e.stopPropagation();
                         fileInputRef.current?.click();
                       }}
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-400 rounded-xl text-sm font-medium shadow-sm transition"
+                      className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-[#D5DFED] text-slate-700 hover:text-[#2155D9] hover:border-[#2155D9] rounded-lg text-xs font-semibold shadow-xs transition"
                     >
-                      <UploadIcon className="w-4 h-4 text-amber-500" /> Browse Files...
+                      <UploadIcon className="w-3.5 h-3.5 text-[#2155D9]" /> Browse Files...
                     </button>
                   </>
                 )}
@@ -721,24 +713,24 @@ export default function AITenderAnalyzePage() {
 
           {/* Right Col: Configuration & Analysis Launch */}
           <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sticky top-6">
+            <div className="bg-white p-6 rounded-xl border border-[#D5DFED] shadow-subtle space-y-5 sticky top-8">
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <SlidersIcon className="w-4 h-4 text-amber-500" /> Analysis Configuration
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <SlidersIcon className="w-4 h-4 text-[#2155D9]" /> Analysis Configuration
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <p className="text-[11px] text-slate-500 mt-0.5">
                   Configure target tender linkage and intelligent document processing profiles.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                       Selected Document
                     </label>
                     {customFile && (
-                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                      <span className="text-[10px] font-bold text-[#2155D9] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                         Custom PDF
                       </span>
                     )}
@@ -747,18 +739,18 @@ export default function AITenderAnalyzePage() {
                     type="text"
                     readOnly
                     value={customFile ? customFile.name : selectedPreset}
-                    className="w-full px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs text-slate-800 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">
                     Target Tender Record ID
                   </label>
                   <select
                     value={targetTenderId}
                     onChange={(e) => setTargetTenderId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 bg-white border border-[#D5DFED] rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   >
                     {tendersList.length === 0 ? (
                       <option value="">No tenders available in database</option>
@@ -772,26 +764,26 @@ export default function AITenderAnalyzePage() {
                   </select>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                <div className="p-3.5 rounded-lg bg-slate-50 border border-[#D5DFED] space-y-1.5 text-xs text-slate-600">
                   <div className="flex justify-between font-medium">
                     <span>OCR Engine:</span>
-                    <span className="text-slate-900 dark:text-white font-semibold">Smart IDP v2 (Hybrid)</span>
+                    <span className="text-slate-900 font-semibold">Smart IDP v2 (Hybrid)</span>
                   </div>
                   <div className="flex justify-between font-medium">
                     <span>Target Extraction:</span>
-                    <span className="text-slate-900 dark:text-white font-semibold">PQC, Financial, MII & Statutory</span>
+                    <span className="text-slate-900 font-semibold">PQC, Financial, MII & Statutory</span>
                   </div>
                   <div className="flex justify-between font-medium">
                     <span>RulesEngine Sync:</span>
-                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Enabled</span>
+                    <span className="text-emerald-700 font-semibold">Enabled</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleStartAnalysis()}
-                  className="w-full py-3.5 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm tracking-wide"
+                  className="w-full py-2.5 px-4 bg-[#2155D9] hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-lg shadow-xs transition flex items-center justify-center gap-2 text-xs"
                 >
-                  <SparklesIcon className="w-5 h-5" /> Run AI Tender Analysis
+                  <SparklesIcon className="w-4 h-4" /> Run AI Tender Analysis
                 </button>
               </div>
             </div>
@@ -801,18 +793,18 @@ export default function AITenderAnalyzePage() {
 
       {/* TAB 2: PROCESSING VISUALIZER */}
       {activeTab === "processing" && (
-        <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg text-center space-y-8">
-          <div className="w-20 h-20 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-3xl flex items-center justify-center mx-auto animate-pulse">
-            <RefreshCwIcon className="w-10 h-10 animate-spin" />
+        <div className="max-w-xl mx-auto bg-white p-8 rounded-xl border border-[#D5DFED] shadow-subtle text-center space-y-6">
+          <div className="w-16 h-16 bg-blue-50 text-[#2155D9] rounded-2xl flex items-center justify-center mx-auto animate-pulse">
+            <RefreshCwIcon className="w-8 h-8 animate-spin" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Executing Intelligent Document Processing (IDP)</h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-              Analyzing <span className="font-mono font-medium text-slate-800 dark:text-slate-200">{selectedPreset}</span> for CPCL procurement requirements...
+            <h2 className="text-xl font-extrabold text-slate-900">Executing Intelligent Document Processing (IDP)</h2>
+            <p className="text-slate-500 text-xs mt-1">
+              Analyzing <span className="font-mono font-semibold text-slate-800">{selectedPreset}</span> for CPCL procurement requirements...
             </p>
           </div>
 
-          <div className="space-y-4 text-left max-w-md mx-auto">
+          <div className="space-y-3 text-left max-w-md mx-auto">
             {[
               { step: 1, title: "PDF Ingestion & Page Segmentation", desc: "Extracting raw text and vector layouts across pages" },
               { step: 2, title: "Multi-Layer Smart OCR & Table Parsing", desc: "Recognizing tables, headers, and clause number boundaries" },
@@ -821,30 +813,30 @@ export default function AITenderAnalyzePage() {
             ].map((s) => (
               <div
                 key={s.step}
-                className={`flex items-start gap-3.5 p-3.5 rounded-xl border transition ${
+                className={`flex items-start gap-3 p-3 rounded-lg border transition text-xs ${
                   processingStep > s.step
-                    ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-900 dark:text-emerald-200"
+                    ? "bg-emerald-50/50 border-emerald-200 text-emerald-900"
                     : processingStep === s.step
-                    ? "bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-slate-900 dark:text-white shadow-sm"
-                    : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-400 opacity-60"
+                    ? "bg-blue-50 border-blue-200 text-slate-900 shadow-xs"
+                    : "bg-slate-50 border-[#D5DFED] text-slate-400 opacity-60"
                 }`}
               >
                 <div className="mt-0.5">
                   {processingStep > s.step ? (
-                    <CheckCircle2Icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2Icon className="w-4 h-4 text-emerald-600" />
                   ) : processingStep === s.step ? (
-                    <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs animate-spin">
+                    <div className="w-4 h-4 rounded-full bg-[#2155D9] text-white flex items-center justify-center font-bold text-[10px] animate-spin">
                       {s.step}
                     </div>
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold text-xs">
+                    <div className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-[10px]">
                       {s.step}
                     </div>
                   )}
                 </div>
                 <div>
-                  <h4 className="font-semibold text-sm">{s.title}</h4>
-                  <p className="text-xs opacity-80 mt-0.5">{s.desc}</p>
+                  <h4 className="font-bold">{s.title}</h4>
+                  <p className="opacity-80 mt-0.5 text-[11px]">{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -855,19 +847,19 @@ export default function AITenderAnalyzePage() {
       {/* TAB 3: HUMAN-IN-THE-LOOP REVIEW STUDIO */}
       {activeTab === "review" && (
         !analysisJob ? (
-          <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl flex items-center justify-center mx-auto">
-              <FileTextIcon className="w-8 h-8" />
+          <div className="bg-white p-12 rounded-xl border border-[#D5DFED] shadow-subtle text-center space-y-4">
+            <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mx-auto">
+              <FileTextIcon className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">No tender document analyzed yet</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+              <h3 className="text-sm font-bold text-slate-900">No tender document analyzed yet</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                 Upload a tender PDF in the Upload tab and run AI analysis to extract and review procurement requirements.
               </p>
             </div>
             <button
               onClick={() => setActiveTab("upload")}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow transition"
+              className="px-4 py-2 bg-[#2155D9] hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-xs transition"
             >
               Go to Upload Document
             </button>
@@ -875,43 +867,43 @@ export default function AITenderAnalyzePage() {
         ) : (
         <div className="space-y-6">
           {/* Document Summary Bar */}
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="bg-white p-5 rounded-xl border border-[#D5DFED] shadow-subtle flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center shrink-0">
-                <FileTextIcon className="w-6 h-6" />
+              <div className="w-11 h-11 bg-blue-50 text-[#2155D9] rounded-xl flex items-center justify-center shrink-0">
+                <FileTextIcon className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="font-bold text-slate-900 dark:text-white text-base">{analysisJob.title || analysisJob.tender_title || analysisJob.filename}</h2>
-                <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  <span className="font-mono text-amber-600 dark:text-amber-400 font-semibold">{analysisJob.tender_id || targetTenderId}</span>
+                <h2 className="font-bold text-slate-900 text-sm">{analysisJob.title || analysisJob.tender_title || analysisJob.filename}</h2>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                  <span className="font-mono text-[#2155D9] font-semibold">{analysisJob.tender_id || targetTenderId}</span>
                   <span>•</span>
                   <span>{analysisJob.filename}</span>
                   <span>•</span>
                   <span>{analysisJob.total_pages || analysisJob.total_pages_parsed || 1} Pages Parsed</span>
                   <span>•</span>
-                  <span className="text-emerald-600 font-semibold">OCR Confidence: {(analysisJob.ocr_confidence * 100).toFixed(1)}%</span>
+                  <span className="text-emerald-700 font-semibold">OCR: {(analysisJob.ocr_confidence * 100).toFixed(1)}%</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={handleBulkVerifyHighConfidence}
-                className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-medium text-xs rounded-xl transition border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs rounded-lg transition border border-emerald-200 flex items-center gap-1.5 shadow-xs"
               >
-                <CheckIcon className="w-4 h-4" /> Verify All High-Confidence (≥90%)
+                <CheckIcon className="w-3.5 h-3.5" /> Verify High-Conf (≥90%)
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-medium text-xs rounded-xl transition shadow-sm flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5"
               >
-                <PlusIcon className="w-4 h-4" /> Add Manual Requirement
+                <PlusIcon className="w-3.5 h-3.5" /> Add Clause
               </button>
               <button
                 onClick={() => setIsFinalizeModalOpen(true)}
-                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1.5"
+                className="px-4 py-2 bg-[#2155D9] hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5"
               >
-                <ShieldCheckIcon className="w-4 h-4" /> Finalize Requirements ({verifiedCount + editedCount + addedCount}/{totalCount})
+                <ShieldCheckIcon className="w-4 h-4" /> Finalize ({verifiedCount + editedCount + addedCount}/{totalCount})
               </button>
             </div>
           </div>
@@ -922,73 +914,54 @@ export default function AITenderAnalyzePage() {
               {
                 label: "Total Clauses",
                 count: totalCount,
-                cardClass: "bg-[#1E293B] border-[#0F172A]",
-                labelClass: "text-white",
+                cardClass: "bg-slate-900 border-slate-900 text-white",
+                labelClass: "text-slate-200",
                 numberClass: "text-white",
-                style: { backgroundColor: "#1E293B", borderColor: "#0F172A" },
-                labelStyle: { color: "#FFFFFF" },
-                numberStyle: { color: "#FFFFFF" },
               },
               {
                 label: "Verified",
                 count: verifiedCount,
-                cardClass: "bg-[#DCFCE7] border-[#16A34A]",
-                labelClass: "text-[#15803D]",
-                numberClass: "text-[#166534]",
-                style: { backgroundColor: "#DCFCE7", borderColor: "#16A34A" },
-                labelStyle: { color: "#15803D" },
-                numberStyle: { color: "#166534" },
+                cardClass: "bg-emerald-50 border-emerald-200",
+                labelClass: "text-emerald-800",
+                numberClass: "text-emerald-900",
               },
               {
                 label: "Needs Review",
                 count: needsReviewCount,
-                cardClass: "bg-[#FEF3C7] border-[#F59E0B]",
-                labelClass: "text-[#B45309]",
-                numberClass: "text-[#92400E]",
-                style: { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" },
-                labelStyle: { color: "#B45309" },
-                numberStyle: { color: "#92400E" },
+                cardClass: "bg-amber-50 border-amber-200",
+                labelClass: "text-amber-800",
+                numberClass: "text-amber-900",
               },
               {
                 label: "Officer Edited",
                 count: editedCount,
-                cardClass: "bg-[#DBEAFE] border-[#2563EB]",
-                labelClass: "text-[#1D4ED8]",
-                numberClass: "text-[#1E40AF]",
-                style: { backgroundColor: "#DBEAFE", borderColor: "#2563EB" },
-                labelStyle: { color: "#1D4ED8" },
-                numberStyle: { color: "#1E40AF" },
+                cardClass: "bg-blue-50 border-blue-200",
+                labelClass: "text-blue-800",
+                numberClass: "text-blue-900",
               },
               {
                 label: "Manually Added",
                 count: addedCount,
-                cardClass: "bg-[#F3E8FF] border-[#9333EA]",
-                labelClass: "text-[#7E22CE]",
-                numberClass: "text-[#6B21A8]",
-                style: { backgroundColor: "#F3E8FF", borderColor: "#9333EA" },
-                labelStyle: { color: "#7E22CE" },
-                numberStyle: { color: "#6B21A8" },
+                cardClass: "bg-purple-50 border-purple-200",
+                labelClass: "text-purple-800",
+                numberClass: "text-purple-900",
               },
               {
                 label: "Rejected",
                 count: rejectedCount,
-                cardClass: "bg-[#FEE2E2] border-[#DC2626]",
-                labelClass: "text-[#B91C1C]",
-                numberClass: "text-[#991B1B]",
-                style: { backgroundColor: "#FEE2E2", borderColor: "#DC2626" },
-                labelStyle: { color: "#B91C1C" },
-                numberStyle: { color: "#991B1B" },
+                cardClass: "bg-red-50 border-red-200",
+                labelClass: "text-red-800",
+                numberClass: "text-red-900",
               },
             ].map((m, idx) => (
               <div
                 key={idx}
-                style={m.style}
-                className={`p-4 rounded-2xl border ${m.cardClass} flex flex-col justify-between shadow-sm`}
+                className={`p-3.5 rounded-xl border ${m.cardClass} flex flex-col justify-between shadow-xs`}
               >
-                <span style={m.labelStyle} className={`text-sm font-semibold ${m.labelClass}`}>
+                <span className={`text-[11px] font-bold uppercase tracking-wider ${m.labelClass}`}>
                   {m.label}
                 </span>
-                <span style={m.numberStyle} className={`text-3xl font-extrabold mt-2 ${m.numberClass}`}>
+                <span className={`text-2xl font-extrabold mt-1.5 ${m.numberClass}`}>
                   {m.count}
                 </span>
               </div>
@@ -996,15 +969,15 @@ export default function AITenderAnalyzePage() {
           </div>
 
           {/* Filter & Search Toolbar */}
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-white p-4 rounded-xl border border-[#D5DFED] shadow-subtle flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-80">
-              <SearchIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <SearchIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
               <input
                 type="text"
                 placeholder="Search clause, title or keyword..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
               />
             </div>
 
@@ -1012,7 +985,7 @@ export default function AITenderAnalyzePage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none"
+                className="px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-semibold text-slate-700 focus:outline-none"
               >
                 <option value="ALL">All Categories</option>
                 <option value="FINANCIAL">Financial Turnover</option>
@@ -1027,7 +1000,7 @@ export default function AITenderAnalyzePage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none"
+                className="px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-semibold text-slate-700 focus:outline-none"
               >
                 <option value="ALL">All Review Statuses</option>
                 <option value="NEEDS_REVIEW">Needs Review</option>
@@ -1037,12 +1010,12 @@ export default function AITenderAnalyzePage() {
                 <option value="REJECTED">Rejected</option>
               </select>
 
-              <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer px-2">
+              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer px-2">
                 <input
                   type="checkbox"
                   checked={mandatoryOnly}
                   onChange={(e) => setMandatoryOnly(e.target.checked)}
-                  className="rounded border-slate-300 text-amber-500 focus:ring-amber-500 w-4 h-4"
+                  className="rounded border-[#D5DFED] text-[#2155D9] focus:ring-blue-100 w-4 h-4"
                 />
                 Mandatory Only
               </label>
@@ -1052,10 +1025,10 @@ export default function AITenderAnalyzePage() {
           {/* Requirement Cards List */}
           <div className="space-y-4">
             {filteredRequirements.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200 dark:border-slate-800 text-center text-slate-500">
-                <BookOpenIcon className="w-10 h-10 mx-auto text-slate-400 mb-2 opacity-50" />
-                <p className="font-semibold text-base">No requirements found matching current filters.</p>
-                <p className="text-xs mt-1">Try resetting search keywords or category filters.</p>
+              <div className="bg-white p-12 rounded-xl border border-[#D5DFED] shadow-subtle text-center text-slate-500">
+                <BookOpenIcon className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                <p className="font-bold text-slate-800 text-sm">No requirements found matching current filters.</p>
+                <p className="text-xs text-slate-500 mt-1">Try resetting search keywords or category filters.</p>
               </div>
             ) : (
               filteredRequirements.map((req) => {
@@ -1066,48 +1039,47 @@ export default function AITenderAnalyzePage() {
                 return (
                   <div
                     key={req.id}
-                    className={`bg-white dark:bg-slate-900 rounded-2xl border transition shadow-sm p-6 space-y-4 ${
+                    className={`bg-white rounded-xl border transition shadow-subtle p-5 space-y-3.5 ${
                       req.review_status === "VERIFIED"
-                        ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/10"
+                        ? "border-emerald-300 bg-emerald-50/10"
                         : req.review_status === "EDITED"
-                        ? "border-blue-200 dark:border-blue-900/60 bg-blue-50/10"
+                        ? "border-blue-300 bg-blue-50/10"
                         : req.review_status === "REJECTED"
-                        ? "border-rose-200 dark:border-rose-900/60 bg-rose-50/10 opacity-60"
+                        ? "border-red-200 bg-red-50/10 opacity-60"
                         : req.review_status === "ADDED_MANUALLY"
-                        ? "border-purple-200 dark:border-purple-900/60"
-                        : "border-slate-200 dark:border-slate-800"
+                        ? "border-purple-300"
+                        : "border-[#D5DFED]"
                     }`}
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      <div className="flex items-center flex-wrap gap-2.5">
-                        <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-mono font-bold rounded-lg">
+                      <div className="flex items-center flex-wrap gap-2">
+                        <span className="px-2.5 py-1 bg-slate-100 text-slate-800 text-xs font-mono font-bold rounded-md border border-[#D5DFED]">
                           {req.clause_reference}
                         </span>
-                        <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-xs font-bold rounded-lg">
+                        <span className="px-2.5 py-1 bg-blue-50 text-[#2155D9] text-xs font-bold rounded-md border border-blue-200">
                           {req.category}
                         </span>
                         {req.mandatory ? (
-                          <span className="px-2.5 py-1 bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs font-semibold rounded-lg">
+                          <span className="px-2 py-0.5 bg-red-50 text-red-700 text-[11px] font-bold rounded-md border border-red-200">
                             Mandatory
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold rounded-lg">
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-semibold rounded-md border border-[#D5DFED]">
                             Optional
                           </span>
                         )}
 
-                        {/* Review Status Badge */}
                         <span
-                          className={`px-3 py-1 text-xs font-bold rounded-lg ${
+                          className={`px-2.5 py-0.5 text-[11px] font-bold rounded-md border ${
                             req.review_status === "VERIFIED"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : req.review_status === "EDITED"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                              ? "bg-blue-50 text-blue-800 border-blue-200"
                               : req.review_status === "ADDED_MANUALLY"
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
+                              ? "bg-purple-50 text-purple-800 border-purple-200"
                               : req.review_status === "REJECTED"
-                              ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                              : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 animate-pulse"
+                              ? "bg-red-50 text-red-800 border-red-200"
+                              : "bg-amber-50 text-amber-800 border-amber-200 animate-pulse"
                           }`}
                         >
                           {req.review_status.replace("_", " ")}
@@ -1116,12 +1088,12 @@ export default function AITenderAnalyzePage() {
 
                       <div className="flex items-center gap-3">
                         <div
-                          className={`text-xs font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 ${
+                          className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 border ${
                             isHighConf
-                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : isMedConf
-                              ? "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-red-50 text-red-700 border-red-200"
                           }`}
                         >
                           <SparklesIcon className="w-3.5 h-3.5" /> AI Confidence: {confidencePct}%
@@ -1130,16 +1102,16 @@ export default function AITenderAnalyzePage() {
                     </div>
 
                     <div>
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white">{req.name}</h3>
+                      <h3 className="text-sm font-extrabold text-slate-900">{req.name}</h3>
                       <div className="mt-1">
-                        <p className={`text-sm text-slate-600 dark:text-slate-300 leading-relaxed ${!expandedDescriptions[req.id] && (req.description?.length || 0) > 220 ? "line-clamp-2" : ""}`}>
+                        <p className={`text-xs text-slate-600 leading-relaxed ${!expandedDescriptions[req.id] && (req.description?.length || 0) > 220 ? "line-clamp-2" : ""}`}>
                           {req.description}
                         </p>
                         {(req.description?.length || 0) > 220 && (
                           <button
                             type="button"
                             onClick={() => toggleDescription(req.id)}
-                            className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline mt-1 block"
+                            className="text-[11px] font-bold text-[#2155D9] hover:underline mt-1 block"
                           >
                             {expandedDescriptions[req.id] ? "Show less" : "Show more..."}
                           </button>
@@ -1148,64 +1120,64 @@ export default function AITenderAnalyzePage() {
                     </div>
 
                     {/* Threshold & Target Value */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 rounded-lg bg-slate-50 border border-[#D5DFED] text-xs">
                       <div>
-                        <span className="text-slate-500 font-medium block">Threshold Value:</span>
-                        <span className="font-bold text-slate-900 dark:text-white text-sm mt-0.5 block">
+                        <span className="text-slate-500 font-semibold uppercase text-[10px] block">Threshold Value</span>
+                        <span className="font-bold text-slate-900 text-xs mt-0.5 block">
                           {req.threshold_value} {req.unit || ""}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-500 font-medium block">Validation Source:</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5 block">
+                        <span className="text-slate-500 font-semibold uppercase text-[10px] block">Validation Source</span>
+                        <span className="font-semibold text-slate-800 mt-0.5 block">
                           {req.validation_source || "Audited Records / API"}
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-500 font-medium block">Source Location:</span>
-                        <span className="font-mono text-slate-700 dark:text-slate-300 mt-0.5 block">
+                        <span className="text-slate-500 font-semibold uppercase text-[10px] block">Source Location</span>
+                        <span className="font-mono text-slate-700 mt-0.5 block">
                           {req.source_document} (Page {req.source_page})
                         </span>
                       </div>
                     </div>
 
-                    {/* Original vs Edited Diff (if EDITED) */}
+                    {/* Original vs Edited Diff */}
                     {req.review_status === "EDITED" && req.original_data && (
-                      <div className="p-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 text-xs space-y-1.5">
-                        <span className="font-bold text-blue-800 dark:text-blue-300 block">Officer Modified (Diff Tracking):</span>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 font-mono">
-                          <div className="p-2 bg-white dark:bg-slate-900 rounded border border-blue-100 dark:border-blue-900 text-slate-600">
-                            <span className="text-rose-600 font-bold">Original AI:</span> {req.original_data.name} ({req.original_data.threshold_value})
+                      <div className="p-3 rounded-lg bg-blue-50/60 border border-blue-200 text-xs space-y-1">
+                        <span className="font-bold text-blue-900 block">Officer Modified (Diff Tracking):</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 font-mono text-[11px]">
+                          <div className="p-2 bg-white rounded border border-blue-100 text-slate-600">
+                            <span className="text-red-600 font-bold">Original AI:</span> {req.original_data.name} ({req.original_data.threshold_value})
                           </div>
-                          <div className="p-2 bg-white dark:bg-slate-900 rounded border border-blue-100 dark:border-blue-900 text-slate-800 dark:text-slate-200">
-                            <span className="text-emerald-600 font-bold">Modified:</span> {req.name} ({req.threshold_value})
+                          <div className="p-2 bg-white rounded border border-blue-100 text-slate-900">
+                            <span className="text-emerald-700 font-bold">Modified:</span> {req.name} ({req.threshold_value})
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Rejection Reason (if REJECTED) */}
+                    {/* Rejection Reason */}
                     {req.review_status === "REJECTED" && req.rejection_reason && (
-                      <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-200">
+                      <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
                         <span className="font-bold block mb-0.5">Exclusion Justification:</span>
                         {req.rejection_reason}
                       </div>
                     )}
 
                     {/* Action Toolbar */}
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
                       <button
                         onClick={() => setEvidenceModalReq(req)}
-                        className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5"
+                        className="text-xs font-semibold text-[#2155D9] hover:underline flex items-center gap-1.5"
                       >
-                        <EyeIcon className="w-4 h-4" /> View Verbatim PDF Evidence Quote
+                        <EyeIcon className="w-3.5 h-3.5" /> View Verbatim PDF Evidence Quote
                       </button>
 
                       <div className="flex items-center gap-2">
                         {req.review_status !== "VERIFIED" && req.review_status !== "REJECTED" && (
                           <button
                             onClick={() => handleVerifyRequirement(req.id)}
-                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition flex items-center gap-1"
+                            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow-xs transition flex items-center gap-1"
                           >
                             <CheckIcon className="w-3.5 h-3.5" /> Verify
                           </button>
@@ -1216,7 +1188,7 @@ export default function AITenderAnalyzePage() {
                               setEditingReq(req);
                               setIsEditModalOpen(true);
                             }}
-                            className="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition flex items-center gap-1"
+                            className="px-3 py-1 bg-white border border-[#D5DFED] hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg shadow-xs transition flex items-center gap-1"
                           >
                             <Edit3Icon className="w-3.5 h-3.5" /> Edit
                           </button>
@@ -1227,14 +1199,14 @@ export default function AITenderAnalyzePage() {
                               setRejectingReq(req);
                               setIsRejectModalOpen(true);
                             }}
-                            className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-semibold text-xs rounded-xl transition flex items-center gap-1"
+                            className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs rounded-lg transition border border-red-200 flex items-center gap-1"
                           >
                             <XCircleIcon className="w-3.5 h-3.5" /> Reject
                           </button>
                         ) : (
                           <button
                             onClick={() => handleVerifyRequirement(req.id)}
-                            className="px-3.5 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition"
+                            className="px-3 py-1 bg-slate-100 text-slate-700 font-semibold text-xs rounded-lg transition border border-[#D5DFED]"
                           >
                             Restore
                           </button>
@@ -1252,44 +1224,44 @@ export default function AITenderAnalyzePage() {
 
       {/* TAB 4: FINALIZED */}
       {activeTab === "finalized" && (
-        <div className="max-w-3xl mx-auto bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-lg text-center space-y-6">
-          <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-3xl flex items-center justify-center mx-auto">
-            <ShieldCheckIcon className="w-10 h-10" />
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl border border-[#D5DFED] shadow-subtle text-center space-y-6">
+          <div className="w-16 h-16 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200">
+            <ShieldCheckIcon className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Requirements Finalized & Linked Successfully</h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-              All approved procurement criteria have been synchronized with tender <span className="font-mono font-bold text-amber-600">{targetTenderId}</span> and are now actively enforced by the RulesEngine.
+            <h2 className="text-xl font-extrabold text-slate-900">Requirements Finalized & Linked Successfully</h2>
+            <p className="text-slate-500 text-xs mt-1">
+              All approved procurement criteria have been synchronized with tender <span className="font-mono font-bold text-[#2155D9]">{targetTenderId}</span> and are now actively enforced by the RulesEngine.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 text-left">
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-xs text-slate-500 block">Total Enforced Criteria</span>
-              <span className="text-xl font-bold text-slate-900 dark:text-white mt-1 block">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-left text-xs">
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-[#D5DFED]">
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Enforced Criteria</span>
+              <span className="text-base font-extrabold text-slate-900 mt-0.5 block">
                 {verifiedCount + editedCount + addedCount} Clauses
               </span>
             </div>
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-xs text-slate-500 block">RulesEngine Status</span>
-              <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">Zero Hallucination</span>
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-[#D5DFED]">
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">RulesEngine Status</span>
+              <span className="text-base font-extrabold text-emerald-700 mt-0.5 block">Zero Hallucination</span>
             </div>
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-xs text-slate-500 block">Audit Trail Event</span>
-              <span className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-1 block">Logged & Signed</span>
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-[#D5DFED]">
+              <span className="text-[10px] uppercase font-bold text-slate-500 block">Audit Trail Event</span>
+              <span className="text-base font-extrabold text-[#2155D9] mt-0.5 block">Logged & Signed</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-4 pt-6">
+          <div className="flex items-center justify-center gap-3 pt-4">
             <a
               href="/compliance"
-              className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl shadow-lg transition flex items-center gap-2 text-sm"
+              className="px-5 py-2.5 bg-[#2155D9] hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition flex items-center gap-2 text-xs"
             >
               Run AI Compliance Evaluation <ArrowRightIcon className="w-4 h-4" />
             </a>
             <a
               href="/audit"
-              className="px-6 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl transition text-sm"
+              className="px-5 py-2.5 bg-white border border-[#D5DFED] hover:bg-slate-50 text-slate-700 font-semibold rounded-lg shadow-xs transition text-xs"
             >
               View Audit Log
             </a>
@@ -1299,46 +1271,46 @@ export default function AITenderAnalyzePage() {
 
       {/* MODAL: EVIDENCE QUOTE VIEWER */}
       {evidenceModalReq && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-xl border border-[#D5DFED] shadow-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BookOpenIcon className="w-5 h-5 text-amber-500" />
-                <h3 className="font-bold text-slate-900 dark:text-white text-lg">Source PDF Evidence Trace</h3>
+                <BookOpenIcon className="w-5 h-5 text-[#2155D9]" />
+                <h3 className="font-bold text-slate-900 text-base">Source PDF Evidence Trace</h3>
               </div>
               <button
                 onClick={() => setEvidenceModalReq(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-slate-400 hover:text-slate-700"
               >
-                <XCircleIcon className="w-6 h-6" />
+                <XCircleIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-sm">
+            <div className="space-y-3.5 text-xs">
               <div>
-                <span className="text-xs font-semibold text-slate-500 block mb-1">Clause & Requirement</span>
-                <p className="font-bold text-slate-900 dark:text-white">
+                <span className="font-semibold text-slate-500 uppercase text-[10px] block mb-0.5">Clause & Requirement</span>
+                <p className="font-bold text-slate-900 text-sm">
                   {evidenceModalReq.clause_reference}: {evidenceModalReq.name}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Source Document & Page</span>
-                  <p className="font-mono text-slate-700 dark:text-slate-300 text-xs">
+                  <span className="font-semibold text-slate-500 uppercase text-[10px] block mb-0.5">Source Document & Page</span>
+                  <p className="font-mono text-slate-700">
                     {evidenceModalReq.source_document} (Page {evidenceModalReq.source_page})
                   </p>
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 block mb-1">Document Section</span>
-                  <p className="font-medium text-slate-700 dark:text-slate-300 text-xs">
+                  <span className="font-semibold text-slate-500 uppercase text-[10px] block mb-0.5">Document Section</span>
+                  <p className="font-medium text-slate-700">
                     {evidenceModalReq.section || `Page ${evidenceModalReq.source_page} Specification`}
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-slate-800 dark:text-slate-200 font-mono text-xs leading-relaxed">
-                <span className="font-bold text-amber-700 dark:text-amber-400 block mb-1.5">Verbatim PDF Excerpt:</span>
+              <div className="p-3.5 rounded-lg bg-blue-50/50 border border-blue-200 text-slate-800 font-mono text-[11px] leading-relaxed">
+                <span className="font-bold text-[#2155D9] block mb-1">Verbatim PDF Excerpt:</span>
                 <p className={!isModalEvidenceExpanded && (evidenceModalReq.evidence_text?.length || 0) > 300 ? "line-clamp-4" : ""}>
                   "{evidenceModalReq.evidence_text}"
                 </p>
@@ -1346,7 +1318,7 @@ export default function AITenderAnalyzePage() {
                   <button
                     type="button"
                     onClick={() => setIsModalEvidenceExpanded(!isModalEvidenceExpanded)}
-                    className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline mt-2 inline-block font-sans"
+                    className="text-xs font-semibold text-[#2155D9] hover:underline mt-2 inline-block font-sans"
                   >
                     {isModalEvidenceExpanded ? "Show less" : "Show more..."}
                   </button>
@@ -1354,24 +1326,24 @@ export default function AITenderAnalyzePage() {
               </div>
 
               {/* Provenance Verification Badge */}
-              <div className="pt-2">
-                <span className="text-xs font-semibold text-slate-500 block mb-1.5">Provenance & Grounding Status</span>
+              <div className="pt-1">
+                <span className="font-semibold text-slate-500 uppercase text-[10px] block mb-1">Provenance & Grounding Status</span>
                 {evidenceModalReq.evidence_status === "SMART_IDP_VERIFIED" || evidenceModalReq.provenance_status === "VERIFIED" ? (
-                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-semibold text-xs">
-                    <CheckCircle2Icon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-semibold text-[11px]">
+                    <CheckCircle2Icon className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Smart IDP Layout Match Verified — Validated against PDF Page {evidenceModalReq.source_page} OCR text buffer</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-semibold text-xs">
-                    <AlertTriangleIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 font-semibold text-[11px]">
+                    <AlertTriangleIcon className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>EVIDENCE_REQUIRES_REVIEW — Evidence could not be automatically confirmed on Page {evidenceModalReq.source_page}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-between items-center text-slate-500 pt-2 border-t border-slate-100">
                 <span>AI Confidence: {(evidenceModalReq.confidence * 100).toFixed(1)}%</span>
-                <span className="font-medium text-slate-600 dark:text-slate-400">
+                <span className="font-semibold text-slate-700">
                   Authority: {evidenceModalReq.validation_source || "Tender Document Analysis"}
                 </span>
               </div>
@@ -1380,7 +1352,7 @@ export default function AITenderAnalyzePage() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setEvidenceModalReq(null)}
-                className="px-5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold rounded-xl text-sm transition"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg text-xs transition shadow-xs"
               >
                 Close Viewer
               </button>
@@ -1391,53 +1363,53 @@ export default function AITenderAnalyzePage() {
 
       {/* MODAL: EDIT REQUIREMENT */}
       {isEditModalOpen && editingReq && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-xl border border-[#D5DFED] shadow-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 dark:text-white text-lg">Edit Extracted Requirement</h3>
+              <h3 className="font-bold text-slate-950 text-base">Edit Extracted Requirement</h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-slate-400 hover:text-slate-700"
               >
-                <XCircleIcon className="w-6 h-6" />
+                <XCircleIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditedRequirement} className="space-y-4 text-sm">
+            <form onSubmit={handleSaveEditedRequirement} className="space-y-4 text-xs">
               {errorMsg && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-center gap-2">
                   <AlertTriangleIcon className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Requirement Name</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Requirement Name</label>
                 <input
                   type="text"
                   required
                   value={editingReq.name}
                   onChange={(e) => setEditingReq({ ...editingReq, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Clause Reference</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Clause Reference</label>
                   <input
                     type="text"
                     required
                     value={editingReq.clause_reference}
                     onChange={(e) => setEditingReq({ ...editingReq, clause_reference: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Category</label>
                   <select
                     value={editingReq.category}
                     onChange={(e) => setEditingReq({ ...editingReq, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-semibold text-slate-900 focus:outline-none"
                   >
                     <option value="FINANCIAL">FINANCIAL</option>
                     <option value="TECHNICAL">TECHNICAL</option>
@@ -1450,36 +1422,36 @@ export default function AITenderAnalyzePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Threshold Value</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Threshold Value</label>
                   <input
                     type="text"
                     required
                     value={editingReq.threshold_value}
                     onChange={(e) => setEditingReq({ ...editingReq, threshold_value: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Unit</label>
                   <input
                     type="text"
                     value={editingReq.unit || ""}
                     onChange={(e) => setEditingReq({ ...editingReq, unit: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detailed Description</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Detailed Description</label>
                 <textarea
                   rows={3}
                   required
                   value={editingReq.description}
                   onChange={(e) => setEditingReq({ ...editingReq, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                 />
               </div>
 
@@ -1489,24 +1461,24 @@ export default function AITenderAnalyzePage() {
                   id="editMandatory"
                   checked={editingReq.mandatory}
                   onChange={(e) => setEditingReq({ ...editingReq, mandatory: e.target.checked })}
-                  className="rounded border-slate-300 text-amber-500 w-4 h-4"
+                  className="rounded border-[#D5DFED] text-[#2155D9] w-4 h-4"
                 />
-                <label htmlFor="editMandatory" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="editMandatory" className="text-xs font-semibold text-slate-700">
                   Mandatory Requirement (Required for Compliance Pass)
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm"
+                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm shadow-md"
+                  className="px-4 py-1.5 bg-[#2155D9] hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-xs"
                 >
                   Save & Mark Edited
                 </button>
@@ -1518,45 +1490,45 @@ export default function AITenderAnalyzePage() {
 
       {/* MODAL: REJECT REASON */}
       {isRejectModalOpen && rejectingReq && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-xl border border-[#D5DFED] shadow-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 dark:text-white text-lg">Exclude / Reject Requirement</h3>
+              <h3 className="font-bold text-slate-900 text-base">Exclude / Reject Requirement</h3>
               <button
                 onClick={() => setIsRejectModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-slate-400 hover:text-slate-700"
               >
-                <XCircleIcon className="w-6 h-6" />
+                <XCircleIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-sm">
-              <p className="text-slate-600 dark:text-slate-400">
-                Please provide an official justification for excluding <span className="font-bold text-slate-900 dark:text-white">"{rejectingReq.name}"</span> from tender evaluation.
+            <div className="space-y-4 text-xs">
+              <p className="text-slate-600">
+                Please provide an official justification for excluding <span className="font-bold text-slate-900">"{rejectingReq.name}"</span> from tender evaluation.
               </p>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Rejection Justification *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Rejection Justification *</label>
                 <textarea
                   rows={3}
                   required
                   placeholder="e.g. Clause superseded by CPCL corrigendum #2 dated 14-Sep-2026."
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   onClick={() => setIsRejectModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm"
+                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleRejectRequirement}
-                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm shadow-md"
+                  className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs shadow-xs"
                 >
                   Confirm Exclusion
                 </button>
@@ -1568,55 +1540,55 @@ export default function AITenderAnalyzePage() {
 
       {/* MODAL: ADD MANUAL REQUIREMENT */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-xl rounded-xl border border-[#D5DFED] shadow-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 dark:text-white text-lg">Add Manual Procurement Clause</h3>
+              <h3 className="font-bold text-slate-900 text-base">Add Manual Procurement Clause</h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-slate-400 hover:text-slate-700"
               >
-                <XCircleIcon className="w-6 h-6" />
+                <XCircleIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddManualRequirement} className="space-y-4 text-sm">
+            <form onSubmit={handleAddManualRequirement} className="space-y-4 text-xs">
               {errorMsg && (
-                <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-xl text-red-700 dark:text-red-400 text-xs flex items-center gap-2">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-center gap-2">
                   <AlertTriangleIcon className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Requirement Title *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Requirement Title *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. ISO 9001 Quality Certification"
                   value={newReqForm.name}
                   onChange={(e) => setNewReqForm({ ...newReqForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Clause Reference *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Clause Reference *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Clause 8.2.1"
                     value={newReqForm.clause_reference}
                     onChange={(e) => setNewReqForm({ ...newReqForm, clause_reference: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Category *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Category *</label>
                   <select
                     value={newReqForm.category}
                     onChange={(e) => setNewReqForm({ ...newReqForm, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-semibold text-slate-900 focus:outline-none"
                   >
                     <option value="FINANCIAL">FINANCIAL</option>
                     <option value="TECHNICAL">TECHNICAL</option>
@@ -1629,39 +1601,39 @@ export default function AITenderAnalyzePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Threshold Value *</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Threshold Value *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Valid ISO 9001:2015"
                     value={newReqForm.threshold_value}
                     onChange={(e) => setNewReqForm({ ...newReqForm, threshold_value: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Unit</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Unit</label>
                   <input
                     type="text"
                     placeholder="e.g. Certification"
                     value={newReqForm.unit}
                     onChange={(e) => setNewReqForm({ ...newReqForm, unit: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                    className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Detailed Description *</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Detailed Description *</label>
                 <textarea
                   rows={3}
                   required
                   placeholder="Specify detailed evaluation instructions..."
                   value={newReqForm.description}
                   onChange={(e) => setNewReqForm({ ...newReqForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                 />
               </div>
 
@@ -1671,24 +1643,24 @@ export default function AITenderAnalyzePage() {
                   id="newMandatory"
                   checked={newReqForm.mandatory}
                   onChange={(e) => setNewReqForm({ ...newReqForm, mandatory: e.target.checked })}
-                  className="rounded border-slate-300 text-amber-500 w-4 h-4"
+                  className="rounded border-[#D5DFED] text-[#2155D9] w-4 h-4"
                 />
-                <label htmlFor="newMandatory" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <label htmlFor="newMandatory" className="text-xs font-semibold text-slate-700">
                   Mandatory Requirement
                 </label>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm"
+                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm shadow-md"
+                  className="px-4 py-1.5 bg-[#2155D9] hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-xs"
                 >
                   Add Requirement
                 </button>
@@ -1700,62 +1672,62 @@ export default function AITenderAnalyzePage() {
 
       {/* MODAL: FINALIZE REQUIREMENTS */}
       {isFinalizeModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-xl border border-[#D5DFED] shadow-xl p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ShieldCheckIcon className="w-6 h-6 text-amber-500" />
-                <h3 className="font-bold text-slate-900 dark:text-white text-lg">Finalize Tender Requirements</h3>
+                <ShieldCheckIcon className="w-5 h-5 text-[#2155D9]" />
+                <h3 className="font-bold text-slate-900 text-base">Finalize Tender Requirements</h3>
               </div>
               <button
                 onClick={() => setIsFinalizeModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="text-slate-400 hover:text-slate-700"
               >
-                <XCircleIcon className="w-6 h-6" />
+                <XCircleIcon className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+            <div className="space-y-4 text-xs text-slate-600">
               <p>
-                You are about to lock and finalize <span className="font-bold text-slate-900 dark:text-white">{verifiedCount + editedCount + addedCount} approved requirements</span> for tender <span className="font-mono font-bold text-amber-600">{targetTenderId}</span>.
+                You are about to lock and finalize <span className="font-bold text-slate-900">{verifiedCount + editedCount + addedCount} approved requirements</span> for tender <span className="font-mono font-bold text-[#2155D9]">{targetTenderId}</span>.
               </p>
 
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-                <div className="flex justify-between">
+              <div className="p-3.5 rounded-lg bg-slate-50 border border-[#D5DFED] space-y-1.5 text-xs">
+                <div className="flex justify-between font-medium">
                   <span>Approved & Verified:</span>
-                  <span className="font-bold text-emerald-600">{verifiedCount + editedCount + addedCount} Clauses</span>
+                  <span className="font-bold text-emerald-700">{verifiedCount + editedCount + addedCount} Clauses</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between font-medium">
                   <span>Excluded / Rejected:</span>
-                  <span className="font-bold text-rose-600">{rejectedCount} Clauses</span>
+                  <span className="font-bold text-red-600">{rejectedCount} Clauses</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between font-medium">
                   <span>RulesEngine Integration:</span>
-                  <span className="font-bold text-amber-600">Immediate Synchronization</span>
+                  <span className="font-bold text-[#2155D9]">Immediate Synchronization</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Officer Finalization Notes (Optional)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Officer Finalization Notes (Optional)</label>
                 <textarea
                   rows={2}
                   placeholder="e.g. All requirements reviewed and verified in accordance with CPCL procurement guidelines."
                   value={finalizeNotes}
                   onChange={(e) => setFinalizeNotes(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm"
+                  className="w-full px-3 py-2 bg-slate-50 border border-[#D5DFED] rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#2155D9]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   onClick={() => setIsFinalizeModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm"
+                  className="px-3.5 py-1.5 bg-slate-100 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Continue Reviewing
                 </button>
                 <button
                   onClick={handleFinalizeRequirements}
-                  className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm shadow-md"
+                  className="px-4 py-2 bg-[#2155D9] hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-xs"
                 >
                   Lock & Finalize Requirements
                 </button>
