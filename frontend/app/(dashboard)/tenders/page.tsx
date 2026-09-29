@@ -2987,46 +2987,7 @@ export default function TendersPage() {
                   </div>
                 </form>
               )}
-<<<<<<< HEAD
             </div>
-=======
-
-              {/* Error Banner */}
-              {importError && (
-                <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900 flex items-center gap-2">
-                  <AlertTriangleIcon className="size-4 text-red-600 shrink-0" />
-                  <span>{importError}</span>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsImportModalOpen(false);
-                    setImportError(null);
-                    setManualFiles([]);
-                  }}
-                  disabled={importLoading}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={importLoading || manualFiles.length === 0}
-                  loading={importLoading}
-                  className="bg-blue-700 hover:bg-blue-800 font-bold min-w-[160px]"
-                >
-                  {importLoading ? "Processing Ingestion..." : `Import ${manualFiles.length} Tender(s)`}
-                </Button>
-              </div>
-            </form>
->>>>>>> 9392f13 (feat(tenders): support multi-document tender uploads)
           </div>
         </div>
       )}
