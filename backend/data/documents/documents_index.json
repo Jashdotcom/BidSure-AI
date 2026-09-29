@@ -227,19 +227,247 @@
       "tender_id": "2026_BSF_926450_1"
     }
   },
-  "DOC-50a20890f9e0": {
-    "document_id": "DOC-50a20890f9e0",
+  "DOC-47a5673530f9": {
+    "document_id": "DOC-47a5673530f9",
+    "tender_id": "2026_IITG_925833_1",
+    "filename": "2026_IITG_925833_1_IITG_Firewall_NIT.pdf",
+    "storage_filename": "DOC-47a5673530f9_2026_IITG_925833_1_IITG_Firewall_NIT.pdf",
+    "file_size_bytes": 1095,
+    "file_size_kb": 1,
+    "document_hash_sha256": "47a5673530f94f11ea161c481d04989c0c0e2838c8797fcd897d78c9ee74d1ec",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-47a5673530f9_2026_IITG_925833_1_IITG_Firewall_NIT.pdf",
+    "metadata": {
+      "title": "Supply and installation of Next Generation Firewall Solution at IIT Guwahati",
+      "organization": "Indian Institute of Technology Guwahati",
+      "tender_id": "2026_IITG_925833_1"
+    }
+  },
+  "DOC-2da95be6645a": {
+    "document_id": "DOC-2da95be6645a",
+    "tender_id": "2026_IITG_925784_1",
+    "filename": "2026_IITG_925784_1_Ion_Beam_NIT.pdf",
+    "storage_filename": "DOC-2da95be6645a_2026_IITG_925784_1_Ion_Beam_NIT.pdf",
+    "file_size_bytes": 1083,
+    "file_size_kb": 1,
+    "document_hash_sha256": "2da95be6645a3c4b152ec95ebc69ba2eefeadbd75c5a0aa0d3181a1986408d1f",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2da95be6645a_2026_IITG_925784_1_Ion_Beam_NIT.pdf",
+    "metadata": {
+      "title": "Supply and installation of Ion Beam Milling System",
+      "organization": "Indian Institute of Technology Guwahati",
+      "tender_id": "2026_IITG_925784_1"
+    }
+  },
+  "DOC-82eabdda488e": {
+    "document_id": "DOC-82eabdda488e",
+    "tender_id": "2026_IITG_925891_1",
+    "filename": "2026_IITG_925891_1_Pumps_NIT.pdf",
+    "storage_filename": "DOC-82eabdda488e_2026_IITG_925891_1_Pumps_NIT.pdf",
+    "file_size_bytes": 1128,
+    "file_size_kb": 1,
+    "document_hash_sha256": "82eabdda488e4f296bc8db28bd0cd44e5aa85c7ec4f602edc6017bfa5780e6e5",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-82eabdda488e_2026_IITG_925891_1_Pumps_NIT.pdf",
+    "metadata": {
+      "title": "Supply and installation of pump sets and associated machineries at the Water Supply System in IITG campus",
+      "organization": "Indian Institute of Technology Guwahati",
+      "tender_id": "2026_IITG_925891_1"
+    }
+  },
+  "DOC-0b3b01d5e1e7": {
+    "document_id": "DOC-0b3b01d5e1e7",
+    "tender_id": "2026_IITG_926050_1",
+    "filename": "2026_IITG_926050_1_Paver_NIT.pdf",
+    "storage_filename": "DOC-0b3b01d5e1e7_2026_IITG_926050_1_Paver_NIT.pdf",
+    "file_size_bytes": 1102,
+    "file_size_kb": 1,
+    "document_hash_sha256": "0b3b01d5e1e7988af98964d77ff5667fee30c64b26dc9580c0864cbb88a9500d",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-0b3b01d5e1e7_2026_IITG_926050_1_Paver_NIT.pdf",
+    "metadata": {
+      "title": "Provision of Paver Block Pavement shoulder in front of KV School in IITG Campus",
+      "organization": "Indian Institute of Technology Guwahati",
+      "tender_id": "2026_IITG_926050_1"
+    }
+  },
+  "DOC-20b1bc4e394e": {
+    "document_id": "DOC-20b1bc4e394e",
+    "tender_id": "2026_IITG_926104_1",
+    "filename": "2026_IITG_926104_1_Waste_NIT.pdf",
+    "storage_filename": "DOC-20b1bc4e394e_2026_IITG_926104_1_Waste_NIT.pdf",
+    "file_size_bytes": 1145,
+    "file_size_kb": 1,
+    "document_hash_sha256": "20b1bc4e394ef5fdfde2f13077b776485628020f1df2b05aa2b945a770ce044a",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-20b1bc4e394e_2026_IITG_926104_1_Waste_NIT.pdf",
+    "metadata": {
+      "title": "Site development work for the proposed solid waste management project with material recovery facility near ASEB gate in IITG Campus",
+      "organization": "Indian Institute of Technology Guwahati",
+      "tender_id": "2026_IITG_926104_1"
+    }
+  },
+  "DOC-2a22ba9c3d71": {
+    "document_id": "DOC-2a22ba9c3d71",
+    "tender_id": "2026_IITG_925722_1",
+    "filename": "2026_IITG_925722_1_HVAC_NIT.pdf",
+    "storage_filename": "DOC-2a22ba9c3d71_2026_IITG_925722_1_HVAC_NIT.pdf",
+    "file_size_bytes": 1142,
+    "file_size_kb": 1,
+    "document_hash_sha256": "2a22ba9c3d713eca143478b79250a581635d1f71c72ea31c53af57ecb610559b",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2a22ba9c3d71_2026_IITG_925722_1_HVAC_NIT.pdf",
+    "metadata": {
+      "title": "Providing and fixing of butterfly valves and flexible bellows in various locations under central air conditioning system at IITG campus",
+      "organization": "Indian Institute of Technology Guwahati",
+      "tender_id": "2026_IITG_925722_1"
+    }
+  },
+  "DOC-94c297f55b5e": {
+    "document_id": "DOC-94c297f55b5e",
+    "tender_id": "2026_SAI_925808_1",
+    "filename": "2026_SAI_925808_1_SAI_NIT.pdf",
+    "storage_filename": "DOC-94c297f55b5e_2026_SAI_925808_1_SAI_NIT.pdf",
+    "file_size_bytes": 1071,
+    "file_size_kb": 1,
+    "document_hash_sha256": "94c297f55b5e2c1990b48733763530f315374ddce93f21c87702aba66697f84a",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-94c297f55b5e_2026_SAI_925808_1_SAI_NIT.pdf",
+    "metadata": {
+      "title": "Procurement of Elico make Non Consumable equipment",
+      "organization": "Sports Authority of India",
+      "tender_id": "2026_SAI_925808_1"
+    }
+  },
+  "DOC-befe3d937369": {
+    "document_id": "DOC-befe3d937369",
+    "tender_id": "2026_ASI_925830_1",
+    "filename": "2026_ASI_925830_1_ASI_NIT.pdf",
+    "storage_filename": "DOC-befe3d937369_2026_ASI_925830_1_ASI_NIT.pdf",
+    "file_size_bytes": 1125,
+    "file_size_kb": 1,
+    "document_hash_sha256": "befe3d93736973fe2bd198da8b5b7defa7af0de1f01af8fde8998c432a0dc4eb",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-befe3d937369_2026_ASI_925830_1_ASI_NIT.pdf",
+    "metadata": {
+      "title": "UPoHA to Construction of approach pathway and guard-wall from entrance to caves at Patur Caves, Dist. Akola",
+      "organization": "Archaeological Survey of India",
+      "tender_id": "2026_ASI_925830_1"
+    }
+  },
+  "DOC-9abf81864537": {
+    "document_id": "DOC-9abf81864537",
+    "tender_id": "2026_MoRTH_925773_1",
+    "filename": "2026_MoRTH_925773_1_MoRTH_NIT.pdf",
+    "storage_filename": "DOC-9abf81864537_2026_MoRTH_925773_1_MoRTH_NIT.pdf",
+    "file_size_bytes": 1156,
+    "file_size_kb": 1,
+    "document_hash_sha256": "9abf81864537d27025dc5ee89f7532c431ecdfda29ca41d537d26ed52b8a8ea4",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9abf81864537_2026_MoRTH_925773_1_MoRTH_NIT.pdf",
+    "metadata": {
+      "title": "Protection Work at Approach at Km 4.500 (NAHAR PAKRI Bridge) of NH 227 (old NH 104) in the state of Bihar for the year 2026-27",
+      "organization": "Ministry of Road Transport and Highways",
+      "tender_id": "2026_MoRTH_925773_1"
+    }
+  },
+  "DOC-645f5aa6d026": {
+    "document_id": "DOC-645f5aa6d026",
+    "tender_id": "2026_IIITP_926201_1",
+    "filename": "2026_IIITP_926201_1_IIITP_NIT.pdf",
+    "storage_filename": "DOC-645f5aa6d026_2026_IIITP_926201_1_IIITP_NIT.pdf",
+    "file_size_bytes": 1126,
+    "file_size_kb": 1,
+    "document_hash_sha256": "645f5aa6d026457492fba8ab2f5e9de110345dc3e4086881dd60d2725e187ad6",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-645f5aa6d026_2026_IIITP_926201_1_IIITP_NIT.pdf",
+    "metadata": {
+      "title": "Development of Temporary Ground behind Academic Building and Near Shopping Complex IIIT Pune Campus",
+      "organization": "Indian Institute of Information Technology Pune",
+      "tender_id": "2026_IIITP_926201_1"
+    }
+  },
+  "DOC-a53736fee55c": {
+    "document_id": "DOC-a53736fee55c",
+    "tender_id": "2026_IITH_926312_1",
+    "filename": "2026_IITH_926312_1_IITH_NIT.pdf",
+    "storage_filename": "DOC-a53736fee55c_2026_IITH_926312_1_IITH_NIT.pdf",
+    "file_size_bytes": 1119,
+    "file_size_kb": 1,
+    "document_hash_sha256": "a53736fee55cf8e36d830d35cd5243c5c26c9cc48cbfd313e034cd7e2f2e84db",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a53736fee55c_2026_IITH_926312_1_IITH_NIT.pdf",
+    "metadata": {
+      "title": "Provision of Permanent Power Supply / HT enabling works / associated infrastructure at IIT Hyderabad",
+      "organization": "Indian Institute of Technology Hyderabad",
+      "tender_id": "2026_IITH_926312_1"
+    }
+  },
+  "DOC-c58c3c5f702e": {
+    "document_id": "DOC-c58c3c5f702e",
+    "tender_id": "2026_BSF_926450_1",
+    "filename": "2026_BSF_926450_1_BSF_NIT.pdf",
+    "storage_filename": "DOC-c58c3c5f702e_2026_BSF_926450_1_BSF_NIT.pdf",
+    "file_size_bytes": 1112,
+    "file_size_kb": 1,
+    "document_hash_sha256": "c58c3c5f702eac89f4f660a7421d94760ad96fc2528e724ce1db1588f7a4cab4",
+    "uploaded_at": "2026-09-29T08:55:51Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "CPPP_IMPORT",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c58c3c5f702e_2026_BSF_926450_1_BSF_NIT.pdf",
+    "metadata": {
+      "title": "Supplying Installation Testing and Commissioning of LT panels of residential Buildings under FTR HQ BSF Kashmir",
+      "organization": "Border Security Force",
+      "tender_id": "2026_BSF_926450_1"
+    }
+  },
+  "DOC-73ae4f31cf75": {
+    "document_id": "DOC-73ae4f31cf75",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-50a20890f9e0_01_PAN.pdf",
+    "storage_filename": "DOC-73ae4f31cf75_01_PAN.pdf",
     "file_size_bytes": 1129,
     "file_size_kb": 1,
-    "document_hash_sha256": "50a20890f9e04fa4d928a3b69c1467415d3fc3ca630ff8e27960386590186785",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "73ae4f31cf75b85d3b87e638af917228c75d32397b5ef0a0311afcb54334bbf4",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-50a20890f9e0_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-73ae4f31cf75_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "PAN",
@@ -247,19 +475,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-4f8118fa3727": {
-    "document_id": "DOC-4f8118fa3727",
+  "DOC-77efa697e244": {
+    "document_id": "DOC-77efa697e244",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-4f8118fa3727_02_GST.pdf",
+    "storage_filename": "DOC-77efa697e244_02_GST.pdf",
     "file_size_bytes": 1129,
     "file_size_kb": 1,
-    "document_hash_sha256": "4f8118fa3727b2ed312c353fc48619e21ab218f4ebb1de10e60c837d1381f6d3",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "77efa697e2440deebd18d3c11613d6795bc4b8396f4c01413de058ecfb05a4dc",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4f8118fa3727_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-77efa697e244_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "GST",
@@ -267,19 +495,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-397a65efc0af": {
-    "document_id": "DOC-397a65efc0af",
+  "DOC-416771e5b685": {
+    "document_id": "DOC-416771e5b685",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-397a65efc0af_03_Company_Registration.pdf",
+    "storage_filename": "DOC-416771e5b685_03_Company_Registration.pdf",
     "file_size_bytes": 1142,
     "file_size_kb": 1,
-    "document_hash_sha256": "397a65efc0af047fa86d767de9a5270d0379dde995357afcff8143769a4d49ab",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "416771e5b685a3462845d25546f97606c7be174e437e59cff74192c8f3f19de8",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-397a65efc0af_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-416771e5b685_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "COMPANY_REGISTRATION",
@@ -287,19 +515,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-e2a8dd1ec35a": {
-    "document_id": "DOC-e2a8dd1ec35a",
+  "DOC-7a7ea23bc470": {
+    "document_id": "DOC-7a7ea23bc470",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-e2a8dd1ec35a_04_Udyam.pdf",
+    "storage_filename": "DOC-7a7ea23bc470_04_Udyam.pdf",
     "file_size_bytes": 1137,
     "file_size_kb": 1,
-    "document_hash_sha256": "e2a8dd1ec35acb35276206a0c51c70ddb3cc9dbcec4211f73c3385fd07cdc511",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "7a7ea23bc4705baffb41866bfde25ed9fb135c579c216ea50755007fcd768aa2",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e2a8dd1ec35a_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7a7ea23bc470_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "UDYAM_MSME",
@@ -307,19 +535,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-35eda38cb26e": {
-    "document_id": "DOC-35eda38cb26e",
+  "DOC-185f7cd73d4e": {
+    "document_id": "DOC-185f7cd73d4e",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-35eda38cb26e_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-185f7cd73d4e_05_Experience_Certificate.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "35eda38cb26ecf46f1655d0b4c89e75700d566a81cdb6e2a8a7ce65cdedeb880",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "185f7cd73d4ee26de587448ca48aad14ad52b162c4a7ed952df860c9aa5a18e1",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-35eda38cb26e_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-185f7cd73d4e_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -327,19 +555,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-9f6cd34fcb94": {
-    "document_id": "DOC-9f6cd34fcb94",
+  "DOC-382b37f5dcec": {
+    "document_id": "DOC-382b37f5dcec",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-9f6cd34fcb94_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-382b37f5dcec_06_OEM_Authorization.pdf",
     "file_size_bytes": 1141,
     "file_size_kb": 1,
-    "document_hash_sha256": "9f6cd34fcb9495bf2717f06645402430a2952ed6bfb05b4a61cedce414862700",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "382b37f5dceceacc3cfd6220a6b9d8cd985cde862d8643b9e38386faa10e8a07",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9f6cd34fcb94_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-382b37f5dcec_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "OEM_AUTHORIZATION",
@@ -347,19 +575,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-77b3d275b3dd": {
-    "document_id": "DOC-77b3d275b3dd",
+  "DOC-d1eef8c87c65": {
+    "document_id": "DOC-d1eef8c87c65",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-77b3d275b3dd_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-d1eef8c87c65_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1145,
     "file_size_kb": 1,
-    "document_hash_sha256": "77b3d275b3ddcc5c5d7fd5b7e86d5080a8394f13d2350fb2f74583c4a4d7ec24",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "d1eef8c87c657b1372e85b703aa826a392d8bd7fc3c54810cb9f15ab0b505b1b",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-77b3d275b3dd_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d1eef8c87c65_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -367,19 +595,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-2d521b2414ce": {
-    "document_id": "DOC-2d521b2414ce",
+  "DOC-31aa0e90d834": {
+    "document_id": "DOC-31aa0e90d834",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-2d521b2414ce_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-31aa0e90d834_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1135,
     "file_size_kb": 1,
-    "document_hash_sha256": "2d521b2414ced964768aef8b06e80da36059f4db94b1422b2f565b5c1fbc8485",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "31aa0e90d8342974cc0551b89769ab997a78bd3730186dfc6beac17338d66504",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2d521b2414ce_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-31aa0e90d834_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "EPFO_ESIC",
@@ -387,19 +615,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-52013a6095e9": {
-    "document_id": "DOC-52013a6095e9",
+  "DOC-75b990df318e": {
+    "document_id": "DOC-75b990df318e",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-52013a6095e9_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-75b990df318e_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1146,
     "file_size_kb": 1,
-    "document_hash_sha256": "52013a6095e9bcd8db2327ea2f7a27077b9ffd6e08b492cce704898aae2767dd",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "75b990df318e2253b56212374213e7dd2917828d2aac35c473889438baa61a01",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo001@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-52013a6095e9_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-75b990df318e_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-001",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -407,19 +635,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-63be1c918350": {
-    "document_id": "DOC-63be1c918350",
+  "DOC-9a03c7c28aa7": {
+    "document_id": "DOC-9a03c7c28aa7",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-63be1c918350_01_PAN.pdf",
-    "file_size_bytes": 1130,
+    "storage_filename": "DOC-9a03c7c28aa7_01_PAN.pdf",
+    "file_size_bytes": 1129,
     "file_size_kb": 1,
-    "document_hash_sha256": "63be1c918350011d9b86ad387689383e657c7b88b58d2a8658173c07d550ba3f",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "9a03c7c28aa78c0d90a994acf8004d59670690230951e8f7d8769783fcf6ef5c",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-63be1c918350_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9a03c7c28aa7_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "PAN",
@@ -427,19 +655,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-8486ff019ab1": {
-    "document_id": "DOC-8486ff019ab1",
+  "DOC-088eb99a0894": {
+    "document_id": "DOC-088eb99a0894",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-8486ff019ab1_02_GST.pdf",
+    "storage_filename": "DOC-088eb99a0894_02_GST.pdf",
     "file_size_bytes": 1130,
     "file_size_kb": 1,
-    "document_hash_sha256": "8486ff019ab1b306b720f63789d9989bd1c40d7bdabb21abf4101e87df1fb8ec",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "088eb99a0894d3dc00ffe93b1e0be8e524aa074d4a6672be81b823a9076d9c6e",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8486ff019ab1_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-088eb99a0894_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "GST",
@@ -447,19 +675,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-c8978f3b3c4a": {
-    "document_id": "DOC-c8978f3b3c4a",
+  "DOC-66ea4789e043": {
+    "document_id": "DOC-66ea4789e043",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-c8978f3b3c4a_03_Company_Registration.pdf",
+    "storage_filename": "DOC-66ea4789e043_03_Company_Registration.pdf",
     "file_size_bytes": 1143,
     "file_size_kb": 1,
-    "document_hash_sha256": "c8978f3b3c4ae24234338b36186b8e978e2ac34515a2fbee2ac344861563663b",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "66ea4789e0431d0cfcbc65130c1e17fd2a8832ca187b44946897dfc307371d6d",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c8978f3b3c4a_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-66ea4789e043_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "COMPANY_REGISTRATION",
@@ -467,19 +695,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-7a86c3998eb9": {
-    "document_id": "DOC-7a86c3998eb9",
+  "DOC-f4312f9eb46c": {
+    "document_id": "DOC-f4312f9eb46c",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-7a86c3998eb9_04_Udyam.pdf",
+    "storage_filename": "DOC-f4312f9eb46c_04_Udyam.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "7a86c3998eb9d61066468e98ae2b5aac2ba4cd7abe3b066b6c0dbad9564627b8",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "f4312f9eb46cb41adef7d0c97a957c330dd4906bb46ba18f6a306968482977c6",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7a86c3998eb9_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-f4312f9eb46c_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "UDYAM_MSME",
@@ -487,19 +715,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-bf80b7515e39": {
-    "document_id": "DOC-bf80b7515e39",
+  "DOC-f13cd07bf538": {
+    "document_id": "DOC-f13cd07bf538",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-bf80b7515e39_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-f13cd07bf538_05_Experience_Certificate.pdf",
     "file_size_bytes": 1140,
     "file_size_kb": 1,
-    "document_hash_sha256": "bf80b7515e394e56d686391d8050f1f11469742fcdb404711fb38219e91e9bf3",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "f13cd07bf53815d44407e49ed75b6eb729f039ce642fc9b5212a5e783e04abb4",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-bf80b7515e39_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-f13cd07bf538_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -507,19 +735,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3a14f48c808f": {
-    "document_id": "DOC-3a14f48c808f",
+  "DOC-e14e6353a1ae": {
+    "document_id": "DOC-e14e6353a1ae",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-3a14f48c808f_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-e14e6353a1ae_06_OEM_Authorization.pdf",
     "file_size_bytes": 1143,
     "file_size_kb": 1,
-    "document_hash_sha256": "3a14f48c808f4b0e1a62755b9805d7355d43adebf92b070beeeedb67064fa32a",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "e14e6353a1aef4b56cd5ee117fc67629ce6c11a2eecda76772bbfaf207c090c6",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3a14f48c808f_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e14e6353a1ae_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "OEM_AUTHORIZATION",
@@ -527,19 +755,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-9d89ee62fb91": {
-    "document_id": "DOC-9d89ee62fb91",
+  "DOC-3eb1868194d5": {
+    "document_id": "DOC-3eb1868194d5",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-9d89ee62fb91_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-3eb1868194d5_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1147,
     "file_size_kb": 1,
-    "document_hash_sha256": "9d89ee62fb919649327fbc45b222496d6dc8c0adc4bd68c028921e02b632a37c",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "3eb1868194d5ffd076542c155498de33963580663688436c045119b73f5728c0",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9d89ee62fb91_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3eb1868194d5_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -547,19 +775,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-6240dbde5cda": {
-    "document_id": "DOC-6240dbde5cda",
+  "DOC-c7d68a82e270": {
+    "document_id": "DOC-c7d68a82e270",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-6240dbde5cda_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-c7d68a82e270_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1136,
     "file_size_kb": 1,
-    "document_hash_sha256": "6240dbde5cdaea885bfc332c4897ee6db5e4986c2259dc39070eb0ae4a4312a3",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "c7d68a82e270a0c2eb6ec86fbbba20eb3203ab95523d786b442c65cc5338b619",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6240dbde5cda_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c7d68a82e270_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "EPFO_ESIC",
@@ -567,19 +795,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-079fe8c3b43c": {
-    "document_id": "DOC-079fe8c3b43c",
+  "DOC-b2ea8e9b2ea2": {
+    "document_id": "DOC-b2ea8e9b2ea2",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-079fe8c3b43c_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-b2ea8e9b2ea2_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1147,
     "file_size_kb": 1,
-    "document_hash_sha256": "079fe8c3b43ce2013312ab9debc86e5c0e676c54ad11eb2861d538aac23942d3",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "b2ea8e9b2ea2db3b0c88cb2c314a740d13a398680ad076866f2bd9ce6a8df514",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo002@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-079fe8c3b43c_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-b2ea8e9b2ea2_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-002",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -587,19 +815,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-874ed6c18a7d": {
-    "document_id": "DOC-874ed6c18a7d",
+  "DOC-7a04ebc828b9": {
+    "document_id": "DOC-7a04ebc828b9",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-874ed6c18a7d_01_PAN.pdf",
+    "storage_filename": "DOC-7a04ebc828b9_01_PAN.pdf",
     "file_size_bytes": 1132,
     "file_size_kb": 1,
-    "document_hash_sha256": "874ed6c18a7dfcb09660a2e12d7b331f746282df500ac82e63ce783ad2295620",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "7a04ebc828b972e3555d9608bd067a12a045fc45fd7f0cea282fa2465945aaef",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-874ed6c18a7d_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7a04ebc828b9_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "PAN",
@@ -607,19 +835,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-ae0f4ccce973": {
-    "document_id": "DOC-ae0f4ccce973",
+  "DOC-2dcfafbc691e": {
+    "document_id": "DOC-2dcfafbc691e",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-ae0f4ccce973_02_GST.pdf",
+    "storage_filename": "DOC-2dcfafbc691e_02_GST.pdf",
     "file_size_bytes": 1132,
     "file_size_kb": 1,
-    "document_hash_sha256": "ae0f4ccce9732f0fa3d7468718f762f1999a27d6d1c2222cd0a11b79eaf2254c",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "2dcfafbc691ecd692a2c4b3679cb7a5f653c44310de986465c45028e33f78f31",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-ae0f4ccce973_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2dcfafbc691e_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "GST",
@@ -627,19 +855,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-9938094745ac": {
-    "document_id": "DOC-9938094745ac",
+  "DOC-1adcd04e0ba4": {
+    "document_id": "DOC-1adcd04e0ba4",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-9938094745ac_03_Company_Registration.pdf",
+    "storage_filename": "DOC-1adcd04e0ba4_03_Company_Registration.pdf",
     "file_size_bytes": 1145,
     "file_size_kb": 1,
-    "document_hash_sha256": "9938094745ac214c055dd6939e8a4739b96ded768be394abf3509a71ffdfa3af",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "1adcd04e0ba4aa4ef9f431c8a42421e0d332888ddb473a996a391961006f99f2",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9938094745ac_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-1adcd04e0ba4_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "COMPANY_REGISTRATION",
@@ -647,19 +875,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3a2087d1da53": {
-    "document_id": "DOC-3a2087d1da53",
+  "DOC-a263de7a0145": {
+    "document_id": "DOC-a263de7a0145",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-3a2087d1da53_04_Udyam.pdf",
+    "storage_filename": "DOC-a263de7a0145_04_Udyam.pdf",
     "file_size_bytes": 1141,
     "file_size_kb": 1,
-    "document_hash_sha256": "3a2087d1da536fa506cbb5e1d018eef971b944e78f5fc2062e12afbd004ebb34",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a263de7a0145067cd21badefa514a216e4f2903e69625074d7595647f2a22281",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3a2087d1da53_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a263de7a0145_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "UDYAM_MSME",
@@ -667,19 +895,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-27650d3b33ac": {
-    "document_id": "DOC-27650d3b33ac",
+  "DOC-3f4ee21330ac": {
+    "document_id": "DOC-3f4ee21330ac",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-27650d3b33ac_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-3f4ee21330ac_05_Experience_Certificate.pdf",
     "file_size_bytes": 1142,
     "file_size_kb": 1,
-    "document_hash_sha256": "27650d3b33ac226b26fa5bb46bc7500412153370fdfa59bb4d1e8743ebbb6555",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "3f4ee21330ac234c97daf76eb769add32986f2aa2344aee28af17595bbc840a0",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-27650d3b33ac_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3f4ee21330ac_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -687,19 +915,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-7419b0dd4b8a": {
-    "document_id": "DOC-7419b0dd4b8a",
+  "DOC-f3303d9390cd": {
+    "document_id": "DOC-f3303d9390cd",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-7419b0dd4b8a_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-f3303d9390cd_06_OEM_Authorization.pdf",
     "file_size_bytes": 1144,
     "file_size_kb": 1,
-    "document_hash_sha256": "7419b0dd4b8a9640d6079dc516c6ef03511c17fbd4f985291584b2976dfbaf65",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "f3303d9390cd8617122cb43bd3c6fdd15f6233389edb9e9e88aefc894b989eda",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7419b0dd4b8a_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-f3303d9390cd_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "OEM_AUTHORIZATION",
@@ -707,19 +935,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-668f148d66f4": {
-    "document_id": "DOC-668f148d66f4",
+  "DOC-a057e01897fe": {
+    "document_id": "DOC-a057e01897fe",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-668f148d66f4_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-a057e01897fe_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1150,
     "file_size_kb": 1,
-    "document_hash_sha256": "668f148d66f42f66982f861bd2d498accfc6aa0b0028e0e239d60928b7a1f414",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a057e01897fe0ed6921535384ddc12e19ac6be8975fb5a2f28fcba529aba4c37",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-668f148d66f4_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a057e01897fe_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -727,19 +955,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-0176a70c163a": {
-    "document_id": "DOC-0176a70c163a",
+  "DOC-8bd010cb853a": {
+    "document_id": "DOC-8bd010cb853a",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-0176a70c163a_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-8bd010cb853a_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1137,
     "file_size_kb": 1,
-    "document_hash_sha256": "0176a70c163ae3c4fbb31547ae1c94b7f8155ecbc0e2ff5c9961e8a32a809b0b",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "8bd010cb853aeb4e65f4961c0e00111bd4e9e8f1876aa4fc124792343f440a19",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-0176a70c163a_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8bd010cb853a_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "EPFO_ESIC",
@@ -747,19 +975,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-76c0513644b4": {
-    "document_id": "DOC-76c0513644b4",
+  "DOC-57a68f002f62": {
+    "document_id": "DOC-57a68f002f62",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-76c0513644b4_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-57a68f002f62_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1149,
     "file_size_kb": 1,
-    "document_hash_sha256": "76c0513644b4c3dc9d801e54357d29ab3ca4286a2cd564c86196d3ae7e1e7def",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "57a68f002f627e96f5bbc6aa63e1e425ef0bd466f9e667f8c8fa2bbe610a3351",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo003@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-76c0513644b4_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-57a68f002f62_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-003",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -767,19 +995,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-16798f572633": {
-    "document_id": "DOC-16798f572633",
+  "DOC-091a55f36b6c": {
+    "document_id": "DOC-091a55f36b6c",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-16798f572633_01_PAN.pdf",
+    "storage_filename": "DOC-091a55f36b6c_01_PAN.pdf",
     "file_size_bytes": 1132,
     "file_size_kb": 1,
-    "document_hash_sha256": "16798f572633505a7cecbd244733188524b8c8bc6da6bc0b4f2f61a81bbffc6a",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "091a55f36b6c73756ed50cb3528bbc80a2b7a1ce4318ad830d2d7335f4d8177d",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-16798f572633_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-091a55f36b6c_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "PAN",
@@ -787,19 +1015,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-909bea7dc340": {
-    "document_id": "DOC-909bea7dc340",
+  "DOC-9b60fea15891": {
+    "document_id": "DOC-9b60fea15891",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-909bea7dc340_02_GST.pdf",
+    "storage_filename": "DOC-9b60fea15891_02_GST.pdf",
     "file_size_bytes": 1131,
     "file_size_kb": 1,
-    "document_hash_sha256": "909bea7dc34017cf964ebf8062fbd7112d7eca4af0161a4e9f75180d19ed1d40",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "9b60fea15891513b6466eb9900f662746e1eb9b5b03211a845452d8dfad7db1e",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-909bea7dc340_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9b60fea15891_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "GST",
@@ -807,19 +1035,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-14cce10bb7eb": {
-    "document_id": "DOC-14cce10bb7eb",
+  "DOC-8d0b4d9a1c62": {
+    "document_id": "DOC-8d0b4d9a1c62",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-14cce10bb7eb_03_Company_Registration.pdf",
+    "storage_filename": "DOC-8d0b4d9a1c62_03_Company_Registration.pdf",
     "file_size_bytes": 1145,
     "file_size_kb": 1,
-    "document_hash_sha256": "14cce10bb7ebb6441a5c14756b7b7a971216329a61e20b12c301d51652ad6b22",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "8d0b4d9a1c62af1f9820945414f11fc3f43b202d55e47675d8f6c399926a8fa1",
+    "uploaded_at": "2026-09-29T08:55:51Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-14cce10bb7eb_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8d0b4d9a1c62_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "COMPANY_REGISTRATION",
@@ -827,19 +1055,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-c668d200e2f7": {
-    "document_id": "DOC-c668d200e2f7",
+  "DOC-e0a1a0edf062": {
+    "document_id": "DOC-e0a1a0edf062",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-c668d200e2f7_04_Udyam.pdf",
+    "storage_filename": "DOC-e0a1a0edf062_04_Udyam.pdf",
     "file_size_bytes": 1140,
     "file_size_kb": 1,
-    "document_hash_sha256": "c668d200e2f7f1f377000da009edfcc3a6546b983613589b9c357c7019561261",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "e0a1a0edf0620131e4f1bfcb1252e7497ce5f3eaa1f135517c8c83816d3754dc",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c668d200e2f7_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e0a1a0edf062_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "UDYAM_MSME",
@@ -847,19 +1075,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-e0e117c2c5b1": {
-    "document_id": "DOC-e0e117c2c5b1",
+  "DOC-5cb2a3eaf4cc": {
+    "document_id": "DOC-5cb2a3eaf4cc",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-e0e117c2c5b1_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-5cb2a3eaf4cc_05_Experience_Certificate.pdf",
     "file_size_bytes": 1142,
     "file_size_kb": 1,
-    "document_hash_sha256": "e0e117c2c5b1642d20a1147a85f10b49f89c92868f2d0b9dfb30249748e43894",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "5cb2a3eaf4ccd58b6d08f610cc1bfbd5416d1e507b29e1fe0abdc5ae68464761",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e0e117c2c5b1_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-5cb2a3eaf4cc_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -867,19 +1095,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-969f07bd84f3": {
-    "document_id": "DOC-969f07bd84f3",
+  "DOC-33ba0ca07ce1": {
+    "document_id": "DOC-33ba0ca07ce1",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-969f07bd84f3_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-33ba0ca07ce1_06_OEM_Authorization.pdf",
     "file_size_bytes": 1145,
     "file_size_kb": 1,
-    "document_hash_sha256": "969f07bd84f31f1819b683375c575a6429f197e3b321cf8c889ad2d68ae1c776",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "33ba0ca07ce18d21c040ea9e9aae352ffd108c2375cbdc7022544c4066167735",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-969f07bd84f3_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-33ba0ca07ce1_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "OEM_AUTHORIZATION",
@@ -887,19 +1115,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-e6c358acf47a": {
-    "document_id": "DOC-e6c358acf47a",
+  "DOC-bd01e9f80935": {
+    "document_id": "DOC-bd01e9f80935",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-e6c358acf47a_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-bd01e9f80935_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1149,
     "file_size_kb": 1,
-    "document_hash_sha256": "e6c358acf47a48822c5e4420fe173b7df9a6ac64d1119dad014bcdee7624e275",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "bd01e9f80935ec623980c0c2015dd0793c06c46571558c20ad5191a60762aaad",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e6c358acf47a_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-bd01e9f80935_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -907,19 +1135,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-cf53ec1c8809": {
-    "document_id": "DOC-cf53ec1c8809",
+  "DOC-6dbed5cb41ab": {
+    "document_id": "DOC-6dbed5cb41ab",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-cf53ec1c8809_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-6dbed5cb41ab_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "cf53ec1c8809f73215318aab8c40e79de2dab303d2aba60ed23ec25cf6dc1bd7",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "6dbed5cb41ab7fbc89008cf7a26dc3554368ae3773080249981799f3fb479c0d",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-cf53ec1c8809_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6dbed5cb41ab_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "EPFO_ESIC",
@@ -927,19 +1155,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-87a4b50940a1": {
-    "document_id": "DOC-87a4b50940a1",
+  "DOC-52bd3c8c41dc": {
+    "document_id": "DOC-52bd3c8c41dc",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-87a4b50940a1_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-52bd3c8c41dc_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1149,
     "file_size_kb": 1,
-    "document_hash_sha256": "87a4b50940a1aa8398866133a1334dc20e885c5988927b5722a0bb25292ea9d0",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "52bd3c8c41dc32d2c0d6fc1142a258262b58cda9f49e184aeabf972eb4fe014f",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo004@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-87a4b50940a1_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-52bd3c8c41dc_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-004",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -947,19 +1175,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-540c52aa5b30": {
-    "document_id": "DOC-540c52aa5b30",
+  "DOC-4e34872dd89c": {
+    "document_id": "DOC-4e34872dd89c",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-540c52aa5b30_01_PAN.pdf",
+    "storage_filename": "DOC-4e34872dd89c_01_PAN.pdf",
     "file_size_bytes": 1136,
     "file_size_kb": 1,
-    "document_hash_sha256": "540c52aa5b30dbd4d4dd66cff7b074bdbae48b6e42539253abe7388195bdc29b",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "4e34872dd89c19a00de8ec060838afcd5f3fd0d4710ac6cc1c6403ee39c8abc9",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-540c52aa5b30_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4e34872dd89c_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "PAN",
@@ -967,19 +1195,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-97508bef673b": {
-    "document_id": "DOC-97508bef673b",
+  "DOC-914212c60337": {
+    "document_id": "DOC-914212c60337",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-97508bef673b_02_GST.pdf",
+    "storage_filename": "DOC-914212c60337_02_GST.pdf",
     "file_size_bytes": 1135,
     "file_size_kb": 1,
-    "document_hash_sha256": "97508bef673ba2801329e857d8dcf1fa047d3e59c51079e51b2d12ec031cce81",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "914212c60337d699b1a19098ad3c39a55dd17f7a9885b8c634c269e0bfe81a95",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-97508bef673b_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-914212c60337_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "GST",
@@ -987,19 +1215,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-316bf5d34e35": {
-    "document_id": "DOC-316bf5d34e35",
+  "DOC-a6e44da7904f": {
+    "document_id": "DOC-a6e44da7904f",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-316bf5d34e35_03_Company_Registration.pdf",
+    "storage_filename": "DOC-a6e44da7904f_03_Company_Registration.pdf",
     "file_size_bytes": 1150,
     "file_size_kb": 1,
-    "document_hash_sha256": "316bf5d34e35144f0b14c26a4c25db48f10b71283f7781a5a893188b255d4eb3",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a6e44da7904fa983b5b709afd846bdab3281da08c168ab15522d550fcc8bac35",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-316bf5d34e35_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a6e44da7904f_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "COMPANY_REGISTRATION",
@@ -1007,19 +1235,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-ca8bb5fe6035": {
-    "document_id": "DOC-ca8bb5fe6035",
+  "DOC-8a9c1720c598": {
+    "document_id": "DOC-8a9c1720c598",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-ca8bb5fe6035_04_Udyam.pdf",
+    "storage_filename": "DOC-8a9c1720c598_04_Udyam.pdf",
     "file_size_bytes": 1144,
     "file_size_kb": 1,
-    "document_hash_sha256": "ca8bb5fe60356b3d50886563f4b4536f96d6bd9103bbcf302cc3714bbfea1bb1",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "8a9c1720c598e9c09f7805e8436c01af0bf4ba87edee28022c5399a0da13b09d",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-ca8bb5fe6035_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8a9c1720c598_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "UDYAM_MSME",
@@ -1027,19 +1255,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-20ffd703a441": {
-    "document_id": "DOC-20ffd703a441",
+  "DOC-a247ea5ef377": {
+    "document_id": "DOC-a247ea5ef377",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-20ffd703a441_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-a247ea5ef377_05_Experience_Certificate.pdf",
     "file_size_bytes": 1145,
     "file_size_kb": 1,
-    "document_hash_sha256": "20ffd703a441e386456716036f4218813631ae51874ee4d34a42ee2362ab8e48",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a247ea5ef37742771a9a87fc2048e52f3d2676fb2bf62e50c084ab277a51ca8b",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-20ffd703a441_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a247ea5ef377_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -1047,19 +1275,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-e20f2dfcda15": {
-    "document_id": "DOC-e20f2dfcda15",
+  "DOC-ff2d5993cfa9": {
+    "document_id": "DOC-ff2d5993cfa9",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-e20f2dfcda15_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-ff2d5993cfa9_06_OEM_Authorization.pdf",
     "file_size_bytes": 1147,
     "file_size_kb": 1,
-    "document_hash_sha256": "e20f2dfcda1547e2a5f4c5e35478d4d0e17b13efa954187f6f41879d01d8b60d",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "ff2d5993cfa94129f68f3278c3c98a585ac30a682e1aec07d437e5af46e346c6",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e20f2dfcda15_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-ff2d5993cfa9_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "OEM_AUTHORIZATION",
@@ -1067,19 +1295,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-326a997b6491": {
-    "document_id": "DOC-326a997b6491",
+  "DOC-f9c55fdec014": {
+    "document_id": "DOC-f9c55fdec014",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-326a997b6491_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-f9c55fdec014_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1153,
     "file_size_kb": 1,
-    "document_hash_sha256": "326a997b64911fb5ae0fffb0710039529f8c9787eb367e97b242404ce7dfaee0",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "f9c55fdec01428fc8e7ecdedfeac2fffa80b72764ed8f2983f0217b731765766",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-326a997b6491_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-f9c55fdec014_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -1087,19 +1315,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-9c1f3e1de02d": {
-    "document_id": "DOC-9c1f3e1de02d",
+  "DOC-8426e9b99afd": {
+    "document_id": "DOC-8426e9b99afd",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-9c1f3e1de02d_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-8426e9b99afd_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1141,
     "file_size_kb": 1,
-    "document_hash_sha256": "9c1f3e1de02dea60cadcd3220f3ee5da1c2eae35e4fe41a059aa5eaa4e15a96a",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "8426e9b99afddfe4f7cc631e33aed1fcc164358a0560a823cfbb7510b5c5b705",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9c1f3e1de02d_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8426e9b99afd_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "EPFO_ESIC",
@@ -1107,19 +1335,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-bdf959db1ee2": {
-    "document_id": "DOC-bdf959db1ee2",
+  "DOC-89b011c34386": {
+    "document_id": "DOC-89b011c34386",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-bdf959db1ee2_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-89b011c34386_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1153,
     "file_size_kb": 1,
-    "document_hash_sha256": "bdf959db1ee282e8705d37b5a5bbb84bcdaed6ef4046663b13af8b9fe8627615",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "89b011c343869188e788b673d9bfdf3d765d8fe99b7852d0b14a88f21bc81a13",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo005@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-bdf959db1ee2_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-89b011c34386_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-005",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -1127,19 +1355,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-de6912cce33d": {
-    "document_id": "DOC-de6912cce33d",
+  "DOC-c730747b1288": {
+    "document_id": "DOC-c730747b1288",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-de6912cce33d_01_PAN.pdf",
+    "storage_filename": "DOC-c730747b1288_01_PAN.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "de6912cce33df3972e0fe72b2ba94309257c2a118e2f2084431f2579bae11936",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "c730747b12886bcba49033623aab2a820dd1bb12b1be99f9f663f06bcf06f08d",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-de6912cce33d_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c730747b1288_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "PAN",
@@ -1147,19 +1375,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3ec9dd7e2d85": {
-    "document_id": "DOC-3ec9dd7e2d85",
+  "DOC-a1720c3b9833": {
+    "document_id": "DOC-a1720c3b9833",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-3ec9dd7e2d85_02_GST.pdf",
+    "storage_filename": "DOC-a1720c3b9833_02_GST.pdf",
     "file_size_bytes": 1139,
     "file_size_kb": 1,
-    "document_hash_sha256": "3ec9dd7e2d85093ccbf3d72568045b2c1861bf7d69f6214d99b06908cecf89f9",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a1720c3b9833f3bb44c11d2c841823046a20ea8f3eba0a9089721deff0f9b61d",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3ec9dd7e2d85_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a1720c3b9833_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "GST",
@@ -1167,19 +1395,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-fa0ef29861b0": {
-    "document_id": "DOC-fa0ef29861b0",
+  "DOC-7682741a6782": {
+    "document_id": "DOC-7682741a6782",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-fa0ef29861b0_03_Company_Registration.pdf",
+    "storage_filename": "DOC-7682741a6782_03_Company_Registration.pdf",
     "file_size_bytes": 1153,
     "file_size_kb": 1,
-    "document_hash_sha256": "fa0ef29861b0a6b74fd881c40a037975a841c1fad7bd6738dc2030c15ebbbca5",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "7682741a6782bb7c53ce6c6ab35fe00eb7407e0eea1e33bdfb6f38b4c1e5fe02",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-fa0ef29861b0_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7682741a6782_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "COMPANY_REGISTRATION",
@@ -1187,19 +1415,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-1512b4d6e074": {
-    "document_id": "DOC-1512b4d6e074",
+  "DOC-b96d4ef16d1c": {
+    "document_id": "DOC-b96d4ef16d1c",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-1512b4d6e074_04_Udyam.pdf",
+    "storage_filename": "DOC-b96d4ef16d1c_04_Udyam.pdf",
     "file_size_bytes": 1148,
     "file_size_kb": 1,
-    "document_hash_sha256": "1512b4d6e07404cfab5d602e10f4ae122e791525a15a3b3b5ccf7517d5d9c500",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "b96d4ef16d1c2e75eeefe308151c085a3b9c18a19f03283be096511560085948",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-1512b4d6e074_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-b96d4ef16d1c_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "UDYAM_MSME",
@@ -1207,19 +1435,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-f7ba6af94f0b": {
-    "document_id": "DOC-f7ba6af94f0b",
+  "DOC-c890518f50f4": {
+    "document_id": "DOC-c890518f50f4",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-f7ba6af94f0b_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-c890518f50f4_05_Experience_Certificate.pdf",
     "file_size_bytes": 1150,
     "file_size_kb": 1,
-    "document_hash_sha256": "f7ba6af94f0bc888f93a8af58ce5c8356e540939d656932afa281a781e83ae93",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "c890518f50f482942dc5a758c6c748ca80aa861406251dd1fefa2e5eee890f59",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-f7ba6af94f0b_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c890518f50f4_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -1227,19 +1455,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-197ded38a3b0": {
-    "document_id": "DOC-197ded38a3b0",
+  "DOC-7b8df64f7be7": {
+    "document_id": "DOC-7b8df64f7be7",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-197ded38a3b0_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-7b8df64f7be7_06_OEM_Authorization.pdf",
     "file_size_bytes": 1152,
     "file_size_kb": 1,
-    "document_hash_sha256": "197ded38a3b0a9d40884cbac97875fff40d37056c73770dfa0e7258ba8b246fe",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "7b8df64f7be7a653b1f6e675e90addee6ac57dff181bb317cc3296cb7bc5a243",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-197ded38a3b0_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7b8df64f7be7_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "OEM_AUTHORIZATION",
@@ -1247,19 +1475,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-2a57a57d5341": {
-    "document_id": "DOC-2a57a57d5341",
+  "DOC-a167f39641a8": {
+    "document_id": "DOC-a167f39641a8",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-2a57a57d5341_07_Local_Content_Declaration.pdf",
-    "file_size_bytes": 1153,
+    "storage_filename": "DOC-a167f39641a8_07_Local_Content_Declaration.pdf",
+    "file_size_bytes": 1157,
     "file_size_kb": 1,
-    "document_hash_sha256": "2a57a57d53414717d8136fab8a0b3b3aa8f20ed64369c86bbb85bca7b72e020a",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a167f39641a8d4770e02a2dc58595bf735f9a16da2d00c9aafb73e6c52e866e6",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2a57a57d5341_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a167f39641a8_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -1267,19 +1495,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-06c96b2a1dbe": {
-    "document_id": "DOC-06c96b2a1dbe",
+  "DOC-868fe76deb18": {
+    "document_id": "DOC-868fe76deb18",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-06c96b2a1dbe_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-868fe76deb18_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1146,
     "file_size_kb": 1,
-    "document_hash_sha256": "06c96b2a1dbea9a71fc419100cc59ce4ce138469ff4b555577ea72a27620df03",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "868fe76deb1852a99688b2bd6ef251a0ccd98573c5ee72cf4559c1f15e2bcee8",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-06c96b2a1dbe_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-868fe76deb18_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "EPFO_ESIC",
@@ -1287,19 +1515,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-43bb3327f474": {
-    "document_id": "DOC-43bb3327f474",
+  "DOC-7cc9c6f2be0d": {
+    "document_id": "DOC-7cc9c6f2be0d",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-43bb3327f474_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-7cc9c6f2be0d_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1158,
     "file_size_kb": 1,
-    "document_hash_sha256": "43bb3327f474f1e71ac79f47019dc8f7eaab8d755749127b698758d98c0fb7fe",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "7cc9c6f2be0d52b6b08f98be66864e4cd9a4cad627ebfe82dfaffc6aabed67d0",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo006@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-43bb3327f474_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7cc9c6f2be0d_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-006",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -1307,19 +1535,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-4c8e891fea3b": {
-    "document_id": "DOC-4c8e891fea3b",
+  "DOC-4ee7d1e38215": {
+    "document_id": "DOC-4ee7d1e38215",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-4c8e891fea3b_01_PAN.pdf",
+    "storage_filename": "DOC-4ee7d1e38215_01_PAN.pdf",
     "file_size_bytes": 1141,
     "file_size_kb": 1,
-    "document_hash_sha256": "4c8e891fea3b6335ecc347a2713828134c410647fb152ac99ee3b15ab51f1a53",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "4ee7d1e382156404f7656d41d687cd7ac9038e2dfcdf2c59a1515743918c7cb5",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4c8e891fea3b_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4ee7d1e38215_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "PAN",
@@ -1327,19 +1555,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-98f5ede60980": {
-    "document_id": "DOC-98f5ede60980",
+  "DOC-2d7d1ea50ff1": {
+    "document_id": "DOC-2d7d1ea50ff1",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-98f5ede60980_02_GST.pdf",
+    "storage_filename": "DOC-2d7d1ea50ff1_02_GST.pdf",
     "file_size_bytes": 1142,
     "file_size_kb": 1,
-    "document_hash_sha256": "98f5ede60980f9474ddb6f64ab5cee19780be74faad88a32be800ac9631db3e8",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "2d7d1ea50ff180391369c52fbb51c4e8d5d7301d7dd1b03e223da72f8403330a",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-98f5ede60980_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2d7d1ea50ff1_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "GST",
@@ -1347,19 +1575,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-37ee1fe4b543": {
-    "document_id": "DOC-37ee1fe4b543",
+  "DOC-daa59fa633d5": {
+    "document_id": "DOC-daa59fa633d5",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-37ee1fe4b543_03_Company_Registration.pdf",
+    "storage_filename": "DOC-daa59fa633d5_03_Company_Registration.pdf",
     "file_size_bytes": 1155,
     "file_size_kb": 1,
-    "document_hash_sha256": "37ee1fe4b54387e8271850c150e512ffedc71bd722e1de43e049c1e28b7c343c",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "daa59fa633d51e971635649f43186d261ed8364d9a42848d26fb6d7d2fedc752",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-37ee1fe4b543_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-daa59fa633d5_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "COMPANY_REGISTRATION",
@@ -1367,19 +1595,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-944b67c1be01": {
-    "document_id": "DOC-944b67c1be01",
+  "DOC-8341a269ba1b": {
+    "document_id": "DOC-8341a269ba1b",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-944b67c1be01_04_Udyam.pdf",
+    "storage_filename": "DOC-8341a269ba1b_04_Udyam.pdf",
     "file_size_bytes": 1151,
     "file_size_kb": 1,
-    "document_hash_sha256": "944b67c1be016e69070763f61ec43720e8eae24ee9dfd6d1334ce05634789a5b",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "8341a269ba1b29dfd74bf9a7177a8d17acb7251989184fd53a36c968f46e8aa2",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-944b67c1be01_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8341a269ba1b_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "UDYAM_MSME",
@@ -1387,19 +1615,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3f33e45a7882": {
-    "document_id": "DOC-3f33e45a7882",
+  "DOC-98fd3d3e2a7a": {
+    "document_id": "DOC-98fd3d3e2a7a",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-3f33e45a7882_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-98fd3d3e2a7a_05_Experience_Certificate.pdf",
     "file_size_bytes": 1152,
     "file_size_kb": 1,
-    "document_hash_sha256": "3f33e45a7882c4c198e38c97629db65d8258cef7fadef998f386c2c2e29c1890",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "98fd3d3e2a7af271ec0e0db5cbe1ee1f3bfeceb15d0188b88288af3e5375b810",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3f33e45a7882_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-98fd3d3e2a7a_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -1407,19 +1635,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-a34dcc10fb87": {
-    "document_id": "DOC-a34dcc10fb87",
+  "DOC-1d10cc4d27e3": {
+    "document_id": "DOC-1d10cc4d27e3",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-a34dcc10fb87_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-1d10cc4d27e3_06_OEM_Authorization.pdf",
     "file_size_bytes": 1159,
     "file_size_kb": 1,
-    "document_hash_sha256": "a34dcc10fb87ea44898358b3942bb42c205e0adb1076accb39a10bdde24f8801",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "1d10cc4d27e36a6e831024bbd41d8806cd62d37c10c1d6bab9e8a8c8db4ab80e",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a34dcc10fb87_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-1d10cc4d27e3_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "OEM_AUTHORIZATION",
@@ -1427,19 +1655,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-614b73718a92": {
-    "document_id": "DOC-614b73718a92",
+  "DOC-1ad76ccee7ba": {
+    "document_id": "DOC-1ad76ccee7ba",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-614b73718a92_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-1ad76ccee7ba_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1160,
     "file_size_kb": 1,
-    "document_hash_sha256": "614b73718a9230cb029c43485706af80a470a623c9e40d8fc6b921640a399d6a",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "1ad76ccee7ba2f4dbfb160dd80706eaef0f8fc7d8a05a303e71bd42329647dc2",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-614b73718a92_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-1ad76ccee7ba_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -1447,19 +1675,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-131ce2833a85": {
-    "document_id": "DOC-131ce2833a85",
+  "DOC-6d3519c7d73e": {
+    "document_id": "DOC-6d3519c7d73e",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-131ce2833a85_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-6d3519c7d73e_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1148,
     "file_size_kb": 1,
-    "document_hash_sha256": "131ce2833a85eeb0bc13294be1234f1332a635e1312317cb3c3471195441a81d",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "6d3519c7d73ee3607532055d36a78d3d957f1e4c8a230c1688448b98100760b3",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-131ce2833a85_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6d3519c7d73e_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "EPFO_ESIC",
@@ -1467,19 +1695,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-35c65ed80ecc": {
-    "document_id": "DOC-35c65ed80ecc",
+  "DOC-a159170b069c": {
+    "document_id": "DOC-a159170b069c",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-35c65ed80ecc_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-a159170b069c_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1159,
     "file_size_kb": 1,
-    "document_hash_sha256": "35c65ed80eccf3413573c48fd852da9cca298a5a4821e31bbd1953f0e9c95f23",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "a159170b069c49c3883ce3bd53f71a0c3760ceed4d2a5ff797878a072b1c7231",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo007@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-35c65ed80ecc_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a159170b069c_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-007",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -1487,19 +1715,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3c68275ef028": {
-    "document_id": "DOC-3c68275ef028",
+  "DOC-b3e5764fe7cd": {
+    "document_id": "DOC-b3e5764fe7cd",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-3c68275ef028_01_PAN.pdf",
+    "storage_filename": "DOC-b3e5764fe7cd_01_PAN.pdf",
     "file_size_bytes": 1134,
     "file_size_kb": 1,
-    "document_hash_sha256": "3c68275ef02860e8e84ed09f65df2abbb4af749b2ec9824b5074842e9a9e9d18",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "b3e5764fe7cd5bc115086fbecfa27feb3894de142db1dfb901259bbaff0475bc",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3c68275ef028_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-b3e5764fe7cd_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "PAN",
@@ -1507,19 +1735,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-5726497aabb2": {
-    "document_id": "DOC-5726497aabb2",
+  "DOC-6df5f8b7b9f5": {
+    "document_id": "DOC-6df5f8b7b9f5",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-5726497aabb2_02_GST.pdf",
+    "storage_filename": "DOC-6df5f8b7b9f5_02_GST.pdf",
     "file_size_bytes": 1134,
     "file_size_kb": 1,
-    "document_hash_sha256": "5726497aabb2f08d68a1b01b19f3f3c91fe2a33503dae2c89b012b918dc838fd",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "6df5f8b7b9f5535b4250c474895421e0588c7ca210c2194bfc6a096b486ad588",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-5726497aabb2_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6df5f8b7b9f5_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "GST",
@@ -1527,19 +1755,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-a270e3661c2a": {
-    "document_id": "DOC-a270e3661c2a",
+  "DOC-18a487e105bf": {
+    "document_id": "DOC-18a487e105bf",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-a270e3661c2a_03_Company_Registration.pdf",
+    "storage_filename": "DOC-18a487e105bf_03_Company_Registration.pdf",
     "file_size_bytes": 1148,
     "file_size_kb": 1,
-    "document_hash_sha256": "a270e3661c2addcd720cdd86980990ab4f363f23e87c212aadca7b1b15351701",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "18a487e105bf83c2167db164033b717823abb10386aca3e059cf66c8429b23cc",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a270e3661c2a_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-18a487e105bf_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "COMPANY_REGISTRATION",
@@ -1547,19 +1775,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-ebb52ab7bbe8": {
-    "document_id": "DOC-ebb52ab7bbe8",
+  "DOC-38d06c601019": {
+    "document_id": "DOC-38d06c601019",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-ebb52ab7bbe8_04_Udyam.pdf",
+    "storage_filename": "DOC-38d06c601019_04_Udyam.pdf",
     "file_size_bytes": 1144,
     "file_size_kb": 1,
-    "document_hash_sha256": "ebb52ab7bbe8e7c83c46ca641767b3bb95ef79121960dacade4c55a69ce3f0a7",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "38d06c601019ee727db89fa06f05dd772c16b966141d21fdc098db83d45635b5",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-ebb52ab7bbe8_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-38d06c601019_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "UDYAM_MSME",
@@ -1567,19 +1795,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-b010660ae682": {
-    "document_id": "DOC-b010660ae682",
+  "DOC-d1f12bcae085": {
+    "document_id": "DOC-d1f12bcae085",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-b010660ae682_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-d1f12bcae085_05_Experience_Certificate.pdf",
     "file_size_bytes": 1146,
     "file_size_kb": 1,
-    "document_hash_sha256": "b010660ae68238fb961c9bac4b4d8a136f5a231a00543e4b85c4d110b680a793",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "d1f12bcae08507235a72164dbb561bd3b8fa23aaaeb147729f83ad18d936b23a",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-b010660ae682_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d1f12bcae085_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -1587,19 +1815,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-6959a97b601a": {
-    "document_id": "DOC-6959a97b601a",
+  "DOC-4d2083160bd4": {
+    "document_id": "DOC-4d2083160bd4",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-6959a97b601a_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-4d2083160bd4_06_OEM_Authorization.pdf",
     "file_size_bytes": 1148,
     "file_size_kb": 1,
-    "document_hash_sha256": "6959a97b601a0b77c338a94420f5a7cfb14d6c925948596ef6e8ac00feb7fb0b",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "4d2083160bd4eca15b04f0c0095ec4785a2396ea54e3e553c95b1e1613ce8480",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6959a97b601a_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4d2083160bd4_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "OEM_AUTHORIZATION",
@@ -1607,19 +1835,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-42519c789e49": {
-    "document_id": "DOC-42519c789e49",
+  "DOC-d13f54acca7b": {
+    "document_id": "DOC-d13f54acca7b",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-42519c789e49_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-d13f54acca7b_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1153,
     "file_size_kb": 1,
-    "document_hash_sha256": "42519c789e49d07e6c62e5dc01a5935c712f257f211278d2e91ddbac03a78224",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "d13f54acca7bd21d8f86076545f4f114cf7f5f07326f3e3928090981ce11584a",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-42519c789e49_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d13f54acca7b_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -1627,19 +1855,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-6adf78f20de2": {
-    "document_id": "DOC-6adf78f20de2",
+  "DOC-30589011309c": {
+    "document_id": "DOC-30589011309c",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-6adf78f20de2_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-30589011309c_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1141,
     "file_size_kb": 1,
-    "document_hash_sha256": "6adf78f20de2abe12f7f8c594a6bf14e8cd4d94b76ce39b7498965dab963f2b5",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "30589011309c5431411f8c4bc685559513e037db295efd432f236a6d8f02dbb9",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6adf78f20de2_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-30589011309c_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "EPFO_ESIC",
@@ -1647,19 +1875,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-06ecca88284a": {
-    "document_id": "DOC-06ecca88284a",
+  "DOC-5aa3afd75ff3": {
+    "document_id": "DOC-5aa3afd75ff3",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-06ecca88284a_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-5aa3afd75ff3_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1152,
     "file_size_kb": 1,
-    "document_hash_sha256": "06ecca88284a568c97b3dcc2a959c2c4cf2fe63061e4a9bf5c8a57b7a50ecff9",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "5aa3afd75ff38fc78cbabcf698857f3c5359bcda0c69b53a0e0b7418439f99be",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo008@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-06ecca88284a_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-5aa3afd75ff3_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-008",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -1667,19 +1895,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-1fc8cdc5ebed": {
-    "document_id": "DOC-1fc8cdc5ebed",
+  "DOC-7daed3a26aa7": {
+    "document_id": "DOC-7daed3a26aa7",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-1fc8cdc5ebed_01_PAN.pdf",
+    "storage_filename": "DOC-7daed3a26aa7_01_PAN.pdf",
     "file_size_bytes": 1125,
     "file_size_kb": 1,
-    "document_hash_sha256": "1fc8cdc5ebed5997f748247d7e9d51e8861baaa052568f742c9b4f5f77f8945d",
-    "uploaded_at": "2026-09-27T16:24:36Z",
+    "document_hash_sha256": "7daed3a26aa7a336164352c303dd8a0e223d12c7a86db0fe101ff8761ced16ba",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-1fc8cdc5ebed_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7daed3a26aa7_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "PAN",
@@ -1687,19 +1915,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-630a366c5ff3": {
-    "document_id": "DOC-630a366c5ff3",
+  "DOC-4aafe6972c11": {
+    "document_id": "DOC-4aafe6972c11",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-630a366c5ff3_02_GST.pdf",
+    "storage_filename": "DOC-4aafe6972c11_02_GST.pdf",
     "file_size_bytes": 1125,
     "file_size_kb": 1,
-    "document_hash_sha256": "630a366c5ff389cef1554ad4dc6b9ac5b899e933028a83fd8eb590c537dca58f",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "4aafe6972c11607679a8625c7886476a7ed279d27099615ad61f846f331c48e0",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-630a366c5ff3_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4aafe6972c11_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "GST",
@@ -1707,19 +1935,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-7699478bf302": {
-    "document_id": "DOC-7699478bf302",
+  "DOC-c34d0321e23c": {
+    "document_id": "DOC-c34d0321e23c",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-7699478bf302_03_Company_Registration.pdf",
+    "storage_filename": "DOC-c34d0321e23c_03_Company_Registration.pdf",
     "file_size_bytes": 1140,
     "file_size_kb": 1,
-    "document_hash_sha256": "7699478bf302750570260a899883d4ef63106b4afc876a147254a7f79e8b71a5",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "c34d0321e23c7ef3983a2402e4fbadb0654c3e363c8e7c439df21dd29b5d5fb6",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7699478bf302_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c34d0321e23c_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "COMPANY_REGISTRATION",
@@ -1727,19 +1955,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3667398396d0": {
-    "document_id": "DOC-3667398396d0",
+  "DOC-44362e1b5c3a": {
+    "document_id": "DOC-44362e1b5c3a",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-3667398396d0_04_Udyam.pdf",
+    "storage_filename": "DOC-44362e1b5c3a_04_Udyam.pdf",
     "file_size_bytes": 1133,
     "file_size_kb": 1,
-    "document_hash_sha256": "3667398396d0b04ddac351987fe1c32d96cb20f83990bce875ff565b881f5288",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "44362e1b5c3a05eaaa9674b08769ac253246eb0abc93812e23a0cc0b01ef55b8",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3667398396d0_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-44362e1b5c3a_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "UDYAM_MSME",
@@ -1747,19 +1975,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-9dad2dfa015c": {
-    "document_id": "DOC-9dad2dfa015c",
+  "DOC-4493cd4664f4": {
+    "document_id": "DOC-4493cd4664f4",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-9dad2dfa015c_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-4493cd4664f4_05_Experience_Certificate.pdf",
     "file_size_bytes": 1137,
     "file_size_kb": 1,
-    "document_hash_sha256": "9dad2dfa015c0fa3d7e0a204ea880d0b615bc2b8fb7eb54c3ef3332ecc95c325",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "4493cd4664f4bc928460b29f09d74ed9fdce41be8c8d2b6dba6e7317e533a964",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9dad2dfa015c_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4493cd4664f4_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -1767,19 +1995,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-10bc58ee928e": {
-    "document_id": "DOC-10bc58ee928e",
+  "DOC-d1db47d8ec10": {
+    "document_id": "DOC-d1db47d8ec10",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-10bc58ee928e_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-d1db47d8ec10_06_OEM_Authorization.pdf",
     "file_size_bytes": 1140,
     "file_size_kb": 1,
-    "document_hash_sha256": "10bc58ee928e8877d78149d9a24a3d02b942a0d753174e5c6c1096c874e5a1eb",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "d1db47d8ec10c842c04939b72e4808a1c124f71da9c90d82750b8fe5efe9b2db",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-10bc58ee928e_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d1db47d8ec10_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "OEM_AUTHORIZATION",
@@ -1787,19 +2015,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3dbcf426da23": {
-    "document_id": "DOC-3dbcf426da23",
+  "DOC-076f8a43525f": {
+    "document_id": "DOC-076f8a43525f",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-3dbcf426da23_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-076f8a43525f_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1144,
     "file_size_kb": 1,
-    "document_hash_sha256": "3dbcf426da235e6bae9433049a4fa66b905593007e68a66b2eabc2ca795a6720",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "076f8a43525f001520f5aa57058ef6cfb0eb48d757db01aace1ae9c9b7144dd0",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3dbcf426da23_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-076f8a43525f_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -1807,19 +2035,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-b0aeda22e2c5": {
-    "document_id": "DOC-b0aeda22e2c5",
+  "DOC-fe9cec441c64": {
+    "document_id": "DOC-fe9cec441c64",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-b0aeda22e2c5_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-fe9cec441c64_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1132,
     "file_size_kb": 1,
-    "document_hash_sha256": "b0aeda22e2c5fe8a886ec7eba12a1258f886521d39592709bfd6f6e7c0d3f497",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "fe9cec441c644f62f817a81595bd34dd5ddf520c232d38f53be40f132ccf20e3",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-b0aeda22e2c5_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-fe9cec441c64_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "EPFO_ESIC",
@@ -1827,19 +2055,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-b15831c3f414": {
-    "document_id": "DOC-b15831c3f414",
+  "DOC-811d2c078953": {
+    "document_id": "DOC-811d2c078953",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-b15831c3f414_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-811d2c078953_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1144,
     "file_size_kb": 1,
-    "document_hash_sha256": "b15831c3f414bbbf020ac988b7037208d9a18a5bca2843ef7f7ccf11b6f549f8",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "811d2c07895368e080330b3bd4f9996fd0aabc295cddf159c1383abb768dc2b0",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo009@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-b15831c3f414_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-811d2c078953_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-009",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -1847,19 +2075,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-e37438a45455": {
-    "document_id": "DOC-e37438a45455",
+  "DOC-3de19e5e5f5a": {
+    "document_id": "DOC-3de19e5e5f5a",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-e37438a45455_01_PAN.pdf",
+    "storage_filename": "DOC-3de19e5e5f5a_01_PAN.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "e37438a4545521405565e9c3906b5b21f1b1d17ce49a456945366bbe51e35fcd",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "3de19e5e5f5aa0aa32c2c9243989ff0e749bf0214ed205c8b71a1929f63cc582",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e37438a45455_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3de19e5e5f5a_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "PAN",
@@ -1867,19 +2095,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-7260c90a463a": {
-    "document_id": "DOC-7260c90a463a",
+  "DOC-3a62d96f0dc9": {
+    "document_id": "DOC-3a62d96f0dc9",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-7260c90a463a_02_GST.pdf",
+    "storage_filename": "DOC-3a62d96f0dc9_02_GST.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "7260c90a463a288b3c8beb760dcfd1a8dfa31da46594b41dc23f95fbbe9b1aec",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "3a62d96f0dc9119293c4043e2381888ee0b26d8b8f60603fe3fe00496688ad88",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7260c90a463a_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3a62d96f0dc9_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "GST",
@@ -1887,19 +2115,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-6d4aba422851": {
-    "document_id": "DOC-6d4aba422851",
+  "DOC-7561c4004369": {
+    "document_id": "DOC-7561c4004369",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-6d4aba422851_03_Company_Registration.pdf",
+    "storage_filename": "DOC-7561c4004369_03_Company_Registration.pdf",
     "file_size_bytes": 1152,
     "file_size_kb": 1,
-    "document_hash_sha256": "6d4aba42285105062c28f9a80e4f69ac486fc5372b6938547c5251d59c1cf195",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "7561c400436960a78c0d1dbece39e46ce95de51b81870f5d1120516df255ecf5",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6d4aba422851_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7561c4004369_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "COMPANY_REGISTRATION",
@@ -1907,19 +2135,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-7a5698e24420": {
-    "document_id": "DOC-7a5698e24420",
+  "DOC-8b1b10ef8372": {
+    "document_id": "DOC-8b1b10ef8372",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-7a5698e24420_04_Udyam.pdf",
+    "storage_filename": "DOC-8b1b10ef8372_04_Udyam.pdf",
     "file_size_bytes": 1149,
     "file_size_kb": 1,
-    "document_hash_sha256": "7a5698e24420f3b1622943ce62b5b9437d79eb825fba38159befe98421d22320",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "8b1b10ef83721d1df282ea07c5d016b67b4f0a6bead739c9fe93e8f21d8f08c9",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7a5698e24420_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-8b1b10ef8372_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "UDYAM_MSME",
@@ -1927,19 +2155,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-90e020bca66a": {
-    "document_id": "DOC-90e020bca66a",
+  "DOC-c6aaff8aa0c1": {
+    "document_id": "DOC-c6aaff8aa0c1",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-90e020bca66a_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-c6aaff8aa0c1_05_Experience_Certificate.pdf",
     "file_size_bytes": 1150,
     "file_size_kb": 1,
-    "document_hash_sha256": "90e020bca66ab6a6141930227fe61f3c500f9c5f95c47650378c6a1edd188ffc",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "c6aaff8aa0c1fbd2bc9631731700768cfde86cde96a928b89585eabab9e31fab",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-90e020bca66a_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c6aaff8aa0c1_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -1947,19 +2175,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-339d350118b7": {
-    "document_id": "DOC-339d350118b7",
+  "DOC-61b20e001008": {
+    "document_id": "DOC-61b20e001008",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-339d350118b7_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-61b20e001008_06_OEM_Authorization.pdf",
     "file_size_bytes": 1154,
     "file_size_kb": 1,
-    "document_hash_sha256": "339d350118b7abeebb49790850459528a2f72e85497b7bbc012b3a840ffb6a3a",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "61b20e0010088148cf02132065adf9376cd0cd43575b815bd907c3b346a14173",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-339d350118b7_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-61b20e001008_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "OEM_AUTHORIZATION",
@@ -1967,19 +2195,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-c6fa23c89be6": {
-    "document_id": "DOC-c6fa23c89be6",
+  "DOC-d604473b3960": {
+    "document_id": "DOC-d604473b3960",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-c6fa23c89be6_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-d604473b3960_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1158,
     "file_size_kb": 1,
-    "document_hash_sha256": "c6fa23c89be6f27b26e86d14b1d33b8119f84086ff509f238f836b8d9bad0da6",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "d604473b39602ff2cfe5d82a993c37f9c6395dca2833eb2cfdb7ee29ee685ba3",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c6fa23c89be6_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d604473b3960_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -1987,19 +2215,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-69231e14a525": {
-    "document_id": "DOC-69231e14a525",
+  "DOC-f65f056da4a0": {
+    "document_id": "DOC-f65f056da4a0",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-69231e14a525_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-f65f056da4a0_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1146,
     "file_size_kb": 1,
-    "document_hash_sha256": "69231e14a52582763d78d7297f80e707baf5d2b2649d6aaf95aa39d4dca6d20f",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "f65f056da4a0dd16c2c08fa26d15df746d2cf864613baceb66109ec84eba24e7",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-69231e14a525_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-f65f056da4a0_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "EPFO_ESIC",
@@ -2007,19 +2235,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-ec2a881966b6": {
-    "document_id": "DOC-ec2a881966b6",
+  "DOC-d0ae16316282": {
+    "document_id": "DOC-d0ae16316282",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-ec2a881966b6_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-d0ae16316282_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1158,
     "file_size_kb": 1,
-    "document_hash_sha256": "ec2a881966b607254b72ab06dbfe6fe8c5598252e21d95f909abd04afd3f77e5",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "d0ae1631628267271868c809eced4a6d6713c7de9da662846d3a6a23dc4e6b3f",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo010@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-ec2a881966b6_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d0ae16316282_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-010",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -2027,19 +2255,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-0f66beb1fe33": {
-    "document_id": "DOC-0f66beb1fe33",
+  "DOC-e59a1ab678f2": {
+    "document_id": "DOC-e59a1ab678f2",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-0f66beb1fe33_01_PAN.pdf",
+    "storage_filename": "DOC-e59a1ab678f2_01_PAN.pdf",
     "file_size_bytes": 1133,
     "file_size_kb": 1,
-    "document_hash_sha256": "0f66beb1fe336e989071b826f0c1ba67f5ac2f74025ddc1e1fe4b167a13a96d5",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "e59a1ab678f2c044926a0e5fd5ddefaf641f181f97a1cb09921f9b91edd531b5",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-0f66beb1fe33_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e59a1ab678f2_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "PAN",
@@ -2047,19 +2275,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-d2dce752e6eb": {
-    "document_id": "DOC-d2dce752e6eb",
+  "DOC-90aa1189b2ac": {
+    "document_id": "DOC-90aa1189b2ac",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-d2dce752e6eb_02_GST.pdf",
+    "storage_filename": "DOC-90aa1189b2ac_02_GST.pdf",
     "file_size_bytes": 1133,
     "file_size_kb": 1,
-    "document_hash_sha256": "d2dce752e6eb3d8cd043f9bca8a9fc9e8703b6ffc059ae48359975dce33175ca",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "90aa1189b2ac58262f0b3c57f57c937784a9f91f0f83e3d5eccac01030eb6b4d",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d2dce752e6eb_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-90aa1189b2ac_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "GST",
@@ -2067,19 +2295,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-e09e1e2cabc3": {
-    "document_id": "DOC-e09e1e2cabc3",
+  "DOC-4e3a1b684bc0": {
+    "document_id": "DOC-4e3a1b684bc0",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-e09e1e2cabc3_03_Company_Registration.pdf",
+    "storage_filename": "DOC-4e3a1b684bc0_03_Company_Registration.pdf",
     "file_size_bytes": 1147,
     "file_size_kb": 1,
-    "document_hash_sha256": "e09e1e2cabc32fccacafee146f02de82593489442f400143ecf4bbc9a1fdc925",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "4e3a1b684bc0dc9e48b854f5d7b836019024256fae402c7f6217f746fae166b0",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e09e1e2cabc3_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4e3a1b684bc0_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "COMPANY_REGISTRATION",
@@ -2087,19 +2315,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-fe1eb51c6f12": {
-    "document_id": "DOC-fe1eb51c6f12",
+  "DOC-c074da257a19": {
+    "document_id": "DOC-c074da257a19",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-fe1eb51c6f12_04_Udyam.pdf",
+    "storage_filename": "DOC-c074da257a19_04_Udyam.pdf",
     "file_size_bytes": 1141,
     "file_size_kb": 1,
-    "document_hash_sha256": "fe1eb51c6f12012a34fda94a55a7ff57cb6eb985bd663f7d7ffb5a3a7b877cf9",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "c074da257a19faf16be901518bdc01687a6f5a46810162bd7b1b6d84024674ba",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-fe1eb51c6f12_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c074da257a19_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "UDYAM_MSME",
@@ -2107,19 +2335,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-35014716d315": {
-    "document_id": "DOC-35014716d315",
+  "DOC-e77c7f523b7e": {
+    "document_id": "DOC-e77c7f523b7e",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-35014716d315_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-e77c7f523b7e_05_Experience_Certificate.pdf",
     "file_size_bytes": 1143,
     "file_size_kb": 1,
-    "document_hash_sha256": "35014716d31502d35d04005d55f2daba6dc5a1f64b62ad28e52e8e0b219cfe2c",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "e77c7f523b7e01de8f3a11fe304d20ea4931515e7fe3ae2245f1f76ddfdbf450",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-35014716d315_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-e77c7f523b7e_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -2127,19 +2355,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-9ab05bf170e1": {
-    "document_id": "DOC-9ab05bf170e1",
+  "DOC-2850677aaa23": {
+    "document_id": "DOC-2850677aaa23",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-9ab05bf170e1_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-2850677aaa23_06_OEM_Authorization.pdf",
     "file_size_bytes": 1144,
     "file_size_kb": 1,
-    "document_hash_sha256": "9ab05bf170e1d4349300be761c6a8b16586120a434742ebe2bb9aa27f5d4cfaa",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "2850677aaa235ace98b47e5ca8a41c71e5927980838df402dafc62286bb9ea70",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-9ab05bf170e1_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2850677aaa23_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "OEM_AUTHORIZATION",
@@ -2147,19 +2375,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-23d02137760c": {
-    "document_id": "DOC-23d02137760c",
+  "DOC-7b11d7eb2e4f": {
+    "document_id": "DOC-7b11d7eb2e4f",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-23d02137760c_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-7b11d7eb2e4f_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1153,
     "file_size_kb": 1,
-    "document_hash_sha256": "23d02137760caac5e00b0521f9b0c5b44e096ab858f4e8c64080d065c76e34bf",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "7b11d7eb2e4f38c888c1a16fb3308bbb3ff62dbb7530c928175016336d3a24d9",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-23d02137760c_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7b11d7eb2e4f_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -2167,19 +2395,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-66fada25c661": {
-    "document_id": "DOC-66fada25c661",
+  "DOC-a7b05a1fdf60": {
+    "document_id": "DOC-a7b05a1fdf60",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-66fada25c661_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-a7b05a1fdf60_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1138,
     "file_size_kb": 1,
-    "document_hash_sha256": "66fada25c661a030dd82d5a86def00efb4f4453b21a17de8eac9c1328889b6e2",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "a7b05a1fdf60da1d787daaf741bbdb91a21c89a26433f106b3d1e50461e58593",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-66fada25c661_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-a7b05a1fdf60_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "EPFO_ESIC",
@@ -2187,19 +2415,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-1a8586ceeca0": {
-    "document_id": "DOC-1a8586ceeca0",
+  "DOC-c5558036f9fc": {
+    "document_id": "DOC-c5558036f9fc",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-1a8586ceeca0_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-c5558036f9fc_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1149,
     "file_size_kb": 1,
-    "document_hash_sha256": "1a8586ceeca08ec78e7aa861b114b5de469687409dc0b57fc7dc957c6b160b37",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "c5558036f9fce6fdfdfaf33565355e39071c74102ec01a53d7e8703a7e1371fd",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo011@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-1a8586ceeca0_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c5558036f9fc_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-011",
       "document_type": "BLACKLISTING_DECLARATION",
@@ -2207,19 +2435,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-66657fb89460": {
-    "document_id": "DOC-66657fb89460",
+  "DOC-d4126881978b": {
+    "document_id": "DOC-d4126881978b",
     "tender_id": null,
     "filename": "01_PAN.pdf",
-    "storage_filename": "DOC-66657fb89460_01_PAN.pdf",
+    "storage_filename": "DOC-d4126881978b_01_PAN.pdf",
     "file_size_bytes": 1137,
     "file_size_kb": 1,
-    "document_hash_sha256": "66657fb89460bac2e099ee15c38870f3171b0e7404d6ef508238ed9abfbe6ef1",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "d4126881978b9b33d63a3dc0729b00d4e4ad33163bda7705ca16b8cd796d6b67",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-66657fb89460_01_PAN.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d4126881978b_01_PAN.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "PAN",
@@ -2227,19 +2455,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-2124179cac69": {
-    "document_id": "DOC-2124179cac69",
+  "DOC-bc18dcd1a1c4": {
+    "document_id": "DOC-bc18dcd1a1c4",
     "tender_id": null,
     "filename": "02_GST.pdf",
-    "storage_filename": "DOC-2124179cac69_02_GST.pdf",
+    "storage_filename": "DOC-bc18dcd1a1c4_02_GST.pdf",
     "file_size_bytes": 1137,
     "file_size_kb": 1,
-    "document_hash_sha256": "2124179cac69f558b1972d895b5c8d41f2ca9c1ccaec4a7cf6928c9feed2f322",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "bc18dcd1a1c480c3eb8223c8593d46b6802a5eda70d486a179d08b458597c3ca",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-2124179cac69_02_GST.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-bc18dcd1a1c4_02_GST.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "GST",
@@ -2247,19 +2475,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-09119dea495f": {
-    "document_id": "DOC-09119dea495f",
+  "DOC-0b99bdff5cb1": {
+    "document_id": "DOC-0b99bdff5cb1",
     "tender_id": null,
     "filename": "03_Company_Registration.pdf",
-    "storage_filename": "DOC-09119dea495f_03_Company_Registration.pdf",
+    "storage_filename": "DOC-0b99bdff5cb1_03_Company_Registration.pdf",
     "file_size_bytes": 1151,
     "file_size_kb": 1,
-    "document_hash_sha256": "09119dea495ffde050b63d3f0c8b35ba87e2ed132ed9175dc45a9fa6b10dc4a5",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "0b99bdff5cb179e86560d0e6467eb295a50e3bb56f8acebf637faf1b30a7f94c",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-09119dea495f_03_Company_Registration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-0b99bdff5cb1_03_Company_Registration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "COMPANY_REGISTRATION",
@@ -2267,19 +2495,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-040605af4c1a": {
-    "document_id": "DOC-040605af4c1a",
+  "DOC-0a614b777f36": {
+    "document_id": "DOC-0a614b777f36",
     "tender_id": null,
     "filename": "04_Udyam.pdf",
-    "storage_filename": "DOC-040605af4c1a_04_Udyam.pdf",
+    "storage_filename": "DOC-0a614b777f36_04_Udyam.pdf",
     "file_size_bytes": 1146,
     "file_size_kb": 1,
-    "document_hash_sha256": "040605af4c1ab14aa77378b259a91d2d3f66988afc33eb5de312874633b1efcc",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "0a614b777f36185470d6967a7aa6882ac8f960ebb0bdb6508d2a8fb5bcd1a7fa",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-040605af4c1a_04_Udyam.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-0a614b777f36_04_Udyam.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "UDYAM_MSME",
@@ -2287,19 +2515,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-7112f78cdca7": {
-    "document_id": "DOC-7112f78cdca7",
+  "DOC-fc511941a8ee": {
+    "document_id": "DOC-fc511941a8ee",
     "tender_id": null,
     "filename": "05_Experience_Certificate.pdf",
-    "storage_filename": "DOC-7112f78cdca7_05_Experience_Certificate.pdf",
+    "storage_filename": "DOC-fc511941a8ee_05_Experience_Certificate.pdf",
     "file_size_bytes": 1147,
     "file_size_kb": 1,
-    "document_hash_sha256": "7112f78cdca71a4f2316262de8d50f730b43c99403f118aae795b13ab0b3af9a",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "fc511941a8eebce7f8ecdf3d187e7b0d4ddcb68c6f50cfeab2dbf800397b99de",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-7112f78cdca7_05_Experience_Certificate.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-fc511941a8ee_05_Experience_Certificate.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "EXPERIENCE_CERTIFICATE",
@@ -2307,19 +2535,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-203602495be8": {
-    "document_id": "DOC-203602495be8",
+  "DOC-4f6448b9a260": {
+    "document_id": "DOC-4f6448b9a260",
     "tender_id": null,
     "filename": "06_OEM_Authorization.pdf",
-    "storage_filename": "DOC-203602495be8_06_OEM_Authorization.pdf",
+    "storage_filename": "DOC-4f6448b9a260_06_OEM_Authorization.pdf",
     "file_size_bytes": 1150,
     "file_size_kb": 1,
-    "document_hash_sha256": "203602495be8724884afc533656d4ceede59b6cf5387a655d8bc5531b51099d2",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "4f6448b9a260ca5762b5d04efce95f81b87ccd7bdcc54cd9367f98fdd668d677",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-203602495be8_06_OEM_Authorization.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-4f6448b9a260_06_OEM_Authorization.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "OEM_AUTHORIZATION",
@@ -2327,19 +2555,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-082b01dcd8e6": {
-    "document_id": "DOC-082b01dcd8e6",
+  "DOC-3986ef0a8a0d": {
+    "document_id": "DOC-3986ef0a8a0d",
     "tender_id": null,
     "filename": "07_Local_Content_Declaration.pdf",
-    "storage_filename": "DOC-082b01dcd8e6_07_Local_Content_Declaration.pdf",
+    "storage_filename": "DOC-3986ef0a8a0d_07_Local_Content_Declaration.pdf",
     "file_size_bytes": 1155,
     "file_size_kb": 1,
-    "document_hash_sha256": "082b01dcd8e661f676c073628d68037aeee82133508d4cc228afc1f95d8d90be",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "3986ef0a8a0d699b565ac5d23585a4ddb840a9b52c4e395a6091535417490a0b",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-082b01dcd8e6_07_Local_Content_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3986ef0a8a0d_07_Local_Content_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "LOCAL_CONTENT_DECLARATION",
@@ -2347,19 +2575,19 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-992b9ef29110": {
-    "document_id": "DOC-992b9ef29110",
+  "DOC-d52be700cb93": {
+    "document_id": "DOC-d52be700cb93",
     "tender_id": null,
     "filename": "08_EPFO_ESIC.pdf",
-    "storage_filename": "DOC-992b9ef29110_08_EPFO_ESIC.pdf",
+    "storage_filename": "DOC-d52be700cb93_08_EPFO_ESIC.pdf",
     "file_size_bytes": 1143,
     "file_size_kb": 1,
-    "document_hash_sha256": "992b9ef29110bd8bc551edc95821707ecc3097c234cc68ae4790d6c2d69d7176",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "d52be700cb9344030b8f9be3bbd31f49eaba830c87703639a96f0ed344482269",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-992b9ef29110_08_EPFO_ESIC.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-d52be700cb93_08_EPFO_ESIC.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "EPFO_ESIC",
@@ -2367,24 +2595,44 @@
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
     }
   },
-  "DOC-3e71979de699": {
-    "document_id": "DOC-3e71979de699",
+  "DOC-6a13195a26c8": {
+    "document_id": "DOC-6a13195a26c8",
     "tender_id": null,
     "filename": "09_Blacklisting_Declaration.pdf",
-    "storage_filename": "DOC-3e71979de699_09_Blacklisting_Declaration.pdf",
+    "storage_filename": "DOC-6a13195a26c8_09_Blacklisting_Declaration.pdf",
     "file_size_bytes": 1154,
     "file_size_kb": 1,
-    "document_hash_sha256": "3e71979de69989d2b89ffc6742d8601b5c4a4eaa0f05151f27fa855c56a93432",
-    "uploaded_at": "2026-09-27T16:24:37Z",
+    "document_hash_sha256": "6a13195a26c80affaab17257e48b0d89c7cc58d97811af314170f26b2a777fd8",
+    "uploaded_at": "2026-09-29T08:55:52Z",
     "uploaded_by": "demo012@bidsure.local",
     "content_type": "application/pdf",
     "source": "SYNTHETIC_UPLOAD",
-    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-3e71979de699_09_Blacklisting_Declaration.pdf",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-6a13195a26c8_09_Blacklisting_Declaration.pdf",
     "metadata": {
       "bidder_id": "BID-DEMO-012",
       "document_type": "BLACKLISTING_DECLARATION",
       "is_synthetic_demo": true,
       "demo_watermark": "DEMO DOCUMENT \u2014 SYNTHETIC DATA \u2014 NOT A REAL GOVERNMENT CERTIFICATE"
+    }
+  },
+  "DOC-c698cb97d770": {
+    "document_id": "DOC-c698cb97d770",
+    "tender_id": "2026_IITG_925833_1",
+    "filename": "Tendernotice_1.pdf",
+    "storage_filename": "DOC-c698cb97d770_Tendernotice_1.pdf",
+    "file_size_bytes": 10320,
+    "file_size_kb": 10,
+    "document_hash_sha256": "c698cb97d7705b35f4e458c351ec7ab89d05f5d147d735b766eb360887f5a272",
+    "uploaded_at": "2026-09-29T08:55:52Z",
+    "uploaded_by": "officer@cpcl.gov.in",
+    "content_type": "application/pdf",
+    "source": "OFFICER_UPLOAD",
+    "storage_path": "C:\\Users\\Jash Mistry\\Desktop\\BidSure AI\\backend\\data\\documents\\DOC-c698cb97d770_Tendernotice_1.pdf",
+    "metadata": {
+      "title": "Supply and installation of Next Generation Firewall Solution at IIT Guwahati",
+      "organization": "Indian Institute of Technology Guwahati",
+      "total_pages": 17,
+      "document_type": "TENDER_NOTICE_NIT"
     }
   }
 }

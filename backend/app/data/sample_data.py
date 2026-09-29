@@ -4,6 +4,7 @@ Provides realistic user credentials and dynamic in-memory data store for procure
 """
 from typing import Dict, List, Any, Optional
 import os
+import sys
 import json
 import copy
 import time
@@ -684,11 +685,26 @@ def _load_or_generate_persisted_state():
     if os.path.exists(STATE_FILE_PATH):
         try:
             with open(STATE_FILE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                if data and len(data.get("bidder_bids", [])) > 0:
+                    return data
         except Exception:
             pass
 
-    # Auto-generate 12 real CPPP tenders & synthetic demo dataset on first initialization
+    # Automatically run the realistic demo dataset loader to populate 12 tenders, 36+ bids, 108 docs, and audit logs
+    try:
+        scripts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        from load_demo_dataset import run_demo_dataset_loader
+        run_demo_dataset_loader()
+        if os.path.exists(STATE_FILE_PATH):
+            with open(STATE_FILE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error executing demo dataset loader: {e}")
+
+    # Fallback to basic state if loader fails
     try:
         from app.services.tender_sources.cppp_adapter import CPPPTenderAdapter
         cppp_adapter = CPPPTenderAdapter()
@@ -706,11 +722,9 @@ def _load_or_generate_persisted_state():
             tender_record["document_count"] = 1
             tenders.append(tender_record)
 
-        # Ensure we have at least 12 tenders
         if len(tenders) < 12:
             raise Exception(f"Only {len(tenders)} tenders found, expected 12.")
 
-        # Initialize other structures as empty or default
         bidders = []
         bidder_profiles = {}
         bidder_documents = []
