@@ -234,3 +234,80 @@ export function StatusBadge({
     </span>
   );
 }
+
+// Risk Badge (LOW / MEDIUM / HIGH / CRITICAL)
+export function RiskBadge({ risk }: { risk: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | string }) {
+  const normalized = (risk || "MEDIUM").toUpperCase();
+  if (normalized === "LOW" || normalized === "MINIMAL") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+        <ShieldCheckIcon className="size-3 text-emerald-600" />
+        Low Risk
+      </span>
+    );
+  }
+  if (normalized === "HIGH" || normalized === "CRITICAL") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200">
+        <AlertTriangleIcon className="size-3 text-red-600" />
+        {normalized} Risk
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+      <AlertTriangleIcon className="size-3 text-amber-600" />
+      Medium Risk
+    </span>
+  );
+}
+
+// Score Display component
+export function ScoreDisplay({ score, size = "md" }: { score: number; size?: "sm" | "md" | "lg" }) {
+  const num = typeof score === "number" ? score : Number(score) || 0;
+  const sizeClasses = {
+    sm: "px-2 py-0.5 text-xs font-bold",
+    md: "px-2.5 py-1 text-sm font-extrabold",
+    lg: "px-3.5 py-1.5 text-lg font-black",
+  };
+  const colorClass =
+    num >= 80
+      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+      : num >= 50
+      ? "bg-amber-50 text-amber-700 border border-amber-200"
+      : "bg-red-50 text-red-700 border border-red-200";
+
+  return (
+    <span className={`inline-flex items-center justify-center rounded-lg ${sizeClasses[size]} ${colorClass}`}>
+      {num}%
+    </span>
+  );
+}
+
+// Document Status Badge
+export function DocumentStatusBadge({ status }: { status: string }) {
+  const normalized = (status || "").toUpperCase();
+  if (normalized === "VERIFIED" || normalized === "PASS" || normalized === "VALID") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">
+        <CheckCircleIcon className="size-3 text-emerald-600" />
+        Verified
+      </span>
+    );
+  }
+  if (normalized === "REJECTED" || normalized === "INVALID" || normalized === "FAIL") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 border border-red-200">
+        <XCircleIcon className="size-3 text-red-600" />
+        Rejected
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 border border-amber-200">
+      <ClockIcon className="size-3 text-amber-600" />
+      {status || "Pending"}
+    </span>
+  );
+}
+
